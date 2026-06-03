@@ -8,6 +8,16 @@ import {
 const PublicWelcome = () => {
   const navigate = useNavigate();
   const [openFaq, setOpenFaq] = useState(null);
+  const [currentSlide, setCurrentSlide] = useState(0);
+  const slides = ['/slide1.png', '/slide2.png', '/slide3.png'];
+
+  // Background slider
+  useEffect(() => {
+    const timer = setInterval(() => {
+      setCurrentSlide((prev) => (prev + 1) % slides.length);
+    }, 4000);
+    return () => clearInterval(timer);
+  }, [slides.length]);
 
   // Scroll to top on load
   useEffect(() => {
@@ -73,7 +83,19 @@ const PublicWelcome = () => {
       </header>
 
       {/* Hero Section */}
-      <section className="relative pt-24 pb-32 lg:pt-32 lg:pb-40 overflow-hidden" style={{ background: 'linear-gradient(135deg, #085041 0%, #1D9E75 100%)' }}>
+      <section className="relative pt-24 pb-32 lg:pt-32 lg:pb-40 overflow-hidden bg-[#085041]">
+        {/* Sliding Background Images */}
+        {slides.map((slide, index) => (
+          <div 
+            key={index}
+            className={`absolute inset-0 transition-opacity duration-1000 ease-in-out ${index === currentSlide ? 'opacity-100' : 'opacity-0'}`}
+          >
+            <img src={slide} alt="Lab background" className="w-full h-full object-cover" />
+          </div>
+        ))}
+        {/* Dark Teal Gradient Overlay */}
+        <div className="absolute inset-0 bg-gradient-to-r from-[#085041]/95 to-[#1D9E75]/85"></div>
+
         <div className="relative z-10 max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 text-center">
           <h2 className="text-5xl md:text-6xl lg:text-7xl font-heading text-white mb-6 leading-tight max-w-4xl mx-auto">
             Trusted Pathology Lab in Your City
