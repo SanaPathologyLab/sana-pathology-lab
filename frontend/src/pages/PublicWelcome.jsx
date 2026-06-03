@@ -261,7 +261,7 @@ const PublicWelcome = () => {
                 </div>
                 <div>
                   <h4 className="font-bold text-slate-800">Address</h4>
-                  <p className="text-slate-600">123 Health Avenue, Medical Hub Area,<br/>City Name, State 123456</p>
+                  <p className="text-slate-600">Datawali Road, Near Aara Machine,<br/>Hayat Nagar, Distt. Sambhal-244303 (U.P)</p>
                 </div>
               </div>
 
@@ -288,9 +288,16 @@ const PublicWelcome = () => {
           </div>
           
           <div className="h-[400px] bg-slate-200 rounded-3xl overflow-hidden shadow-sm border border-slate-300 relative flex items-center justify-center">
-            {/* Embedded map placeholder */}
-            <MapPin className="w-16 h-16 text-slate-400 absolute opacity-20" />
-            <p className="text-slate-500 font-bold z-10 text-center px-4">Interactive Google Map<br/><span className="text-sm font-normal">will be embedded here</span></p>
+            <iframe 
+              title="Sana Pathology Lab Location"
+              src="https://www.google.com/maps?q=Datawali%20Road,%20Near%20Aara%20Machine,%20Hayat%20Nagar,%20Distt.%20Sambhal-244303&output=embed"
+              width="100%" 
+              height="100%" 
+              style={{ border: 0 }} 
+              allowFullScreen="" 
+              loading="lazy" 
+              referrerPolicy="no-referrer-when-downgrade"
+            ></iframe>
           </div>
         </div>
       </section>
@@ -316,7 +323,7 @@ const PublicWelcome = () => {
             <ul className="space-y-2 text-sm opacity-80">
               <li>+91 6396786939</li>
               <li>support@sanapathology.com</li>
-              <li>123 Health Avenue, City</li>
+              <li>Datawali Road, Sambhal</li>
             </ul>
           </div>
           <div>
