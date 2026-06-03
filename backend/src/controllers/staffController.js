@@ -97,4 +97,52 @@ const markAttendance = async (req, res) => {
   }
 };
 
-module.exports = { getStaff, createStaff, updateStaff, deleteStaff, markAttendance };
+const setStaffCredentials = async (req, res) => {
+  try {
+    const { id } = req.params;
+    const { password } = req.body;
+    
+    if (!password) {
+      return res.status(400).json({ error: 'Password is required' });
+    }
+
+    const staff = await prisma.staff.findUnique({ where: { id: parseInt(id) } });
+    if (!staff) return res.status(404).json({ error: 'Staff member not found' });
+
+    const bcrypt = require('bcryptjs');
+    const hashedPassword = bcrypt.hashSync(password, 8);
+
+    // Map Staff role to valid User role if possible, fallback to RECEPTIONIST
+    const roleMapping = {
+      'TECHNICIAN': 'TECHNICIAN',
+      'RECEPTIONIST': 'RECEPTIONIST',
+      'MANAGER': 'ADMIN',
+      'ACCOUNTANT': 'RECEPTIONIST',
+    };
+    const userRole = roleMapping[staff.role] || 'RECEPTIONIST';
+
+    // Upsert User record using staffId as the 'email' (login ID)
+    const user = await prisma.user.upsert({
+      where: { email: staff.staffId },
+      update: {
+        password: hashedPassword,
+        name: staff.name,
+        role: userRole,
+        phone: staff.mobile
+      },
+      create: {
+        email: staff.staffId,
+        password: hashedPassword,
+        name: staff.name,
+        role: userRole,
+        phone: staff.mobile
+      }
+    });
+
+    res.json({ message: 'Credentials updated successfully', loginId: staff.staffId });
+  } catch (err) {
+    res.status(500).json({ error: err.message });
+  }
+};
+
+module.exports = { getStaff, createStaff, updateStaff, deleteStaff, markAttendance, setStaffCredentials };

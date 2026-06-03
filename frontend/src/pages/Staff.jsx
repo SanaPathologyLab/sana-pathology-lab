@@ -1,7 +1,7 @@
 import React, { useEffect, useState, useContext } from 'react';
 import Layout from '../components/Layout';
 import { AuthContext } from '../context/AuthContext';
-import { Plus, Pencil, Trash2, X, Users, CalendarCheck, Wallet, ToggleLeft, ToggleRight, Download } from 'lucide-react';
+import { Plus, Pencil, Trash2, X, Users, CalendarCheck, Wallet, ToggleLeft, ToggleRight, Download, KeyRound } from 'lucide-react';
 import * as XLSX from 'xlsx';
 
 const API = '/api';
@@ -28,6 +28,11 @@ const Staff = () => {
   const [tab, setTab] = useState('ACTIVE');
   const [form, setForm] = useState({ name: '', role: 'TECHNICIAN', mobile: '', email: '', address: '', joiningDate: '', salary: '' });
   const [attendanceDate, setAttendanceDate] = useState(new Date().toISOString().split('T')[0]);
+
+  // Credentials Modal State
+  const [showCredModal, setShowCredModal] = useState(false);
+  const [credPassword, setCredPassword] = useState('');
+  const [credStaff, setCredStaff] = useState(null);
 
   const fetchStaff = async () => {
     setLoading(true);
@@ -78,6 +83,27 @@ const Staff = () => {
   const markAttendance = async (staffId, status) => {
     await fetch(`${API}/staff/attendance`, { method: 'POST', headers, body: JSON.stringify({ staffId, date: attendanceDate, status }) });
     fetchStaff();
+  };
+
+  const handleSetCredentials = async (e) => {
+    e.preventDefault();
+    if (!credPassword) return;
+    try {
+      const res = await fetch(`${API}/staff/${credStaff.id}/credentials`, {
+        method: 'POST',
+        headers,
+        body: JSON.stringify({ password: credPassword })
+      });
+      if (res.ok) {
+        alert(`Successfully set password for ${credStaff.name}!\n\nThey can log in using Email: ${credStaff.staffId}`);
+        setShowCredModal(false);
+        setCredPassword('');
+      } else {
+        alert('Failed to set password.');
+      }
+    } catch (err) {
+      console.error(err);
+    }
   };
 
   const filtered = staff.filter(s => tab === 'ACTIVE' ? s.isActive : !s.isActive);
@@ -205,8 +231,11 @@ const Staff = () => {
                 {s.joiningDate && <p className="text-sm text-gray-600"><span className="font-bold text-[#00488d]">Joined:</span> {new Date(s.joiningDate).toLocaleDateString('en-IN')}</p>}
               </div>
               <div className="flex gap-2 pt-3 border-t border-gray-100">
+                <button onClick={() => { setCredStaff(s); setShowCredModal(true); setCredPassword(''); }} className="flex-1 flex items-center justify-center gap-1 text-xs font-bold text-gray-600 border border-gray-300 py-1.5 rounded hover:bg-gray-100" title="Set Login Password">
+                  <KeyRound className="w-3.5 h-3.5" />
+                </button>
                 <button onClick={() => openEdit(s)} className="flex-1 flex items-center justify-center gap-1 text-xs font-bold text-[#00488d] border border-[#00488d] py-1.5 rounded hover:bg-blue-50">
-                  <Pencil className="w-3.5 h-3.5" /> Edit
+                  <Pencil className="w-3.5 h-3.5" />
                 </button>
                 <button onClick={() => handleToggleActive(s)} className={`flex-1 flex items-center justify-center gap-1 text-xs font-bold py-1.5 rounded ${s.isActive ? 'border border-orange-400 text-orange-600 hover:bg-orange-50' : 'border border-green-400 text-green-600 hover:bg-green-50'}`}>
                   {s.isActive ? <ToggleRight className="w-3.5 h-3.5" /> : <ToggleLeft className="w-3.5 h-3.5" />}
@@ -273,6 +302,36 @@ const Staff = () => {
                 <button type="button" onClick={() => setShowModal(false)} className="px-5 py-2 border border-gray-300 rounded text-sm font-bold text-gray-600 hover:bg-gray-50">Cancel</button>
                 <button type="submit" className="px-5 py-2 bg-[#00488d] text-white rounded text-sm font-bold hover:bg-blue-800">
                   {editItem ? 'Update' : 'Add Staff'}
+                </button>
+              </div>
+            </form>
+          </div>
+        </div>
+      )}
+
+      {/* Credentials Modal */}
+      {showCredModal && (
+        <div className="fixed inset-0 bg-black/50 z-50 flex items-center justify-center p-4">
+          <div className="bg-white rounded-xl shadow-2xl w-full max-w-sm">
+            <div className="flex items-center justify-between px-6 py-4 border-b border-gray-200">
+              <h2 className="text-lg font-bold text-[#00488d]">Set Login Password</h2>
+              <button onClick={() => setShowCredModal(false)}><X className="w-5 h-5 text-gray-400" /></button>
+            </div>
+            <form onSubmit={handleSetCredentials} className="p-6 space-y-4">
+              <div className="bg-blue-50 text-blue-800 p-3 rounded text-sm mb-4">
+                <p><strong>Staff Member:</strong> {credStaff?.name}</p>
+                <p><strong>Login ID (Email):</strong> {credStaff?.staffId}</p>
+                <p className="text-xs text-blue-600 mt-2">They will type this ID into the Email field when logging in.</p>
+              </div>
+              <div>
+                <label className="block text-xs font-bold text-gray-500 uppercase mb-1">New Password *</label>
+                <input required type="text" value={credPassword} onChange={e => setCredPassword(e.target.value)}
+                  className="w-full border border-gray-300 rounded px-3 py-2 text-sm focus:outline-none focus:border-[#00488d]" placeholder="e.g. 123456" />
+              </div>
+              <div className="flex justify-end gap-3 pt-2">
+                <button type="button" onClick={() => setShowCredModal(false)} className="px-5 py-2 border border-gray-300 rounded text-sm font-bold text-gray-600 hover:bg-gray-50">Cancel</button>
+                <button type="submit" className="px-5 py-2 bg-[#00488d] text-white rounded text-sm font-bold hover:bg-blue-800">
+                  Set Password
                 </button>
               </div>
             </form>
