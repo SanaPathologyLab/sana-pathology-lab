@@ -44,7 +44,7 @@ exports.login = async (req, res) => {
     if (!passwordIsValid) return res.status(401).json({ message: 'Invalid password' });
 
     const token = jwt.sign({ id: user.id, role: user.role, userType: 'STAFF' }, process.env.JWT_SECRET || 'supersecretjwtkey', {
-      expiresIn: 86400 // 24 hours
+      expiresIn: '365d' // 1 year (persistent login)
     });
 
     res.status(200).json({
@@ -81,7 +81,7 @@ exports.loginPatient = async (req, res) => {
     if (!patient) return res.status(404).json({ message: 'Invalid Patient ID or Mobile Number' });
 
     const token = jwt.sign({ id: patient.id, userType: 'PATIENT' }, process.env.JWT_SECRET || 'supersecretjwtkey', {
-      expiresIn: 86400
+      expiresIn: '365d'
     });
 
     res.status(200).json({
@@ -106,7 +106,7 @@ exports.loginDoctor = async (req, res) => {
     if (!doctor.isApproved) return res.status(403).json({ message: 'Your account is pending admin approval.' });
 
     const token = jwt.sign({ id: doctor.id, userType: 'DOCTOR' }, process.env.JWT_SECRET || 'supersecretjwtkey', {
-      expiresIn: 86400
+      expiresIn: '365d'
     });
 
     res.status(200).json({

@@ -56,14 +56,28 @@ const PublicAppointment = () => {
           </div>
           <h2 className="text-2xl font-bold text-slate-800 mb-2">Request Received!</h2>
           <p className="text-slate-600 mb-8">
-            Thank you, {formData.name}. We have received your appointment request. Our team will contact you shortly to confirm the details.
+            Thank you, {formData.name}. We have received your appointment request. Please alert us on WhatsApp so we can process it immediately.
           </p>
-          <button
-            onClick={() => navigate('/')}
-            className="w-full bg-[#00488d] text-white py-3 rounded-xl font-medium hover:bg-blue-800 transition-colors"
-          >
-            Return to Home
-          </button>
+          
+          <div className="space-y-3">
+            <button
+              onClick={() => {
+                const msg = `*New Appointment Request*\n\n*Name:* ${formData.name}\n*Mobile:* ${formData.mobile}\n*Gender:* ${formData.gender}\n*Date:* ${formData.preferredDate}\n*Time:* ${formData.preferredTime}\n*Address:* ${formData.address}\n*Notes:* ${formData.notes || 'None'}`;
+                // Hardcoding lab phone since settings might not be available in this public view context, but we found it in Settings.jsx
+                const labPhone = "916396786939"; 
+                window.open(`https://wa.me/${labPhone}?text=${encodeURIComponent(msg)}`, '_blank');
+              }}
+              className="w-full bg-[#25D366] text-white py-3 rounded-xl font-bold text-lg shadow-lg shadow-green-200 hover:bg-[#128C7E] transition-all flex items-center justify-center gap-2"
+            >
+              Alert Lab via WhatsApp
+            </button>
+            <button
+              onClick={() => navigate('/')}
+              className="w-full bg-slate-100 text-slate-700 py-3 rounded-xl font-medium hover:bg-slate-200 transition-colors"
+            >
+              Return to Home
+            </button>
+          </div>
         </div>
       </div>
     );
