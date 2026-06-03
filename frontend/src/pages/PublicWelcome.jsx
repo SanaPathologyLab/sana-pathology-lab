@@ -66,17 +66,19 @@ const PublicWelcome = () => {
             </div>
           </div>
           
-          <div className="hidden md:flex items-center gap-8">
-            <a href="#services" className="text-sm font-bold text-slate-600 hover:text-primary transition-colors">Services</a>
-            <a href="#faq" className="text-sm font-bold text-slate-600 hover:text-primary transition-colors">FAQ</a>
-            <a href="#contact" className="text-sm font-bold text-slate-600 hover:text-primary transition-colors">Contact</a>
+          <div className="flex items-center gap-3">
+            <div className="hidden md:flex items-center gap-8 mr-4">
+              <a href="#services" className="text-sm font-bold text-slate-600 hover:text-primary transition-colors">Services</a>
+              <a href="#faq" className="text-sm font-bold text-slate-600 hover:text-primary transition-colors">FAQ</a>
+              <a href="#contact" className="text-sm font-bold text-slate-600 hover:text-primary transition-colors">Contact</a>
+            </div>
             
             <button 
               onClick={() => navigate('/login')}
-              className="flex items-center gap-2 text-sm font-bold text-white bg-primary hover:bg-primary-light transition-all px-6 py-2.5 rounded-full"
+              className="flex items-center gap-1.5 text-sm font-bold text-white bg-primary hover:bg-primary-light transition-all px-4 py-2 md:px-6 md:py-2.5 rounded-full shadow-lg shadow-primary/30 ring-2 ring-primary/40 ring-offset-2 ring-offset-white"
             >
-              <UserCircle size={18} />
-              Login / Portals
+              <UserCircle size={18} className="hidden sm:block" />
+              <span>Login</span>
             </button>
           </div>
         </div>
