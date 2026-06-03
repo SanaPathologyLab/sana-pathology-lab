@@ -198,7 +198,7 @@ const PrintReport = () => {
 
   // ── High Quality HTML Letterhead Footer (Screen & PDF share only) ──
   const LetterheadFooter = () => (
-    <footer className="mt-auto w-full">
+    <footer className="absolute bottom-0 left-0 w-full px-[14mm] bg-white z-20">
       {/* Signature Area (Visible on print and screen) */}
       <div className="flex justify-between items-end px-12 mb-3">
         <div></div>
@@ -314,7 +314,7 @@ const PrintReport = () => {
   );
 
   // --- Pagination Algorithm ---
-  const PAGE_CAPACITY = 28; // Max rows per A4 page
+  const PAGE_CAPACITY = 23; // Reduced Max rows to leave safe space for multi-line text and absolutely positioned footer
   const pages = [];
   let currentPage = { tests: [], rowCount: 0 };
 
@@ -471,7 +471,7 @@ const PrintReport = () => {
 
               <LetterheadHeader />
               
-              <div className="flex-grow flex flex-col relative z-10 px-2">
+              <div className="flex-grow flex flex-col relative z-10 px-2 pb-[160px]">
                 <PatientHeader pageNum={pageIndex + 1} totalPages={totalPages} />
                 <div className="flex-grow mt-2">
                   
