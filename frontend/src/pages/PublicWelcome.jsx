@@ -2,7 +2,8 @@ import React, { useEffect, useState } from 'react';
 import { useNavigate } from 'react-router-dom';
 import { 
   Phone, MapPin, Clock, CheckCircle2, Activity, Microscope, 
-  UserCircle, Star, ChevronDown, ChevronUp, MessageCircle, ShieldCheck
+  UserCircle, Star, ChevronDown, ChevronUp, MessageCircle, ShieldCheck,
+  Search, FileText
 } from 'lucide-react';
 import Logo from '../components/Logo';
 
@@ -10,7 +11,19 @@ const PublicWelcome = () => {
   const navigate = useNavigate();
   const [openFaq, setOpenFaq] = useState(null);
   const [currentSlide, setCurrentSlide] = useState(0);
+  const [searchType, setSearchType] = useState('mobile');
+  const [searchQuery, setSearchQuery] = useState('');
   const slides = ['/slide1.png', '/slide2.png', '/slide3.png'];
+
+  const handleSearch = (e) => {
+    e.preventDefault();
+    if (!searchQuery.trim()) return;
+    if (searchType === 'mobile') {
+      navigate(`/report-lookup?mobile=${encodeURIComponent(searchQuery.trim())}`);
+    } else {
+      navigate(`/report-lookup?reportNumber=${encodeURIComponent(searchQuery.trim())}`);
+    }
+  };
 
   // Background slider
   useEffect(() => {
@@ -127,6 +140,61 @@ const PublicWelcome = () => {
             <div className="flex items-center gap-2"><Phone className="text-accent" size={20} /><span className="font-medium">Home Collection</span></div>
             <div className="flex items-center gap-2"><ShieldCheck className="text-accent" size={20} /><span className="font-medium">NABL Accredited</span></div>
           </div>
+        </div>
+      </section>
+
+      {/* Floating Lab Result Search Card */}
+      <section className="relative z-20 -mt-16 px-4 sm:px-6 lg:px-8">
+        <div className="max-w-4xl mx-auto bg-white rounded-2xl shadow-xl border border-gray-100 p-6 md:p-8">
+          <div className="flex items-center gap-3 mb-6">
+            <div className="bg-primary-pale p-3 rounded-xl text-primary">
+              <FileText className="w-6 h-6" />
+            </div>
+            <div>
+              <h3 className="text-2xl font-bold text-slate-800">Check Your Lab Results</h3>
+              <p className="text-slate-500 text-sm mt-1">Enter your details below to instantly view or download your reports</p>
+            </div>
+          </div>
+          
+          <form onSubmit={handleSearch} className="flex flex-col md:flex-row gap-4">
+            <div className="flex bg-slate-100 p-1 rounded-xl md:w-64 shrink-0">
+              <button
+                type="button"
+                onClick={() => setSearchType('mobile')}
+                className={`flex-1 py-2 rounded-lg text-sm font-bold transition-all ${
+                  searchType === 'mobile' ? 'bg-white text-primary shadow-sm' : 'text-slate-500 hover:text-slate-700'
+                }`}
+              >
+                Mobile No
+              </button>
+              <button
+                type="button"
+                onClick={() => setSearchType('report')}
+                className={`flex-1 py-2 rounded-lg text-sm font-bold transition-all ${
+                  searchType === 'report' ? 'bg-white text-primary shadow-sm' : 'text-slate-500 hover:text-slate-700'
+                }`}
+              >
+                Report No
+              </button>
+            </div>
+            <div className="relative flex-1">
+              <input
+                type={searchType === 'mobile' ? 'tel' : 'text'}
+                placeholder={searchType === 'mobile' ? 'Enter Mobile Number...' : 'e.g. RPT-000001'}
+                value={searchQuery}
+                onChange={(e) => setSearchQuery(e.target.value)}
+                className="w-full h-full min-h-[48px] pl-4 pr-4 border-2 border-slate-200 rounded-xl focus:border-primary focus:ring-0 outline-none transition-colors"
+                required
+              />
+            </div>
+            <button
+              type="submit"
+              className="bg-primary hover:bg-primary-light text-white px-8 py-3 rounded-xl font-bold transition-colors flex items-center justify-center gap-2"
+            >
+              <Search className="w-5 h-5" />
+              Find Report
+            </button>
+          </form>
         </div>
       </section>
 
