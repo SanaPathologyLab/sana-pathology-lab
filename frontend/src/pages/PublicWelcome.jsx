@@ -38,7 +38,7 @@ const PublicWelcome = () => {
               className="flex items-center gap-2 text-sm font-bold text-slate-600 hover:text-[#00488d] transition-all bg-slate-100 hover:bg-blue-50 px-5 py-2.5 rounded-full border border-slate-200"
             >
               <UserCircle size={18} />
-              Staff Login
+              Login / Portals
             </button>
           </div>
         </div>
@@ -75,7 +75,7 @@ const PublicWelcome = () => {
               Experience world-class healthcare with 100% accurate reports, advanced technology, and hassle-free home sample collection.
             </p>
 
-            <div className="flex flex-col sm:flex-row gap-4">
+            <div className="flex flex-col sm:flex-row gap-4 mb-6">
               <button 
                 onClick={() => navigate('/book-appointment')}
                 className="group flex items-center justify-center gap-2 bg-[#00488d] hover:bg-blue-600 text-white px-8 py-4 rounded-full font-bold text-lg transition-all shadow-lg shadow-blue-900/50 hover:-translate-y-1"
@@ -90,6 +90,27 @@ const PublicWelcome = () => {
               >
                 <FileText size={20} />
                 Download Report
+              </button>
+            </div>
+
+            <div className="flex flex-wrap gap-3">
+              <button 
+                onClick={() => window.open('https://wa.me/916396786939', '_blank')}
+                className="flex items-center gap-2 bg-[#25D366]/20 hover:bg-[#25D366]/40 border border-[#25D366]/50 backdrop-blur-md text-green-300 px-5 py-2.5 rounded-full font-semibold text-sm transition-all"
+              >
+                <Phone size={16} /> WhatsApp Us
+              </button>
+              <button 
+                onClick={() => navigate('/login')}
+                className="flex items-center gap-2 bg-white/10 hover:bg-white/20 border border-white/20 backdrop-blur-md text-slate-200 px-5 py-2.5 rounded-full font-semibold text-sm transition-all"
+              >
+                <UserCircle size={16} /> Patient Login
+              </button>
+              <button 
+                onClick={() => navigate('/login')}
+                className="flex items-center gap-2 bg-white/10 hover:bg-white/20 border border-white/20 backdrop-blur-md text-slate-200 px-5 py-2.5 rounded-full font-semibold text-sm transition-all"
+              >
+                <Stethoscope size={16} /> Doctor Login
               </button>
             </div>
           </div>
