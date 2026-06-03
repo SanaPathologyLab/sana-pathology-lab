@@ -311,7 +311,32 @@ const PrintReport = () => {
     </div>
   );
 
-  const totalPages = testNames.length;
+  // --- Pagination Algorithm ---
+  const PAGE_CAPACITY = 28; // Max rows per A4 page
+  const pages = [];
+  let currentPage = { tests: [], rowCount: 0 };
+
+  testNames.forEach(testName => {
+    const rows = groupedTests[testName];
+    // Calculate how many rows this test will take up
+    // +4 for test title, table header, and spacing
+    const groupCount = new Set(rows.map(r => r.groupName).filter(Boolean)).size;
+    const rowsNeeded = rows.length + 4 + (groupCount * 1.5); 
+    
+    if (currentPage.rowCount + rowsNeeded > PAGE_CAPACITY && currentPage.tests.length > 0) {
+      pages.push(currentPage);
+      currentPage = { tests: [], rowCount: 0 };
+    }
+    
+    currentPage.tests.push({ name: testName, rows });
+    currentPage.rowCount += rowsNeeded;
+  });
+  
+  if (currentPage.tests.length > 0) {
+    pages.push(currentPage);
+  }
+
+  const totalPages = pages.length;
 
   const handlePrint = () => {
     if (window.ReactNativeWebView) {
@@ -431,12 +456,10 @@ const PrintReport = () => {
       </div>
 
       <div className="report-wrapper" id="report-content">
-        {testNames.map((testName, pageIndex) => {
-          const rows = groupedTests[testName];
-          const sampleType = rows[0]?.test?.sampleType;
+        {pages.map((pageData, pageIndex) => {
           
           return (
-            <div key={testName} className="report-page">
+            <div key={`page-${pageIndex}`} className="report-page">
               
               {/* Background Watermark (Screen/PDF share only) */}
               <div className="absolute inset-0 flex flex-col items-center justify-center opacity-[0.03] pointer-events-none select-none z-0 print:hidden">
@@ -449,10 +472,15 @@ const PrintReport = () => {
               <div className="flex-grow flex flex-col relative z-10 px-2">
                 <PatientHeader pageNum={pageIndex + 1} totalPages={totalPages} />
                 <div className="flex-grow mt-2">
-                  <TestTable testName={testName} rows={rows} sampleType={sampleType} />
+                  
+                  {pageData.tests.map((testData, idx) => (
+                    <div key={testData.name} className={idx > 0 ? "mt-6" : ""}>
+                      <TestTable testName={testData.name} rows={testData.rows} />
+                    </div>
+                  ))}
                   
                   {/* Premium End of Report Marker - Only on last page */}
-                  {pageIndex === testNames.length - 1 && (
+                  {pageIndex === pages.length - 1 && (
                     <div className="mt-12 mb-6 flex flex-col items-center justify-center w-full">
                       <div className="flex items-center w-3/4 mx-auto">
                         <div className="flex-1 border-t border-gray-300"></div>
