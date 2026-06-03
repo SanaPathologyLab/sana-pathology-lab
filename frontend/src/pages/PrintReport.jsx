@@ -313,30 +313,41 @@ const PrintReport = () => {
     </div>
   );
 
-  // --- Pagination Algorithm ---
-  const PAGE_CAPACITY = 23; // Reduced Max rows to leave safe space for multi-line text and absolutely positioned footer
-  const pages = [];
-  let currentPage = { tests: [], rowCount: 0 };
-
-  testNames.forEach(testName => {
+  // --- Smart Pagination (Bin Packing Algorithm) ---
+  const PAGE_CAPACITY = 32; // Increased capacity for better packing
+  
+  // 1. Calculate size for each test
+  const testsWithSize = testNames.map(testName => {
     const rows = groupedTests[testName];
-    // Calculate how many rows this test will take up
-    // +4 for test title, table header, and spacing
     const groupCount = new Set(rows.map(r => r.groupName).filter(Boolean)).size;
     const rowsNeeded = rows.length + 4 + (groupCount * 1.5); 
-    
-    if (currentPage.rowCount + rowsNeeded > PAGE_CAPACITY && currentPage.tests.length > 0) {
-      pages.push(currentPage);
-      currentPage = { tests: [], rowCount: 0 };
-    }
-    
-    currentPage.tests.push({ name: testName, rows });
-    currentPage.rowCount += rowsNeeded;
+    return { name: testName, rows, rowsNeeded };
   });
-  
-  if (currentPage.tests.length > 0) {
-    pages.push(currentPage);
-  }
+
+  // 2. Sort tests by size descending (largest first) to optimize packing
+  testsWithSize.sort((a, b) => b.rowsNeeded - a.rowsNeeded);
+
+  // 3. Pack tests into pages (First Fit Decreasing)
+  const pages = [];
+  testsWithSize.forEach(testData => {
+    let placed = false;
+    // Look for an existing page with enough remaining space
+    for (let i = 0; i < pages.length; i++) {
+      if (pages[i].rowCount + testData.rowsNeeded <= PAGE_CAPACITY) {
+        pages[i].tests.push(testData);
+        pages[i].rowCount += testData.rowsNeeded;
+        placed = true;
+        break;
+      }
+    }
+    // If it didn't fit anywhere, start a new page
+    if (!placed) {
+      pages.push({
+        tests: [testData],
+        rowCount: testData.rowsNeeded
+      });
+    }
+  });
 
   const totalPages = pages.length;
 
@@ -471,7 +482,7 @@ const PrintReport = () => {
 
               <LetterheadHeader />
               
-              <div className="flex-grow flex flex-col relative z-10 px-2 pb-[160px]">
+              <div className="flex-grow flex flex-col relative z-10 px-2 pb-[180px]">
                 <PatientHeader pageNum={pageIndex + 1} totalPages={totalPages} />
                 <div className="flex-grow mt-2">
                   
