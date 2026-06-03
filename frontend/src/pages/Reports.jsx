@@ -138,7 +138,11 @@ const Reports = () => {
       flag: ''
     }));
 
-    setEditResults(prev => [...prev, ...newResults]);
+    setEditResults(prev => {
+      const existingParams = new Set(prev.map(r => r.parameterName));
+      const uniqueNewResults = newResults.filter(r => !existingParams.has(r.parameterName));
+      return [...prev, ...uniqueNewResults];
+    });
   };
 
   const testOptions = tests.map(t => ({
