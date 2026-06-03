@@ -1,5 +1,5 @@
 import { StatusBar } from 'expo-status-bar';
-import { StyleSheet, SafeAreaView, Platform, BackHandler } from 'react-native';
+import { StyleSheet, SafeAreaView, Platform, BackHandler, Linking } from 'react-native';
 import { WebView } from 'react-native-webview';
 import React, { useRef, useEffect, useState } from 'react';
 import * as FileSystem from 'expo-file-system';
@@ -31,6 +31,16 @@ export default function App() {
 
   const onNavigationStateChange = (navState) => {
     setCanGoBack(navState.canGoBack);
+  };
+
+  const onShouldStartLoadWithRequest = (request) => {
+    const { url } = request;
+    // Intercept custom URL schemes like whatsapp:, tel:, mailto: and let the OS handle them
+    if (!url.startsWith('http://') && !url.startsWith('https://') && !url.startsWith('about:blank')) {
+      Linking.openURL(url).catch(err => console.error("Error opening URL:", err));
+      return false; // Prevent WebView from trying to load it
+    }
+    return true;
   };
 
   const onMessage = async (event) => {
@@ -72,6 +82,8 @@ export default function App() {
         javaScriptEnabled={true}
         domStorageEnabled={true}
         startInLoadingState={true}
+        originWhitelist={['*']}
+        onShouldStartLoadWithRequest={onShouldStartLoadWithRequest}
         onNavigationStateChange={onNavigationStateChange}
         onMessage={onMessage}
         onError={(syntheticEvent) => {
