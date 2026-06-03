@@ -290,7 +290,7 @@ const PublicWelcome = () => {
           <div className="h-[400px] bg-slate-200 rounded-3xl overflow-hidden shadow-sm border border-slate-300 relative flex items-center justify-center">
             <iframe 
               title="Sana Pathology Lab Location"
-              src="https://www.google.com/maps?q=Datawali%20Road,%20Near%20Aara%20Machine,%20Hayat%20Nagar,%20Distt.%20Sambhal-244303&output=embed"
+              src="https://www.google.com/maps?q=28.5466795,78.5773542&z=16&output=embed"
               width="100%" 
               height="100%" 
               style={{ border: 0 }} 
