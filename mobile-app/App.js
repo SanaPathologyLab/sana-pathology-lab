@@ -6,7 +6,7 @@ import * as FileSystem from 'expo-file-system';
 import * as Sharing from 'expo-sharing';
 import * as Print from 'expo-print';
 
-const WEB_APP_URL = 'http://10.168.43.102:5173';
+const WEB_APP_URL = 'https://sana-pathology-lab.netlify.app';
 
 export default function App() {
   const webviewRef = useRef(null);

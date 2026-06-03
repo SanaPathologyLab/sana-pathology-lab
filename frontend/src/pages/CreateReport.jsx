@@ -10,6 +10,7 @@ const CreateReport = () => {
   const navigate = useNavigate();
 
   const [step, setStep] = useState(1);
+  const [isSubmitting, setIsSubmitting] = useState(false);
 
   // Raw Data
   const [patients, setPatients] = useState([]);
@@ -134,6 +135,8 @@ const CreateReport = () => {
   };
 
   const handleSubmit = async () => {
+    if (isSubmitting) return;
+    setIsSubmitting(true);
     try {
       const payload = {
         patientId: selectedPatient.value,
@@ -163,6 +166,8 @@ const CreateReport = () => {
       }
     } catch (err) {
       console.error(err);
+    } finally {
+      setIsSubmitting(false);
     }
   };
 
@@ -292,8 +297,8 @@ const CreateReport = () => {
               <button onClick={() => setStep(1)} className="px-6 py-2 border border-gray-300 rounded text-gray-700 font-bold hover:bg-gray-100 flex items-center text-sm">
                 <ArrowLeft className="w-4 h-4 mr-2" /> Back
               </button>
-              <button onClick={handleSubmit} className="bg-green-600 hover:bg-green-700 text-white px-8 py-3 rounded text-sm font-bold tracking-wide transition-colors flex items-center">
-                SAVE & PREVIEW <Save className="w-4 h-4 ml-2" />
+              <button disabled={isSubmitting} onClick={handleSubmit} className={`px-8 py-3 rounded text-sm font-bold tracking-wide transition-colors flex items-center ${isSubmitting ? 'bg-gray-400 text-white cursor-not-allowed' : 'bg-green-600 hover:bg-green-700 text-white'}`}>
+                {isSubmitting ? 'SAVING...' : 'SAVE & PREVIEW'} {!isSubmitting && <Save className="w-4 h-4 ml-2" />}
               </button>
             </div>
           </div>
