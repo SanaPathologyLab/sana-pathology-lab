@@ -56,18 +56,42 @@ const PrintReport = () => {
     try {
       setIsGenerating(true);
       
-      // Fetch the perfect vector PDF from the backend using Puppeteer
-      const response = await fetch(`${API}/reports/${report.id}/pdf`, {
-        headers: {
-          'Authorization': `Bearer ${user.accessToken}`
-        }
-      });
+      // Temporarily hide UI elements and remove body background for clean capture
+      const noPrintElements = document.querySelectorAll('.no-print');
+      noPrintElements.forEach(el => el.style.display = 'none');
+      const originalBodyBg = document.body.style.background;
+      document.body.style.background = 'white';
       
-      if (!response.ok) {
-        throw new Error('Failed to generate PDF on server');
+      const element = document.getElementById('report-content');
+      
+      // Dynamically import html2pdf
+      const html2pdf = (await import('html2pdf.js')).default;
+      
+      const opt = {
+        margin:       0,
+        filename:     `${report.reportNumber}_${patient.fullName}.pdf`,
+        image:        { type: 'png', quality: 1.0 }, // Changed to PNG for perfectly sharp text and logos
+        html2canvas:  { scale: 4, useCORS: true, windowWidth: 1024, letterRendering: true }, // Scale 4 for ultra-high resolution
+        jsPDF:        { unit: 'mm', format: 'a4', orientation: 'portrait' }
+      };
+
+      // We will capture each page individually to ensure perfect A4 size without margins
+      const pages = document.querySelectorAll('.report-page');
+      
+      let worker = html2pdf().set(opt).from(pages[0]);
+      
+      // Chain additional pages
+      for (let i = 1; i < pages.length; i++) {
+        worker = worker.toPdf().get('pdf').then(pdf => {
+          pdf.addPage();
+        }).from(pages[i]).toContainer().toCanvas().toPdf();
       }
+
+      const pdfBlob = await worker.output('blob');
       
-      const pdfBlob = await response.blob();
+      // Restore UI
+      noPrintElements.forEach(el => el.style.display = '');
+      document.body.style.background = originalBodyBg;
       
       const fileName = `${report.reportNumber}_${patient.fullName}.pdf`;
       const file = new File([pdfBlob], fileName, { type: 'application/pdf' });
