@@ -2,7 +2,7 @@ import React, { useEffect, useState } from 'react';
 import { useNavigate } from 'react-router-dom';
 import { 
   Phone, MapPin, Clock, CheckCircle2, Activity, Microscope, 
-  UserCircle, Star, ChevronDown, ChevronUp, MessageCircle
+  UserCircle, Star, ChevronDown, ChevronUp, MessageCircle, ShieldCheck
 } from 'lucide-react';
 
 const PublicWelcome = () => {
