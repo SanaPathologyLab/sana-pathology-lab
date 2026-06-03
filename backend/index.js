@@ -164,6 +164,29 @@ app.post('/api/public/book-appointment', async (req, res) => {
   }
 });
 
+// ─── PUBLIC: Get Tests ───
+app.get('/api/public/tests', async (req, res) => {
+  try {
+    const tests = await prisma.test.findMany({
+      select: {
+        id: true,
+        testCode: true,
+        testName: true,
+        price: true,
+        department: true,
+        category: {
+          select: { name: true }
+        }
+      },
+      orderBy: { testName: 'asc' }
+    });
+    res.json(tests);
+  } catch (err) {
+    console.error(err);
+    res.status(500).json({ message: err.message });
+  }
+});
+
 // Dashboard stats
 const { verifyToken } = require('./src/middlewares/auth');
 

@@ -1,20 +1,40 @@
-import React, { useEffect } from 'react';
+import React, { useEffect, useState } from 'react';
 import { useNavigate } from 'react-router-dom';
-import { Stethoscope, FileText, UserCircle, ArrowRight, Activity, Microscope, HeartPulse, CheckCircle2, Phone, MapPin, Clock, CalendarCheck, Beaker, ShieldCheck } from 'lucide-react';
+import { Stethoscope, FileText, UserCircle, ArrowRight, Activity, Microscope, HeartPulse, CheckCircle2, Phone, MapPin, Clock, CalendarCheck, Beaker, ShieldCheck, Upload, Search } from 'lucide-react';
 
 const PublicWelcome = () => {
   const navigate = useNavigate();
 
-  // Scroll to top on load
+  const [tests, setTests] = useState([]);
+  const [searchQuery, setSearchQuery] = useState('');
+  const [showSearchResults, setShowSearchResults] = useState(false);
+
+  // Scroll to top on load and fetch tests
   useEffect(() => {
     window.scrollTo(0, 0);
+    fetch('/api/public/tests')
+      .then(res => res.json())
+      .then(data => setTests(data))
+      .catch(console.error);
   }, []);
+
+  const filteredTests = tests.filter(t => 
+    t.testName.toLowerCase().includes(searchQuery.toLowerCase()) || 
+    (t.testCode && t.testCode.toLowerCase().includes(searchQuery.toLowerCase()))
+  );
 
   return (
     <div className="min-h-screen bg-slate-50 relative font-sans selection:bg-[#00488d] selection:text-white">
       
+      {/* Offers Banner */}
+      <div className="bg-indigo-600 text-white text-xs sm:text-sm font-bold py-2 px-4 text-center z-[60] relative flex items-center justify-center">
+        <marquee scrollamount="5" className="max-w-4xl">
+          🔥 SPECIAL OFFER: Flat 20% OFF on Preventive Health Checkups! | 📞 Call +91 6396786939 for Free Home Collection | 🔬 NABL Certified Laboratory
+        </marquee>
+      </div>
+
       {/* Premium Header */}
-      <header className="fixed w-full z-50 bg-white/90 backdrop-blur-md shadow-sm border-b border-gray-200 transition-all duration-300">
+      <header className="sticky top-0 w-full z-50 bg-white/90 backdrop-blur-md shadow-sm border-b border-gray-200 transition-all duration-300">
         <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 h-20 flex items-center justify-between">
           <div className="flex items-center gap-3 cursor-pointer" onClick={() => window.scrollTo(0,0)}>
             <div className="w-12 h-12 bg-gradient-to-br from-[#00488d] to-indigo-700 rounded-xl flex items-center justify-center shadow-lg shadow-blue-500/30">
@@ -71,11 +91,46 @@ const PublicWelcome = () => {
               Precision <span className="text-transparent bg-clip-text bg-gradient-to-r from-blue-400 to-cyan-300">Diagnostics</span><br />You Can Trust
             </h2>
             
-            <p className="text-lg sm:text-xl text-slate-300 mb-10 leading-relaxed max-w-xl">
+            <p className="text-lg sm:text-xl text-slate-300 mb-8 leading-relaxed max-w-xl">
               Experience world-class healthcare with 100% accurate reports, advanced technology, and hassle-free home sample collection.
             </p>
 
-            <div className="flex flex-col sm:flex-row gap-4 mb-6">
+            {/* Test Search Bar */}
+            <div className="relative max-w-xl mb-8 z-50">
+              <div className="relative flex items-center">
+                <div className="absolute left-4 text-slate-400"><Search size={20} /></div>
+                <input 
+                  type="text"
+                  placeholder="Search for tests (e.g., CBC, Lipid Profile...)"
+                  value={searchQuery}
+                  onChange={(e) => { setSearchQuery(e.target.value); setShowSearchResults(true); }}
+                  onFocus={() => setShowSearchResults(true)}
+                  className="w-full pl-12 pr-4 py-4 rounded-2xl bg-white/10 backdrop-blur-md border border-white/20 text-white placeholder-slate-300 focus:outline-none focus:ring-2 focus:ring-blue-400 focus:bg-white/20 transition-all text-lg"
+                />
+              </div>
+              {showSearchResults && searchQuery.length > 0 && (
+                <div className="absolute top-full left-0 w-full mt-2 bg-white rounded-xl shadow-2xl border border-slate-100 overflow-hidden max-h-64 overflow-y-auto z-50">
+                  {filteredTests.length > 0 ? (
+                    filteredTests.slice(0, 5).map(test => (
+                      <div key={test.id} className="p-4 border-b border-slate-50 hover:bg-slate-50 flex justify-between items-center transition-colors">
+                        <div>
+                          <h4 className="font-bold text-slate-800">{test.testName}</h4>
+                          <span className="text-xs text-slate-500 bg-slate-100 px-2 py-1 rounded">{test.department}</span>
+                        </div>
+                        <div className="text-right flex flex-col items-end">
+                          <div className="font-black text-[#00488d]">₹{test.price}</div>
+                          <button onClick={() => navigate('/book-appointment')} className="text-xs text-blue-600 font-bold hover:underline mt-1">Book Now</button>
+                        </div>
+                      </div>
+                    ))
+                  ) : (
+                    <div className="p-4 text-center text-slate-500 font-medium">No tests found matching "{searchQuery}"</div>
+                  )}
+                </div>
+              )}
+            </div>
+
+            <div className="flex flex-col sm:flex-row gap-4 mb-6 relative z-10">
               <button 
                 onClick={() => navigate('/book-appointment')}
                 className="group flex items-center justify-center gap-2 bg-[#00488d] hover:bg-blue-600 text-white px-8 py-4 rounded-full font-bold text-lg transition-all shadow-lg shadow-blue-900/50 hover:-translate-y-1"
@@ -85,11 +140,11 @@ const PublicWelcome = () => {
               </button>
               
               <button 
-                onClick={() => navigate('/report-lookup')}
-                className="group flex items-center justify-center gap-2 bg-white/10 hover:bg-white/20 backdrop-blur-md text-white border border-white/30 px-8 py-4 rounded-full font-bold text-lg transition-all hover:-translate-y-1"
+                onClick={() => window.open('https://wa.me/916396786939?text=Hello%20Sana%20Pathology%20Lab,%20I%20would%20like%20to%20book%20tests.%20I%20am%20attaching%20my%20doctor%27s%20prescription.', '_blank')}
+                className="group flex items-center justify-center gap-2 bg-[#25D366] hover:bg-[#128C7E] text-white px-8 py-4 rounded-full font-bold text-lg transition-all shadow-lg shadow-green-900/50 hover:-translate-y-1"
               >
-                <FileText size={20} />
-                Download Report
+                <Upload size={20} />
+                Upload Prescription
               </button>
             </div>
 
@@ -159,13 +214,14 @@ const PublicWelcome = () => {
             <div className="w-24 h-1 bg-[#00488d] mx-auto mt-6 rounded-full"></div>
           </div>
 
-          <div className="grid md:grid-cols-3 gap-8">
+          <div className="flex overflow-x-auto snap-x snap-mandatory pb-8 gap-8 [&::-webkit-scrollbar]:hidden -mx-4 px-4 sm:mx-0 sm:px-0">
             {[
               { title: 'Basic Health Checkup', tests: '45+ Tests Included', price: '₹999', old: '₹1500', color: 'blue' },
               { title: 'Comprehensive Full Body', tests: '75+ Tests Included', price: '₹1999', old: '₹3500', color: 'indigo', popular: true },
               { title: 'Senior Citizen Package', tests: '60+ Tests Included', price: '₹1499', old: '₹2500', color: 'cyan' },
+              { title: 'Women\'s Health Special', tests: '50+ Tests Included', price: '₹1299', old: '₹2200', color: 'pink' },
             ].map((pkg, idx) => (
-              <div key={idx} className={`relative bg-white rounded-3xl p-8 border ${pkg.popular ? 'border-indigo-500 shadow-xl shadow-indigo-100 scale-105 z-10' : 'border-slate-200 shadow-sm'} flex flex-col`}>
+              <div key={idx} className={`relative flex-none w-[85vw] sm:w-96 bg-white rounded-3xl p-8 border snap-center ${pkg.popular ? 'border-indigo-500 shadow-xl shadow-indigo-100 sm:scale-105 z-10' : 'border-slate-200 shadow-sm'} flex flex-col`}>
                 {pkg.popular && <div className="absolute -top-4 left-1/2 -translate-x-1/2 bg-gradient-to-r from-indigo-500 to-[#00488d] text-white px-4 py-1 rounded-full text-xs font-black uppercase tracking-wide">Most Popular</div>}
                 
                 <h3 className="text-2xl font-black text-slate-900 mb-2">{pkg.title}</h3>
