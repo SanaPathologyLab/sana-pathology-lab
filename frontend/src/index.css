@@ -1,0 +1,72 @@
+@tailwind base;
+@tailwind components;
+@tailwind utilities;
+
+@layer base {
+  :root {
+    --background: 0 0% 100%; 
+    --foreground: 222.2 84% 4.9%;
+    --card: 0 0% 100%;
+    --card-foreground: 222.2 84% 4.9%;
+    
+    /* Dr Lal PathLabs Branding */
+    --primary: 211 100% 28%; /* #00488d Deep Blue */
+    --primary-foreground: 0 0% 100%;
+    
+    --secondary: 43 100% 50%; /* #ffb800 Yellow/Orange */
+    --secondary-foreground: 222.2 84% 4.9%;
+    
+    --accent: 211 100% 95%; /* Very Light Blue for backgrounds */
+    
+    --success: 142 71% 45%;
+    --warning: 38 92% 50%;
+    --danger: 348 83% 47%;
+    
+    --radius: 0.25rem; /* Sharper corners for corporate look */
+  }
+}
+
+body {
+  font-family: 'Inter', sans-serif;
+  background-color: #f8f9fa; /* Clean light gray */
+  color: #333333;
+  -webkit-font-smoothing: antialiased;
+  -moz-osx-font-smoothing: grayscale;
+}
+
+/* Custom Nav Link styling */
+.nav-link {
+  position: relative;
+  transition: color 0.2s ease;
+}
+
+.nav-link::after {
+  content: '';
+  position: absolute;
+  width: 0;
+  height: 3px;
+  bottom: -4px;
+  left: 0;
+  background-color: hsl(var(--secondary));
+  transition: width 0.3s ease;
+}
+
+.nav-link:hover::after, .nav-link.active::after {
+  width: 100%;
+}
+
+/* Custom Scrollbar */
+::-webkit-scrollbar {
+  width: 8px;
+  height: 8px;
+}
+::-webkit-scrollbar-track {
+  background: rgba(0,0,0,0.02);
+}
+::-webkit-scrollbar-thumb {
+  background: #cbd5e1;
+  border-radius: 4px;
+}
+::-webkit-scrollbar-thumb:hover {
+  background: #94a3b8;
+}

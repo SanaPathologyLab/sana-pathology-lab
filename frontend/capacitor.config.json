@@ -1,0 +1,6 @@
+{
+  "appId": "com.sanapathologylab.app",
+  "appName": "Sana Pathology Lab",
+  "webDir": "dist",
+  "bundledWebRuntime": false
+}

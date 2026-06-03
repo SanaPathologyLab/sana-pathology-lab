@@ -1,0 +1,270 @@
+// This is your Prisma schema file,
+// learn more about it in the docs: https://pris.ly/d/prisma-schema
+
+generator client {
+  provider = "prisma-client-js"
+}
+
+datasource db {
+  provider  = "postgresql"
+  url       = env("DATABASE_URL")
+  directUrl = env("DIRECT_URL")
+}
+
+model User {
+  id        Int      @id @default(autoincrement())
+  email     String   @unique
+  password  String
+  name      String
+  role      String   // "ADMIN", "RECEPTIONIST", "TECHNICIAN", "DOCTOR"
+  phone     String?
+  address   String?
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+  
+  // Relations
+  reports   Report[]
+}
+
+model Patient {
+  id              Int       @id @default(autoincrement())
+  patientId       String    @unique // e.g., SPL-0001
+  fullName        String
+  fatherHusband   String?
+  gender          String
+  dateOfBirth     DateTime?
+  age             Int?
+  mobileNumber    String
+  alternateNumber String?
+  email           String?
+  address         String?
+  city            String?
+  state           String?
+  bloodGroup      String?
+  aadhaarNumber   String?
+  
+  diabetes        Boolean   @default(false)
+  hypertension    Boolean   @default(false)
+  allergies       String?
+  notes           String?
+  
+  // Emergency Contact
+  emergencyName     String?
+  emergencyRelation String?
+  emergencyPhone    String?
+  
+  createdAt       DateTime  @default(now())
+  updatedAt       DateTime  @updatedAt
+
+  reports         Report[]
+  appointments    Appointment[]
+  invoices        Invoice[]
+}
+
+model Doctor {
+  id             Int      @id @default(autoincrement())
+  doctorId       String   @unique
+  name           String
+  qualification  String?
+  specialization String?
+  mobileNumber   String?
+  email          String?
+  clinicName     String?
+  address        String?
+  commissionRate Float?   @default(0)
+  isApproved     Boolean  @default(true)
+  createdAt      DateTime @default(now())
+  updatedAt      DateTime @updatedAt
+
+  reports        Report[]
+  appointments   Appointment[]
+}
+
+model TestCategory {
+  id        Int      @id @default(autoincrement())
+  name      String   @unique // Hematology, Biochemistry, etc.
+  tests     Test[]
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+}
+
+model Test {
+  id             Int             @id @default(autoincrement())
+  testName       String
+  testCode       String          @unique
+  sampleType     String
+  price          Float
+  categoryId     Int
+  category       TestCategory    @relation(fields: [categoryId], references: [id])
+  
+  parameters     TestParameter[]
+  results        ReportResult[]
+  
+  createdAt      DateTime        @default(now())
+  updatedAt      DateTime        @updatedAt
+}
+
+model TestParameter {
+  id             Int      @id @default(autoincrement())
+  testId         Int
+  test           Test     @relation(fields: [testId], references: [id], onDelete: Cascade)
+  parameterName  String
+  referenceRange String
+  unit           String
+  groupName      String?
+  
+  createdAt      DateTime @default(now())
+  updatedAt      DateTime @updatedAt
+}
+
+model Report {
+  id           Int       @id @default(autoincrement())
+  reportNumber String    @unique
+  patientId    Int
+  patient      Patient   @relation(fields: [patientId], references: [id])
+  doctorId     Int?
+  doctor       Doctor?   @relation(fields: [doctorId], references: [id])
+  technicianId Int?
+  technician   User?     @relation(fields: [technicianId], references: [id])
+  reportDate   DateTime  @default(now())
+  status       String    @default("PENDING") // PENDING, COMPLETED
+  qrCodeUrl    String?
+  
+  results      ReportResult[]
+  invoice      Invoice?
+  
+  createdAt    DateTime  @default(now())
+  updatedAt    DateTime  @updatedAt
+}
+
+model ReportResult {
+  id             Int      @id @default(autoincrement())
+  reportId       Int
+  report         Report   @relation(fields: [reportId], references: [id], onDelete: Cascade)
+  testId         Int
+  test           Test     @relation(fields: [testId], references: [id])
+  
+  parameterName  String
+  resultValue    String
+  flag           String?  // HIGH, LOW, NORMAL
+  referenceRange String?
+  unit           String?
+  groupName      String?
+  
+  createdAt      DateTime @default(now())
+  updatedAt      DateTime @updatedAt
+}
+
+model Appointment {
+  id        Int      @id @default(autoincrement())
+  date      DateTime
+  time      String
+  patientId Int
+  patient   Patient  @relation(fields: [patientId], references: [id])
+  doctorId  Int?
+  doctor    Doctor?  @relation(fields: [doctorId], references: [id])
+  notes     String?
+  status    String   @default("SCHEDULED") // SCHEDULED, CANCELLED, COMPLETED
+  
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+}
+
+model Invoice {
+  id             Int       @id @default(autoincrement())
+  invoiceNumber  String    @unique
+  patientId      Int
+  patient        Patient   @relation(fields: [patientId], references: [id])
+  reportId       Int?      @unique
+  report         Report?   @relation(fields: [reportId], references: [id])
+  totalAmount    Float
+  discount       Float     @default(0)
+  discountBy     String?   // DOCTOR | LAB
+  gst            Float     @default(0)
+  finalAmount    Float
+  paymentStatus  String    @default("UNPAID") // PAID, UNPAID, PARTIAL
+  paymentMethod  String?   // CASH, UPI, CC, DC, BANK
+  
+  payments       Payment[]
+  
+  createdAt      DateTime  @default(now())
+  updatedAt      DateTime  @updatedAt
+}
+
+model Payment {
+  id            Int      @id @default(autoincrement())
+  invoiceId     Int
+  invoice       Invoice  @relation(fields: [invoiceId], references: [id], onDelete: Cascade)
+  amount        Float
+  paymentDate   DateTime @default(now())
+  paymentMethod String
+  transactionId String?
+  
+  createdAt     DateTime @default(now())
+}
+
+model Inventory {
+  id             Int       @id @default(autoincrement())
+  itemName       String
+  category       String    // Test Tubes, Reagents, Chemicals, Kits, Consumables
+  currentStock   Int
+  lowStockAlert  Int
+  expiryDate     DateTime?
+  supplierName   String?
+  supplierPhone  String?
+  supplierEmail  String?
+  unitPrice      Float?
+  unit           String?   // Box, Vial, Pack, etc.
+  
+  createdAt      DateTime  @default(now())
+  updatedAt      DateTime  @updatedAt
+}
+
+model Staff {
+  id          Int      @id @default(autoincrement())
+  staffId     String   @unique
+  name        String
+  role        String   // TECHNICIAN, RECEPTIONIST, HELPER, etc.
+  mobile      String?
+  email       String?
+  address     String?
+  joiningDate DateTime?
+  salary      Float?
+  isActive    Boolean  @default(true)
+  
+  attendance  Attendance[]
+  
+  createdAt   DateTime @default(now())
+  updatedAt   DateTime @updatedAt
+}
+
+model Attendance {
+  id        Int      @id @default(autoincrement())
+  staffId   Int
+  staff     Staff    @relation(fields: [staffId], references: [id], onDelete: Cascade)
+  date      DateTime
+  status    String   // PRESENT, ABSENT, HALF_DAY, LEAVE
+  notes     String?
+  
+  createdAt DateTime @default(now())
+}
+
+model Settings {
+  id              Int      @id @default(autoincrement())
+  key             String   @unique
+  value           String
+  
+  updatedAt       DateTime @updatedAt
+}
+
+model ActivityLog {
+  id          Int      @id @default(autoincrement())
+  userId      Int?
+  action      String
+  entity      String?
+  entityId    String?
+  description String?
+  ipAddress   String?
+  
+  createdAt   DateTime @default(now())
+}

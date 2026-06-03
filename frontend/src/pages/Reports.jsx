@@ -1,0 +1,311 @@
+import React, { useState, useEffect, useContext } from 'react';
+import Layout from '../components/Layout';
+import { AuthContext } from '../context/AuthContext';
+import { Plus, Search, FileText, Printer, Trash2, CheckCircle, Clock, X, Pencil, Eye } from 'lucide-react';
+import { useNavigate } from 'react-router-dom';
+
+const API = '/api';
+
+const Reports = () => {
+  const { user } = useContext(AuthContext);
+  const navigate = useNavigate();
+  const headers = { 'Authorization': `Bearer ${user?.accessToken}`, 'Content-Type': 'application/json' };
+
+  const [reports, setReports] = useState([]);
+  const [searchTerm, setSearchTerm] = useState('');
+  const [filterStatus, setFilterStatus] = useState('ALL');
+  const [editReport, setEditReport] = useState(null); // report being edited
+  const [showEditModal, setShowEditModal] = useState(false);
+  const [editResults, setEditResults] = useState([]);
+  const [editStatus, setEditStatus] = useState('');
+  const [saving, setSaving] = useState(false);
+
+  useEffect(() => { fetchReports(); }, []);
+
+  const fetchReports = async () => {
+    try {
+      const res = await fetch(`${API}/reports`, { headers });
+      const data = await res.json();
+      if (Array.isArray(data)) setReports(data);
+    } catch (err) { console.error(err); }
+  };
+
+  const openEdit = async (r) => {
+    // Fetch full report with results
+    const res = await fetch(`${API}/reports/${r.id}`, { headers });
+    const full = await res.json();
+    setEditReport(full);
+    setEditResults(full.results || []);
+    setEditStatus(full.status);
+    setShowEditModal(true);
+  };
+
+  const handleSaveEdit = async () => {
+    setSaving(true);
+    await fetch(`${API}/reports/${editReport.id}`, {
+      method: 'PUT',
+      headers,
+      body: JSON.stringify({ status: editStatus, results: editResults }),
+    });
+    setSaving(false);
+    setShowEditModal(false);
+    fetchReports();
+  };
+
+  const handleDelete = async (id) => {
+    if (!confirm('Delete this report permanently? This cannot be undone.')) return;
+    await fetch(`${API}/reports/${id}`, { method: 'DELETE', headers });
+    fetchReports();
+  };
+
+  const handleMarkComplete = async (r) => {
+    await fetch(`${API}/reports/${r.id}`, {
+      method: 'PUT', headers,
+      body: JSON.stringify({ status: r.status === 'COMPLETED' ? 'PENDING' : 'COMPLETED' }),
+    });
+    fetchReports();
+  };
+
+  const autoCalculateFlag = (valueStr, rangeStr) => {
+    if (!valueStr || !rangeStr) return '';
+    const val = parseFloat(valueStr.toString().replace(/,/g, ''));
+    if (isNaN(val)) return '';
+
+    const range = rangeStr.toString().trim().replace(/,/g, '');
+    const rangePattern = /(?<![\d\.])([\d\.]+)\s*-\s*([\d\.]+)(?![\d\.])/g;
+    const matches = [...range.matchAll(rangePattern)];
+    if (matches.length === 1) {
+      const min = parseFloat(matches[0][1]);
+      const max = parseFloat(matches[0][2]);
+      if (val < min) return 'LOW';
+      if (val > max) return 'HIGH';
+      return '';
+    }
+
+    const lessMatch = range.match(/<\s*([\d\.]+)/);
+    if (lessMatch && val > parseFloat(lessMatch[1])) return 'HIGH';
+
+    const greaterMatch = range.match(/>\s*([\d\.]+)/);
+    if (greaterMatch && val < parseFloat(greaterMatch[1])) return 'LOW';
+
+    return '';
+  };
+
+  const updateResult = (idx, field, value) => {
+    setEditResults(prev => prev.map((r, i) => {
+      if (i === idx) {
+        const updated = { ...r, [field]: value };
+        if (field === 'resultValue') {
+          const autoFlag = autoCalculateFlag(value, r.referenceRange);
+          if (autoFlag || value === '') updated.flag = autoFlag;
+        }
+        return updated;
+      }
+      return r;
+    }));
+  };
+
+  const filtered = reports.filter(r => {
+    const matchSearch = r.reportNumber?.toLowerCase().includes(searchTerm.toLowerCase()) ||
+      r.patient?.fullName?.toLowerCase().includes(searchTerm.toLowerCase()) ||
+      r.patient?.patientId?.toLowerCase().includes(searchTerm.toLowerCase());
+    const matchStatus = filterStatus === 'ALL' || r.status === filterStatus;
+    return matchSearch && matchStatus;
+  });
+
+  return (
+    <Layout>
+      <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-4 mb-6">
+        <div>
+          <h2 className="text-2xl font-bold text-[#00488d] uppercase tracking-wide">Reports</h2>
+          <p className="text-sm text-gray-500 mt-1">{reports.length} total · {reports.filter(r => r.status === 'PENDING').length} pending</p>
+        </div>
+        {user?.userType === 'STAFF' && (
+          <button
+            onClick={() => navigate('/reports/new')}
+            className="bg-[#00488d] hover:bg-[#003875] text-white px-6 py-2 rounded text-sm font-bold tracking-wide transition-colors flex items-center gap-2 shadow-sm"
+          >
+            <Plus className="w-4 h-4" /> NEW REPORT
+          </button>
+        )}
+      </div>
+
+      <div className="bg-white rounded-lg border border-gray-200 overflow-hidden shadow-sm">
+        {/* Filters */}
+        <div className="p-4 border-b border-gray-200 bg-gray-50 flex flex-wrap gap-3 items-center justify-between">
+          <div className="relative w-full max-w-sm bg-white border border-gray-300 rounded flex items-center px-3 py-2 focus-within:border-[#00488d]">
+            <Search className="w-4 h-4 text-gray-400 mr-2 flex-shrink-0" />
+            <input
+              type="text"
+              placeholder="Search by report no / patient name / ID..."
+              value={searchTerm}
+              onChange={e => setSearchTerm(e.target.value)}
+              className="w-full text-sm focus:outline-none"
+            />
+          </div>
+          <div className="flex bg-white rounded border border-gray-300 text-sm overflow-hidden">
+            {['ALL', 'PENDING', 'COMPLETED'].map(s => (
+              <button key={s}
+                onClick={() => setFilterStatus(s)}
+                className={`px-4 py-2 font-bold border-r border-gray-300 last:border-0 transition-colors ${filterStatus === s ? 'bg-[#00488d] text-white' : 'text-gray-600 hover:bg-gray-50'}`}>
+                {s}
+              </button>
+            ))}
+          </div>
+        </div>
+
+        <div className="overflow-x-auto">
+          <table className="w-full text-left border-collapse">
+            <thead>
+              <tr className="bg-gray-100 border-b border-gray-200">
+                {['Report No', 'Patient', 'Doctor', 'Date', 'Status', 'Actions'].map(h => (
+                  <th key={h} className="px-5 py-3 text-xs font-bold text-gray-600 uppercase tracking-wider">{h}</th>
+                ))}
+              </tr>
+            </thead>
+            <tbody className="divide-y divide-gray-100">
+              {filtered.length > 0 ? filtered.map(r => (
+                <tr key={r.id} className="hover:bg-blue-50/40 transition-colors">
+                  <td className="px-5 py-4">
+                    <p className="text-sm font-bold text-[#00488d]">{r.reportNumber}</p>
+                  </td>
+                  <td className="px-5 py-4">
+                    <p className="text-sm font-bold text-gray-900">{r.patient?.fullName}</p>
+                    <p className="text-xs text-gray-400">{r.patient?.patientId} · {r.patient?.age}Y/{r.patient?.gender?.charAt(0)}</p>
+                  </td>
+                  <td className="px-5 py-4 text-sm text-gray-600">{r.doctor?.name || 'Self'}</td>
+                  <td className="px-5 py-4 text-sm text-gray-500">{new Date(r.reportDate).toLocaleDateString('en-IN')}</td>
+                  <td className="px-5 py-4">
+                    {user?.userType === 'STAFF' ? (
+                      <button onClick={() => handleMarkComplete(r)}
+                        className={`px-3 py-1 rounded text-xs font-bold border transition-colors cursor-pointer ${r.status === 'COMPLETED' ? 'bg-green-100 text-green-800 border-green-200 hover:bg-green-200' : 'bg-yellow-100 text-yellow-800 border-yellow-300 hover:bg-yellow-200'}`}>
+                        {r.status === 'COMPLETED' ? '✓ COMPLETED' : '⏳ PENDING'}
+                      </button>
+                    ) : (
+                      <span className={`inline-block px-3 py-1 rounded text-xs font-bold border ${r.status === 'COMPLETED' ? 'bg-green-100 text-green-800 border-green-200' : 'bg-yellow-100 text-yellow-800 border-yellow-300'}`}>
+                        {r.status === 'COMPLETED' ? '✓ COMPLETED' : '⏳ PENDING'}
+                      </span>
+                    )}
+                  </td>
+                  <td className="px-5 py-4">
+                    <div className="flex items-center gap-2">
+                      <button onClick={() => openEdit(r)} title={user?.userType === 'STAFF' ? "Edit Results" : "View Details"}
+                        className="p-1.5 rounded text-[#00488d] hover:bg-blue-100 transition-colors">
+                        {user?.userType === 'STAFF' ? <Pencil className="w-4 h-4" /> : <Eye className="w-4 h-4" />}
+                      </button>
+                      <button onClick={() => navigate(`/print/${r.id}`)} title="Print Report"
+                        className="p-1.5 rounded text-gray-600 hover:bg-gray-100 transition-colors">
+                        <Printer className="w-4 h-4" />
+                      </button>
+                      {user?.userType === 'STAFF' && (
+                        <button onClick={() => handleDelete(r.id)} title="Delete Report"
+                          className="p-1.5 rounded text-red-400 hover:bg-red-50 transition-colors">
+                          <Trash2 className="w-4 h-4" />
+                        </button>
+                      )}
+                    </div>
+                  </td>
+                </tr>
+              )) : (
+                <tr>
+                  <td colSpan="6" className="px-6 py-16 text-center text-gray-400">
+                    <FileText className="w-10 h-10 mx-auto mb-3 text-gray-300" />
+                    No reports found
+                  </td>
+                </tr>
+              )}
+            </tbody>
+          </table>
+        </div>
+      </div>
+
+      {/* Edit Modal */}
+      {showEditModal && editReport && (
+        <div className="fixed inset-0 bg-black/60 z-50 flex items-center justify-center p-4">
+          <div className="bg-white rounded-xl shadow-2xl w-full max-w-4xl max-h-[90vh] flex flex-col">
+            <div className="flex items-center justify-between px-6 py-4 border-b border-gray-200 flex-shrink-0">
+              <div>
+                <h2 className="text-lg font-bold text-[#00488d]">Edit Report — {editReport.reportNumber}</h2>
+                <p className="text-sm text-gray-500">{editReport.patient?.fullName} · {editReport.patient?.patientId}</p>
+              </div>
+              <button onClick={() => setShowEditModal(false)}><X className="w-6 h-6 text-gray-400 hover:text-gray-600" /></button>
+            </div>
+
+            <div className="overflow-y-auto flex-1 p-6">
+              {/* Status */}
+              <div className="flex items-center gap-4 mb-6 p-4 bg-gray-50 rounded-lg">
+                <span className="text-sm font-bold text-gray-600">Report Status:</span>
+                <button 
+                  onClick={() => user?.userType === 'STAFF' && setEditStatus('PENDING')}
+                  className={`flex items-center gap-1.5 px-4 py-2 rounded text-sm font-bold transition-colors ${editStatus === 'PENDING' ? 'bg-yellow-400 text-gray-900' : 'bg-gray-200 text-gray-600 hover:bg-gray-300'} ${user?.userType !== 'STAFF' ? 'cursor-default opacity-80' : ''}`}>
+                  <Clock className="w-3.5 h-3.5" /> PENDING
+                </button>
+                <button 
+                  onClick={() => user?.userType === 'STAFF' && setEditStatus('COMPLETED')}
+                  className={`flex items-center gap-1.5 px-4 py-2 rounded text-sm font-bold transition-colors ${editStatus === 'COMPLETED' ? 'bg-green-500 text-white' : 'bg-gray-200 text-gray-600 hover:bg-gray-300'} ${user?.userType !== 'STAFF' ? 'cursor-default opacity-80' : ''}`}>
+                  <CheckCircle className="w-3.5 h-3.5" /> COMPLETED
+                </button>
+              </div>
+
+              {/* Results Table */}
+              <h3 className="text-sm font-bold text-gray-600 uppercase tracking-wide mb-3">Test Results</h3>
+              <div className="border border-gray-200 rounded-lg overflow-hidden">
+                <table className="w-full text-sm">
+                  <thead className="bg-gray-50 border-b border-gray-200">
+                    <tr>
+                      <th className="px-4 py-3 text-left text-xs font-bold text-gray-500 uppercase">Parameter</th>
+                      <th className="px-4 py-3 text-left text-xs font-bold text-gray-500 uppercase">Result</th>
+                      <th className="px-4 py-3 text-left text-xs font-bold text-gray-500 uppercase">Flag</th>
+                      <th className="px-4 py-3 text-left text-xs font-bold text-gray-500 uppercase">Ref. Range</th>
+                      <th className="px-4 py-3 text-left text-xs font-bold text-gray-500 uppercase">Unit</th>
+                    </tr>
+                  </thead>
+                  <tbody className="divide-y divide-gray-100">
+                    {editResults.map((res, idx) => (
+                      <tr key={res.id} className={idx % 2 === 0 ? 'bg-white' : 'bg-gray-50/50'}>
+                        <td className="px-4 py-2 font-semibold text-gray-700 text-xs">{res.parameterName}</td>
+                        <td className="px-4 py-2">
+                          <input
+                            type="text"
+                            value={res.resultValue || ''}
+                            onChange={e => updateResult(idx, 'resultValue', e.target.value)}
+                            disabled={user?.userType !== 'STAFF'}
+                            className="w-full border border-gray-300 rounded px-2 py-1 text-sm focus:outline-none focus:border-[#00488d] font-bold disabled:bg-transparent disabled:border-transparent"
+                          />
+                        </td>
+                        <td className="px-4 py-2">
+                          <select value={res.flag || 'NORMAL'}
+                            onChange={e => updateResult(idx, 'flag', e.target.value === 'NORMAL' ? null : e.target.value)}
+                            disabled={user?.userType !== 'STAFF'}
+                            className={`border rounded px-2 py-1 text-xs font-bold focus:outline-none disabled:appearance-none ${res.flag === 'HIGH' ? 'bg-red-50 border-red-300 text-red-700' : res.flag === 'LOW' ? 'bg-blue-50 border-blue-300 text-blue-700' : 'bg-gray-50 border-gray-300 text-gray-600'}`}>
+                            <option value="NORMAL">Normal</option>
+                            <option value="HIGH">High ↑</option>
+                            <option value="LOW">Low ↓</option>
+                          </select>
+                        </td>
+                        <td className="px-4 py-2 text-xs text-gray-500">{res.referenceRange}</td>
+                        <td className="px-4 py-2 text-xs text-gray-500">{res.unit}</td>
+                      </tr>
+                    ))}
+                  </tbody>
+                </table>
+              </div>
+            </div>
+
+            <div className="flex justify-end gap-3 px-6 py-4 border-t border-gray-200 flex-shrink-0">
+              <button onClick={() => setShowEditModal(false)} className="px-6 py-2 border border-gray-300 rounded text-sm font-bold text-gray-600 hover:bg-gray-50">Close</button>
+              {user?.userType === 'STAFF' && (
+                <button onClick={handleSaveEdit} disabled={saving}
+                  className="px-6 py-2 bg-[#00488d] text-white rounded text-sm font-bold hover:bg-blue-800 disabled:opacity-50 flex items-center gap-2">
+                  {saving ? <><span className="w-4 h-4 border-2 border-white/40 border-t-white rounded-full animate-spin"></span>Saving...</> : 'Save Changes'}
+                </button>
+              )}
+            </div>
+          </div>
+        </div>
+      )}
+    </Layout>
+  );
+};
+
+export default Reports;
