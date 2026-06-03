@@ -132,9 +132,24 @@ exports.deleteDoctor = async (req, res) => {
   try {
     if (req.userRole !== 'ADMIN') return res.status(403).json({ message: 'Admin access required' });
     
-    await prisma.doctor.delete({ where: { id: parseInt(req.params.id) } });
+    const doctorId = parseInt(req.params.id);
+
+    // Unlink the doctor from any existing reports to prevent foreign key errors
+    await prisma.report.updateMany({
+      where: { doctorId },
+      data: { doctorId: null }
+    });
+
+    // Unlink the doctor from any existing appointments
+    await prisma.appointment.updateMany({
+      where: { doctorId },
+      data: { doctorId: null }
+    });
+
+    await prisma.doctor.delete({ where: { id: doctorId } });
     res.status(200).json({ message: 'Doctor deleted successfully' });
   } catch (err) {
+    console.error(err);
     res.status(500).json({ message: err.message });
   }
 };
