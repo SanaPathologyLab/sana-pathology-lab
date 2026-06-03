@@ -129,6 +129,34 @@ app.post('/api/public/book-appointment', async (req, res) => {
       }
     });
 
+    // Send Fast2SMS Alert to Admin
+    try {
+      const adminPhone = process.env.ADMIN_PHONE || '6396786939';
+      const smsText = `New Appointment!\nName: ${name}\nMob: ${mobile}\nDate: ${preferredDate} ${preferredTime}`;
+      
+      const fast2smsApiKey = process.env.FAST2SMS_API_KEY || 'MtqzwpXCPos2S9fHrAQi3lIEng8xKBUWdevVhb76YDT5c0yR1uibF4qC3UO5jtM0SHuw86KdzJDQN9Wo';
+      
+      fetch('https://www.fast2sms.com/dev/bulkV2', {
+        method: 'POST',
+        headers: {
+          'authorization': fast2smsApiKey,
+          'Content-Type': 'application/json'
+        },
+        body: JSON.stringify({
+          route: 'q',
+          message: smsText,
+          language: 'english',
+          flash: 0,
+          numbers: adminPhone
+        })
+      })
+      .then(r => r.json())
+      .then(data => console.log('Fast2SMS Response:', data))
+      .catch(err => console.error('Fast2SMS Fetch Error:', err));
+    } catch (smsErr) {
+      console.error('Failed to send SMS alert:', smsErr);
+    }
+
     res.status(201).json({ message: 'Appointment booked successfully', appointment });
   } catch (err) {
     console.error(err);
