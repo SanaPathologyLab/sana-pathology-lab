@@ -14,14 +14,18 @@ const PublicWelcome = () => {
     window.scrollTo(0, 0);
     fetch('/api/public/tests')
       .then(res => res.json())
-      .then(data => setTests(data))
+      .then(data => {
+        if (Array.isArray(data)) {
+          setTests(data);
+        }
+      })
       .catch(console.error);
   }, []);
 
-  const filteredTests = tests.filter(t => 
-    t.testName.toLowerCase().includes(searchQuery.toLowerCase()) || 
-    (t.testCode && t.testCode.toLowerCase().includes(searchQuery.toLowerCase()))
-  );
+  const filteredTests = Array.isArray(tests) ? tests.filter(t => 
+    t?.testName?.toLowerCase().includes(searchQuery?.toLowerCase() || '') || 
+    (t?.testCode && t?.testCode?.toLowerCase().includes(searchQuery?.toLowerCase() || ''))
+  ) : [];
 
   return (
     <div className="min-h-screen bg-slate-50 relative font-sans selection:bg-[#00488d] selection:text-white">
