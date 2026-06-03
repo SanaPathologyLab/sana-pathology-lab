@@ -95,8 +95,8 @@ const CreateReport = () => {
 
     const range = rangeStr.toString().trim().replace(/,/g, '');
     
-    // Find exactly one numeric range "min - max"
-    const rangePattern = /(?<![\d\.])([\d\.]+)\s*-\s*([\d\.]+)(?![\d\.])/g;
+    // Find exactly one numeric range "min - max" safely without lookbehinds
+    const rangePattern = /(?:^|[^\d\.])([\d\.]+)\s*-\s*([\d\.]+)(?:[^\d\.]|$)/g;
     const matches = [...range.matchAll(rangePattern)];
     
     if (matches.length === 1) {

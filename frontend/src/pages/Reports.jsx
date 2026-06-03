@@ -72,7 +72,7 @@ const Reports = () => {
     if (isNaN(val)) return '';
 
     const range = rangeStr.toString().trim().replace(/,/g, '');
-    const rangePattern = /(?<![\d\.])([\d\.]+)\s*-\s*([\d\.]+)(?![\d\.])/g;
+    const rangePattern = /(?:^|[^\d\.])([\d\.]+)\s*-\s*([\d\.]+)(?:[^\d\.]|$)/g;
     const matches = [...range.matchAll(rangePattern)];
     if (matches.length === 1) {
       const min = parseFloat(matches[0][1]);

@@ -65,6 +65,15 @@ exports.updateTest = async (req, res) => {
       await prisma.testParameter.createMany({
         data: parameters.map(p => ({ ...p, testId: test.id }))
       });
+
+      // Cascade update to existing ReportResults
+      // If a parameter name matches, update its referenceRange and unit in all historical reports
+      for (const p of parameters) {
+        await prisma.reportResult.updateMany({
+          where: { testId: test.id, parameterName: p.parameterName },
+          data: { referenceRange: p.referenceRange, unit: p.unit }
+        });
+      }
     }
 
     const updatedTest = await prisma.test.findUnique({
