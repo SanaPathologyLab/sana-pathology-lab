@@ -314,7 +314,7 @@ const PrintReport = () => {
   );
 
   // --- Smart Pagination (Bin Packing Algorithm) ---
-  const PAGE_CAPACITY = 32; // Increased capacity for better packing
+  const PAGE_CAPACITY = 18; // Strict safe limit to prevent tests from overflowing A4 bounds and disappearing
   
   // 1. Calculate size for each test
   const testsWithSize = testNames.map(testName => {
