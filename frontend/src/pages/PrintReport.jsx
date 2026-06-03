@@ -252,16 +252,18 @@ const PrintReport = () => {
   );
 
   // ── Test Results Table (Visible everywhere) ──
-  const TestTable = ({ testName, rows }) => (
+  const TestTable = ({ testName, rows, showHeader = true }) => (
     <div className="relative z-10">
       {/* Pill-shaped Table Header */}
-      <div className="border border-black rounded-full px-4 py-1 mb-3 flex text-[14px] font-bold text-black">
-        <div className="w-[45%]">Investigations</div>
-        <div className="w-[15%] text-center">Results</div>
-        <div className="w-[10%] text-center">Flag</div>
-        <div className="w-[15%] text-center">Units</div>
-        <div className="w-[15%] text-center">Normal values</div>
-      </div>
+      {showHeader && (
+        <div className="border border-black rounded-full px-4 py-1 mb-3 flex text-[14px] font-bold text-black">
+          <div className="w-[45%]">Investigations</div>
+          <div className="w-[15%] text-center">Results</div>
+          <div className="w-[10%] text-center">Flag</div>
+          <div className="w-[15%] text-center">Units</div>
+          <div className="w-[15%] text-center">Normal values</div>
+        </div>
+      )}
 
       <div className="px-2">
         <div className="font-black text-[15px] underline uppercase tracking-wider text-black mb-3">
@@ -474,8 +476,8 @@ const PrintReport = () => {
                 <div className="flex-grow mt-2">
                   
                   {pageData.tests.map((testData, idx) => (
-                    <div key={testData.name} className={idx > 0 ? "mt-6" : ""}>
-                      <TestTable testName={testData.name} rows={testData.rows} />
+                    <div key={testData.name} className={idx > 0 ? "mt-4" : ""}>
+                      <TestTable testName={testData.name} rows={testData.rows} showHeader={idx === 0} />
                     </div>
                   ))}
                   
