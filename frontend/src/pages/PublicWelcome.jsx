@@ -4,6 +4,7 @@ import {
   Phone, MapPin, Clock, CheckCircle2, Activity, Microscope, 
   UserCircle, Star, ChevronDown, ChevronUp, MessageCircle, ShieldCheck
 } from 'lucide-react';
+import Logo from '../components/Logo';
 
 const PublicWelcome = () => {
   const navigate = useNavigate();
@@ -55,9 +56,7 @@ const PublicWelcome = () => {
       <header className="sticky top-0 w-full z-50 bg-white/90 backdrop-blur-md shadow-sm border-b border-gray-100 transition-all duration-300">
         <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 h-20 flex items-center justify-between">
           <div className="flex items-center gap-3 cursor-pointer" onClick={() => window.scrollTo(0,0)}>
-            <div className="w-12 h-12 bg-primary rounded-xl flex items-center justify-center shadow-lg">
-              <span className="text-white font-heading text-3xl italic">S</span>
-            </div>
+            <Logo className="w-12 h-12 md:w-14 md:h-14 drop-shadow-md" />
             <div>
               <h1 className="text-2xl font-heading text-primary tracking-tight leading-none">
                 Sana Pathology
