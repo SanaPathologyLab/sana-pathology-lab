@@ -3,6 +3,7 @@ import Layout from '../components/Layout';
 import { AuthContext } from '../context/AuthContext';
 import { Plus, Search, FileText, Printer, Trash2, CheckCircle, Clock, X, Pencil, Eye } from 'lucide-react';
 import { useNavigate } from 'react-router-dom';
+import Select from 'react-select';
 
 const API = '/api';
 
@@ -12,6 +13,7 @@ const Reports = () => {
   const headers = { 'Authorization': `Bearer ${user?.accessToken}`, 'Content-Type': 'application/json' };
 
   const [reports, setReports] = useState([]);
+  const [tests, setTests] = useState([]);
   const [searchTerm, setSearchTerm] = useState('');
   const [filterStatus, setFilterStatus] = useState('ALL');
   const [editReport, setEditReport] = useState(null); // report being edited
@@ -20,13 +22,24 @@ const Reports = () => {
   const [editStatus, setEditStatus] = useState('');
   const [saving, setSaving] = useState(false);
 
-  useEffect(() => { fetchReports(); }, []);
+  useEffect(() => { 
+    fetchReports(); 
+    fetchTests();
+  }, []);
 
   const fetchReports = async () => {
     try {
       const res = await fetch(`${API}/reports`, { headers });
       const data = await res.json();
       if (Array.isArray(data)) setReports(data);
+    } catch (err) { console.error(err); }
+  };
+
+  const fetchTests = async () => {
+    try {
+      const res = await fetch(`${API}/tests`, { headers });
+      const data = await res.json();
+      if (Array.isArray(data)) setTests(data);
     } catch (err) { console.error(err); }
   };
 
@@ -104,6 +117,34 @@ const Reports = () => {
       return r;
     }));
   };
+
+  const handleRemoveResult = (idx) => {
+    if (!confirm('Remove this parameter from the report?')) return;
+    setEditResults(prev => prev.filter((_, i) => i !== idx));
+  };
+
+  const handleAddTest = (selectedOption) => {
+    if (!selectedOption) return;
+    const test = tests.find(t => t.id === selectedOption.value);
+    if (!test || !test.parameters) return;
+
+    const newResults = test.parameters.map(p => ({
+      testId: test.id,
+      parameterName: p.parameterName,
+      referenceRange: p.referenceRange,
+      unit: p.unit,
+      groupName: p.groupName,
+      resultValue: '',
+      flag: ''
+    }));
+
+    setEditResults(prev => [...prev, ...newResults]);
+  };
+
+  const testOptions = tests.map(t => ({
+    value: t.id,
+    label: `${t.testCode} - ${t.testName}`
+  }));
 
   const filtered = reports.filter(r => {
     const matchSearch = r.reportNumber?.toLowerCase().includes(searchTerm.toLowerCase()) ||
@@ -247,6 +288,20 @@ const Reports = () => {
                 </button>
               </div>
 
+              {/* Add New Test Section */}
+              {user?.userType === 'STAFF' && (
+                <div className="mb-6 p-4 border border-blue-100 bg-blue-50/30 rounded-lg">
+                  <label className="block text-sm font-bold text-[#00488d] mb-2">Add Additional Tests to this Report:</label>
+                  <Select 
+                    options={testOptions} 
+                    onChange={handleAddTest} 
+                    placeholder="Search and select a test to add..."
+                    isClearable
+                    value={null} // Always reset after selection
+                  />
+                </div>
+              )}
+
               {/* Results Table */}
               <h3 className="text-sm font-bold text-gray-600 uppercase tracking-wide mb-3">Test Results</h3>
               <div className="border border-gray-200 rounded-lg overflow-hidden">
@@ -258,6 +313,7 @@ const Reports = () => {
                       <th className="px-4 py-3 text-left text-xs font-bold text-gray-500 uppercase">Flag</th>
                       <th className="px-4 py-3 text-left text-xs font-bold text-gray-500 uppercase">Ref. Range</th>
                       <th className="px-4 py-3 text-left text-xs font-bold text-gray-500 uppercase">Unit</th>
+                      {user?.userType === 'STAFF' && <th className="px-4 py-3 text-center text-xs font-bold text-gray-500 uppercase">Action</th>}
                     </tr>
                   </thead>
                   <tbody className="divide-y divide-gray-100">
@@ -285,6 +341,17 @@ const Reports = () => {
                         </td>
                         <td className="px-4 py-2 text-xs text-gray-500">{res.referenceRange}</td>
                         <td className="px-4 py-2 text-xs text-gray-500">{res.unit}</td>
+                        {user?.userType === 'STAFF' && (
+                          <td className="px-4 py-2 text-center">
+                            <button 
+                              onClick={() => handleRemoveResult(idx)} 
+                              className="p-1.5 text-red-400 hover:text-red-600 hover:bg-red-50 rounded transition-colors"
+                              title="Remove Parameter"
+                            >
+                              <Trash2 className="w-4 h-4" />
+                            </button>
+                          </td>
+                        )}
                       </tr>
                     ))}
                   </tbody>

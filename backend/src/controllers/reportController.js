@@ -92,7 +92,10 @@ exports.getReportById = async (req, res) => {
         patient: true,
         doctor: true,
         technician: true,
-        results: { include: { test: true } }
+        results: { 
+          include: { test: true },
+          orderBy: { id: 'asc' }
+        }
       }
     });
     if (!report) return res.status(404).json({ message: 'Report not found' });
@@ -125,15 +128,25 @@ exports.updateReport = async (req, res) => {
       data: updateData
     });
     
-    // Update results if provided
-    if (results && results.length > 0) {
-      for (const resItem of results) {
-        if (resItem.id) {
-          await prisma.reportResult.update({
-            where: { id: resItem.id },
-            data: { resultValue: resItem.resultValue, flag: resItem.flag }
-          });
-        }
+    // Completely recreate results if provided, to support adding/removing tests
+    if (results && Array.isArray(results)) {
+      // Delete old results
+      await prisma.reportResult.deleteMany({ where: { reportId: report.id } });
+      
+      // Create new results
+      if (results.length > 0) {
+        await prisma.reportResult.createMany({
+          data: results.map(r => ({
+            reportId: report.id,
+            testId: r.testId,
+            parameterName: r.parameterName || '-',
+            resultValue: r.resultValue || '',
+            flag: r.flag || null,
+            referenceRange: r.referenceRange || null,
+            unit: r.unit || null,
+            groupName: r.groupName || null
+          }))
+        });
       }
     }
 
