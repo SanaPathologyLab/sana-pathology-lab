@@ -321,13 +321,37 @@ const Reports = () => {
                       <tr key={res.id} className={idx % 2 === 0 ? 'bg-white' : 'bg-gray-50/50'}>
                         <td className="px-4 py-2 font-semibold text-gray-700 text-xs">{res.parameterName}</td>
                         <td className="px-4 py-2">
-                          <input
-                            type="text"
-                            value={res.resultValue || ''}
-                            onChange={e => updateResult(idx, 'resultValue', e.target.value)}
-                            disabled={user?.userType !== 'STAFF'}
-                            className="w-full border border-gray-300 rounded px-2 py-1 text-sm focus:outline-none focus:border-[#00488d] font-bold disabled:bg-transparent disabled:border-transparent"
-                          />
+                          {(res.referenceRange?.toUpperCase().includes('NEGATIVE') || 
+                            res.referenceRange?.toUpperCase().includes('POSITIVE') || 
+                            res.referenceRange?.toUpperCase().includes('REACTIVE')) ? (
+                            <select
+                              value={res.resultValue || ''}
+                              onChange={e => updateResult(idx, 'resultValue', e.target.value)}
+                              disabled={user?.userType !== 'STAFF'}
+                              className="w-full border border-gray-300 rounded px-2 py-1 text-sm focus:outline-none focus:border-[#00488d] font-bold disabled:bg-transparent disabled:border-transparent disabled:appearance-none"
+                            >
+                              <option value="">- Select Result -</option>
+                              {res.referenceRange?.toUpperCase().includes('REACTIVE') && !res.referenceRange?.toUpperCase().includes('NEGATIVE') ? (
+                                <>
+                                  <option value="NON-REACTIVE">NON-REACTIVE</option>
+                                  <option value="REACTIVE">REACTIVE</option>
+                                </>
+                              ) : (
+                                <>
+                                  <option value="NEGATIVE">NEGATIVE</option>
+                                  <option value="POSITIVE">POSITIVE</option>
+                                </>
+                              )}
+                            </select>
+                          ) : (
+                            <input
+                              type="text"
+                              value={res.resultValue || ''}
+                              onChange={e => updateResult(idx, 'resultValue', e.target.value)}
+                              disabled={user?.userType !== 'STAFF'}
+                              className="w-full border border-gray-300 rounded px-2 py-1 text-sm focus:outline-none focus:border-[#00488d] font-bold disabled:bg-transparent disabled:border-transparent"
+                            />
+                          )}
                         </td>
                         <td className="px-4 py-2">
                           <select value={res.flag || 'NORMAL'}

@@ -2,155 +2,45 @@ const { PrismaClient } = require('@prisma/client');
 const prisma = new PrismaClient();
 
 async function main() {
-  console.log('Seeding more standalone tests...');
+  console.log('Seeding Fever Profile (Widal, MP, SGOT/SGPT)...');
 
-  // Get categories (assuming they were created by the previous script)
-  const biochem = await prisma.testCategory.findUnique({ where: { name: 'Biochemistry' } });
-  const hematology = await prisma.testCategory.findUnique({ where: { name: 'Hematology' } });
+  const clinPath = await prisma.testCategory.findFirst({ where: { name: 'Clinical Pathology' } });
+  const biochem = await prisma.testCategory.findFirst({ where: { name: 'Biochemistry' } });
+
+  const categoryId = clinPath ? clinPath.id : 1;
+
+  const feverProfile = await prisma.test.upsert({
+    where: { testCode: 'FEVER-01' },
+    update: { testName: 'FEVER PROFILE (WIDAL, MP, SGOT/SGPT)' },
+    create: {
+      testName: 'FEVER PROFILE (WIDAL, MP, SGOT/SGPT)',
+      testCode: 'FEVER-01',
+      sampleType: 'Serum',
+      price: 800.0,
+      categoryId: categoryId
+    }
+  });
+
+  await prisma.testParameter.deleteMany({ where: { testId: feverProfile.id } });
   
-  // Also create Serology category
-  const serology = await prisma.testCategory.upsert({
-    where: { name: 'Serology' },
-    update: {},
-    create: { name: 'Serology' },
+  await prisma.testParameter.createMany({
+    data: [
+      { testId: feverProfile.id, parameterName: 'MP ELISA P.f (Antigen)', referenceRange: 'NEGATIVE', unit: '-', groupName: 'IMMUNOLOGY & SEROLOGY TEST' },
+      { testId: feverProfile.id, parameterName: 'MP ELISA P.v (Antigen)', referenceRange: 'NEGATIVE', unit: '-', groupName: 'IMMUNOLOGY & SEROLOGY TEST' },
+      { testId: feverProfile.id, parameterName: 'WIDAL TEST (Rapid Slid Method)', referenceRange: 'NEGATIVE', unit: '-', groupName: 'IMMUNOLOGY & SEROLOGY TEST' },
+      { testId: feverProfile.id, parameterName: 'S.G.P.T (ALT) (Modified Reitman Frankel Method)', referenceRange: '5-35', unit: 'UNITS/ML', groupName: 'BIOCHEMISTRICAL EXAMINATION' },
+      { testId: feverProfile.id, parameterName: 'S.G.O.T (AST) (Modified Reitman Frankel’s Method)', referenceRange: '5-40', unit: 'UNITS/ML', groupName: 'BIOCHEMISTRICAL EXAMINATION' },
+      // Adding interpretation as a note/parameter for now so it's not lost
+      { testId: feverProfile.id, parameterName: 'WIDAL INTERPRETATION', referenceRange: '-', unit: '-', groupName: 'INTERPRETATION' }
+    ]
   });
 
-  // 1. SGPT (Standalone)
-  await prisma.test.upsert({
-    where: { testCode: 'SGPT-01' },
-    update: {},
-    create: {
-      testName: 'SGPT (ALT)',
-      testCode: 'SGPT-01',
-      sampleType: 'Serum',
-      price: 150.0,
-      categoryId: biochem.id,
-      parameters: {
-        create: [
-          { parameterName: 'SGPT (ALT)', referenceRange: '7 - 56', unit: 'U/L', groupName: 'Enzymes' },
-        ]
-      }
-    }
-  });
-
-  // 2. SGOT (Standalone)
-  await prisma.test.upsert({
-    where: { testCode: 'SGOT-01' },
-    update: {},
-    create: {
-      testName: 'SGOT (AST)',
-      testCode: 'SGOT-01',
-      sampleType: 'Serum',
-      price: 150.0,
-      categoryId: biochem.id,
-      parameters: {
-        create: [
-          { parameterName: 'SGOT (AST)', referenceRange: '5 - 40', unit: 'U/L', groupName: 'Enzymes' },
-        ]
-      }
-    }
-  });
-
-  // 3. Prothrombin Time (PT)
-  await prisma.test.upsert({
-    where: { testCode: 'PT-01' },
-    update: {},
-    create: {
-      testName: 'Prothrombin Time (PT)',
-      testCode: 'PT-01',
-      sampleType: 'Citrated Plasma',
-      price: 250.0,
-      categoryId: hematology.id,
-      parameters: {
-        create: [
-          { parameterName: 'Test Time', referenceRange: '11 - 15', unit: 'Sec', groupName: 'Coagulation' },
-          { parameterName: 'Control Time', referenceRange: '11 - 15', unit: 'Sec', groupName: 'Coagulation' },
-          { parameterName: 'INR', referenceRange: '0.8 - 1.2', unit: '-', groupName: 'Coagulation' },
-        ]
-      }
-    }
-  });
-
-  // 4. Hemoglobin (Standalone)
-  await prisma.test.upsert({
-    where: { testCode: 'HB-01' },
-    update: {},
-    create: {
-      testName: 'Hemoglobin (Hb)',
-      testCode: 'HB-01',
-      sampleType: 'EDTA Blood',
-      price: 100.0,
-      categoryId: hematology.id,
-      parameters: {
-        create: [
-          { parameterName: 'Hemoglobin (Hb)', referenceRange: '13.0 - 17.0', unit: 'g/dL', groupName: 'Hematology' },
-        ]
-      }
-    }
-  });
-
-  // 5. Serum Creatinine (Standalone)
-  await prisma.test.upsert({
-    where: { testCode: 'CREAT-01' },
-    update: {},
-    create: {
-      testName: 'Serum Creatinine',
-      testCode: 'CREAT-01',
-      sampleType: 'Serum',
-      price: 150.0,
-      categoryId: biochem.id,
-      parameters: {
-        create: [
-          { parameterName: 'Serum Creatinine', referenceRange: '0.6 - 1.2', unit: 'mg/dL', groupName: 'Renal' },
-        ]
-      }
-    }
-  });
-
-  // 6. Blood Urea (Standalone)
-  await prisma.test.upsert({
-    where: { testCode: 'UREA-01' },
-    update: {},
-    create: {
-      testName: 'Blood Urea',
-      testCode: 'UREA-01',
-      sampleType: 'Serum',
-      price: 150.0,
-      categoryId: biochem.id,
-      parameters: {
-        create: [
-          { parameterName: 'Blood Urea', referenceRange: '15 - 40', unit: 'mg/dL', groupName: 'Renal' },
-        ]
-      }
-    }
-  });
-
-  // 7. Widal Test
-  await prisma.test.upsert({
-    where: { testCode: 'WIDAL-01' },
-    update: {},
-    create: {
-      testName: 'Widal Test',
-      testCode: 'WIDAL-01',
-      sampleType: 'Serum',
-      price: 200.0,
-      categoryId: serology.id,
-      parameters: {
-        create: [
-          { parameterName: 'Salmonella Typhi O', referenceRange: '< 1:80', unit: 'Titre', groupName: 'Widal' },
-          { parameterName: 'Salmonella Typhi H', referenceRange: '< 1:80', unit: 'Titre', groupName: 'Widal' },
-          { parameterName: 'Salmonella Paratyphi AH', referenceRange: '< 1:80', unit: 'Titre', groupName: 'Widal' },
-          { parameterName: 'Salmonella Paratyphi BH', referenceRange: '< 1:80', unit: 'Titre', groupName: 'Widal' },
-        ]
-      }
-    }
-  });
-
-  console.log('Successfully seeded more standalone tests!');
+  console.log('Upserted Fever Profile.');
+  console.log('Done!');
 }
 
 main()
-  .catch((e) => {
+  .catch(e => {
     console.error(e);
     process.exit(1);
   })
