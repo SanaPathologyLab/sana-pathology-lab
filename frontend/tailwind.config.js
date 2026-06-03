@@ -6,6 +6,18 @@ module.exports = {
   ],
   theme: {
     extend: {
+      colors: {
+        primary: 'var(--color-primary)',
+        'primary-light': 'var(--color-primary-light)',
+        'primary-pale': 'var(--color-primary-pale)',
+        accent: 'var(--color-accent)',
+        'accent-pale': 'var(--color-accent-pale)',
+        bg: 'var(--color-bg)',
+      },
+      fontFamily: {
+        sans: ['Plus Jakarta Sans', 'sans-serif'],
+        heading: ['DM Serif Display', 'serif'],
+      },
       animation: {
         'fade-in-up': 'fadeInUp 0.8s ease-out forwards',
         'float': 'float 6s ease-in-out infinite',

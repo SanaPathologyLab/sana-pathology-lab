@@ -9,27 +9,33 @@
     --card: 0 0% 100%;
     --card-foreground: 222.2 84% 4.9%;
     
-    /* Dr Lal PathLabs Branding */
-    --primary: 211 100% 28%; /* #00488d Deep Blue */
+    /* Sana Pathology New Theme */
+    --color-primary: #0F6E56;
+    --color-primary-light: #1D9E75;
+    --color-primary-pale: #E1F5EE;
+    --color-accent: #BA7517;
+    --color-accent-pale: #FAEEDA;
+    --color-bg: #F5F7F6;
+
+    /* Legacy mapping for dashboard compatibility */
+    --primary: 165 75% 24%; /* #0F6E56 */
     --primary-foreground: 0 0% 100%;
-    
-    --secondary: 43 100% 50%; /* #ffb800 Yellow/Orange */
+    --secondary: 35 78% 41%; /* #BA7517 */
     --secondary-foreground: 222.2 84% 4.9%;
-    
-    --accent: 211 100% 95%; /* Very Light Blue for backgrounds */
+    --accent-legacy: 165 75% 95%; 
     
     --success: 142 71% 45%;
     --warning: 38 92% 50%;
     --danger: 348 83% 47%;
     
-    --radius: 0.25rem; /* Sharper corners for corporate look */
+    --radius: 0.5rem; /* softer corners */
   }
 }
 
 body {
-  font-family: 'Inter', sans-serif;
-  background-color: #f8f9fa; /* Clean light gray */
-  color: #333333;
+  font-family: 'Plus Jakarta Sans', sans-serif;
+  background-color: var(--color-bg);
+  color: #1A202C;
   -webkit-font-smoothing: antialiased;
   -moz-osx-font-smoothing: grayscale;
 }
