@@ -62,21 +62,21 @@ const Layout = ({ children }) => {
       {/* Main Header */}
       <header className="bg-white border-b border-gray-200 sticky top-0 z-50 shadow-sm">
         <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
-          <div className="flex justify-between items-center h-20">
+          <div className="flex justify-between items-center h-20 gap-4">
             {/* Logo */}
             <div className="flex-shrink-0 flex items-center cursor-pointer" onClick={() => navigate('/dashboard')}>
-              <Logo className="w-12 h-12 mr-2" />
-              <div className="text-[#00488d] font-extrabold text-2xl tracking-tight flex items-center mr-6">
+              <Logo className="w-10 h-10 sm:w-12 sm:h-12 mr-2" />
+              <div className="text-[#00488d] font-extrabold text-lg sm:text-xl lg:text-2xl tracking-tight flex items-center whitespace-nowrap">
                 SANA PATHOLOGY LAB
               </div>
             </div>
 
             {/* Global Search */}
-            <div className="hidden lg:flex items-center flex-1 max-w-sm mr-4">
+            <div className="hidden lg:flex items-center flex-1 max-w-sm">
               <div className="relative w-full">
                 <input 
                   type="text" 
-                  placeholder="Global Search (Patients, Reports)..." 
+                  placeholder="Global Search..." 
                   className="w-full pl-10 pr-4 py-2 bg-gray-50 border border-gray-300 rounded-lg text-sm focus:outline-none focus:ring-2 focus:ring-[#00488d] focus:border-transparent transition-all"
                   onKeyDown={(e) => {
                     if (e.key === 'Enter' && e.target.value) {
@@ -88,38 +88,22 @@ const Layout = ({ children }) => {
               </div>
             </div>
 
-            {/* Desktop Navigation */}
-            <nav className="hidden md:flex items-center space-x-1">
-              {links.map((link) => (
-                <NavLink
-                  key={link.name}
-                  to={link.path}
-                  className={({ isActive }) =>
-                    `px-4 py-2 text-sm font-bold uppercase tracking-wide transition-colors nav-link ${
-                      isActive ? 'text-[#00488d] active' : 'text-gray-600 hover:text-[#00488d]'
-                    }`
-                  }
-                >
-                  {link.name}
-                </NavLink>
-              ))}
-            </nav>
-
-            {/* Right side actions */}
-            <div className="hidden md:flex items-center space-x-4">
+            {/* Right side actions (desktop) */}
+            <div className="hidden lg:flex items-center space-x-3 flex-shrink-0">
               <button 
                 onClick={logout}
-                className="bg-[#ffb800] hover:bg-yellow-500 text-gray-900 px-5 py-2 rounded font-bold text-sm transition-colors shadow-sm"
+                className="bg-[#ffb800] hover:bg-yellow-500 text-gray-900 px-4 py-2 rounded font-bold text-sm transition-colors shadow-sm whitespace-nowrap"
               >
                 Logout
               </button>
             </div>
 
             {/* Mobile menu button */}
-            <div className="md:hidden flex items-center">
+            <div className="lg:hidden flex items-center">
               <button 
                 onClick={() => setMobileMenuOpen(!mobileMenuOpen)}
                 className="text-[#00488d] p-2"
+                aria-label="Toggle menu"
               >
                 {mobileMenuOpen ? <X className="w-6 h-6" /> : <Menu className="w-6 h-6" />}
               </button>
@@ -127,10 +111,47 @@ const Layout = ({ children }) => {
           </div>
         </div>
 
+        {/* Desktop / Tablet Navigation - own row, horizontally scrollable on small screens */}
+        <nav className="hidden lg:block bg-white border-t border-gray-100">
+          <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
+            <div className="flex items-center justify-center gap-1 overflow-x-auto whitespace-nowrap nav-scroll">
+              {links.map((link) => (
+                <NavLink
+                  key={link.name}
+                  to={link.path}
+                  className={({ isActive }) =>
+                    `px-3 xl:px-4 py-3 text-xs xl:text-sm font-bold uppercase tracking-wide transition-colors nav-link flex-shrink-0 ${
+                      isActive ? 'text-[#00488d] active' : 'text-gray-600 hover:text-[#00488d]'
+                    }`
+                  }
+                >
+                  {link.name}
+                </NavLink>
+              ))}
+            </div>
+          </div>
+        </nav>
+
         {/* Mobile Menu */}
         {mobileMenuOpen && (
-          <div className="md:hidden bg-white border-b border-gray-200">
+          <div className="lg:hidden bg-white border-b border-gray-200">
             <div className="px-2 pt-2 pb-3 space-y-1 sm:px-3">
+              <div className="lg:hidden px-3 py-2">
+                <div className="relative">
+                  <input 
+                    type="text" 
+                    placeholder="Global Search..." 
+                    className="w-full pl-10 pr-4 py-2 bg-gray-50 border border-gray-300 rounded-lg text-sm focus:outline-none focus:ring-2 focus:ring-[#00488d] focus:border-transparent transition-all"
+                    onKeyDown={(e) => {
+                      if (e.key === 'Enter' && e.target.value) {
+                        navigate('/patients?search=' + encodeURIComponent(e.target.value));
+                        setMobileMenuOpen(false);
+                      }
+                    }}
+                  />
+                  <Search className="w-4 h-4 text-gray-400 absolute left-3 top-2.5" />
+                </div>
+              </div>
               {links.map((link) => (
                 <NavLink
                   key={link.name}

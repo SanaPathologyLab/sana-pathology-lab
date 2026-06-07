@@ -15,6 +15,10 @@ const Doctors = () => {
     name: '', specialization: '', mobileNumber: '', clinicName: '', commissionRate: ''
   });
 
+  // Prevent duplicate / multiple submissions
+  const [submitting, setSubmitting] = useState(false);
+  const [deletingId, setDeletingId] = useState(null);
+
   useEffect(() => {
     fetchDoctors();
   }, []);
@@ -33,6 +37,20 @@ const Doctors = () => {
 
   const handleSubmit = async (e) => {
     e.preventDefault();
+    if (submitting) return;
+    const name = formData.name.trim().toLowerCase();
+    const mobile = formData.mobileNumber.trim();
+    if (!editingId) {
+      const duplicate = doctors.find(d =>
+        d.name.trim().toLowerCase() === name &&
+        d.mobileNumber.trim() === mobile
+      );
+      if (duplicate) {
+        alert(`A doctor named "${formData.name}" with mobile ${mobile} already exists.`);
+        return;
+      }
+    }
+    setSubmitting(true);
     try {
       const url = editingId 
         ? `/api/doctors/${editingId}` 
@@ -57,10 +75,13 @@ const Doctors = () => {
         closeModal();
         fetchDoctors();
       } else {
-        alert('Failed to save doctor');
+        const err = await res.json().catch(() => ({}));
+        alert(`Failed to save doctor: ${err.message || res.statusText}`);
       }
     } catch (err) {
       console.error(err);
+    } finally {
+      setSubmitting(false);
     }
   };
 
@@ -243,11 +264,11 @@ const Doctors = () => {
                 </div>
               </div>
               <div className="mt-8 flex justify-end space-x-4">
-                <button type="button" onClick={closeModal} className="px-6 py-2 border border-gray-300 rounded text-gray-700 font-bold hover:bg-gray-50">
+                <button type="button" onClick={closeModal} disabled={submitting} className="px-6 py-2 border border-gray-300 rounded text-gray-700 font-bold hover:bg-gray-50 disabled:opacity-50">
                   Cancel
                 </button>
-                <button type="submit" className="px-6 py-2 bg-[#00488d] text-white rounded font-bold hover:bg-[#003875]">
-                  {editingId ? 'Update Doctor' : 'Save Doctor'}
+                <button type="submit" disabled={submitting} className="px-6 py-2 bg-[#00488d] text-white rounded font-bold hover:bg-[#003875] disabled:opacity-50 disabled:cursor-not-allowed">
+                  {submitting ? 'Saving...' : (editingId ? 'Update Doctor' : 'Save Doctor')}
                 </button>
               </div>
             </form>

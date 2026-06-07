@@ -19,6 +19,10 @@ const Patients = () => {
     fullName: '', age: '', gender: 'Male', mobileNumber: '', city: '', bloodGroup: ''
   });
 
+  // Prevent duplicate / multiple submissions
+  const [submitting, setSubmitting] = useState(false);
+  const [deletingId, setDeletingId] = useState(null);
+
   useEffect(() => {
     fetchPatients();
     const query = new URLSearchParams(location.search).get('search');
@@ -41,6 +45,20 @@ const Patients = () => {
 
   const handleSubmit = async (e) => {
     e.preventDefault();
+    if (submitting) return;
+    const name = formData.fullName.trim().toLowerCase();
+    const mobile = formData.mobileNumber.trim();
+    if (!editingId) {
+      const duplicate = patients.find(p =>
+        p.fullName?.trim().toLowerCase() === name &&
+        p.mobileNumber?.trim() === mobile
+      );
+      if (duplicate) {
+        alert(`A patient named "${formData.fullName}" with mobile ${mobile} already exists (${duplicate.patientId}).`);
+        return;
+      }
+    }
+    setSubmitting(true);
     try {
       const url = editingId 
         ? `/api/patients/${editingId}` 
@@ -62,24 +80,34 @@ const Patients = () => {
         closeModal();
         fetchPatients();
       } else {
-        alert('Failed to save patient');
+        const err = await res.json().catch(() => ({}));
+        alert(`Failed to save patient: ${err.message || res.statusText}`);
       }
     } catch (err) {
       console.error(err);
+    } finally {
+      setSubmitting(false);
     }
   };
 
   const handleDelete = async (id) => {
-    if(window.confirm('Are you sure you want to delete this patient?')) {
-      try {
-        await fetch(`/api/patients/${id}`, {
-          method: 'DELETE',
-          headers: { 'Authorization': `Bearer ${user?.token || user?.accessToken}` }
-        });
-        fetchPatients();
-      } catch (err) {
-        console.error(err);
+    if (deletingId) return;
+    if (!window.confirm('Are you sure you want to delete this patient?')) return;
+    setDeletingId(id);
+    try {
+      const res = await fetch(`/api/patients/${id}`, {
+        method: 'DELETE',
+        headers: { 'Authorization': `Bearer ${user?.token || user?.accessToken}` }
+      });
+      if (!res.ok) {
+        const err = await res.json().catch(() => ({}));
+        alert(`Failed to delete: ${err.message || res.statusText}`);
       }
+      fetchPatients();
+    } catch (err) {
+      console.error(err);
+    } finally {
+      setDeletingId(null);
     }
   };
 
@@ -267,11 +295,11 @@ const Patients = () => {
                 </div>
               </div>
               <div className="mt-8 flex justify-end space-x-4">
-                <button type="button" onClick={closeModal} className="px-6 py-2 border border-gray-300 rounded text-gray-700 font-bold hover:bg-gray-50">
+                <button type="button" onClick={closeModal} disabled={submitting} className="px-6 py-2 border border-gray-300 rounded text-gray-700 font-bold hover:bg-gray-50 disabled:opacity-50">
                   Cancel
                 </button>
-                <button type="submit" className="px-6 py-2 bg-[#00488d] text-white rounded font-bold hover:bg-[#003875]">
-                  {editingId ? 'Update Patient' : 'Save Patient'}
+                <button type="submit" disabled={submitting} className="px-6 py-2 bg-[#00488d] text-white rounded font-bold hover:bg-[#003875] disabled:opacity-50 disabled:cursor-not-allowed">
+                  {submitting ? 'Saving...' : (editingId ? 'Update Patient' : 'Save Patient')}
                 </button>
               </div>
             </form>
