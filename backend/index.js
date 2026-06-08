@@ -279,7 +279,45 @@ app.get('/', (req, res) => {
   res.json({ message: 'Sana Pathology Lab API is running' });
 });
 
+// ─── Auto-seed Widal test if not exists ───
+async function seedWidalTest() {
+  try {
+    const existing = await prisma.test.findFirst({ where: { testName: 'WIDAL TEST' } });
+    if (existing) {
+      console.log('Widal test already exists, skipping seed.');
+      return;
+    }
+    let serologyCat = await prisma.testCategory.findFirst({ where: { name: 'Serology' } });
+    if (!serologyCat) {
+      serologyCat = await prisma.testCategory.create({ data: { name: 'Serology' } });
+      console.log('Created Serology category.');
+    }
+    await prisma.test.create({
+      data: {
+        testName: 'WIDAL TEST',
+        testCode: 'WIDAL',
+        sampleType: 'Blood',
+        price: 300,
+        categoryId: serologyCat.id,
+        summary: 'Widal test is a serological test for detecting antibodies against Salmonella typhi and paratyphi. A titre of 1:80 or more for O antigen and 1:160 or more for H antigen is considered clinically significant.',
+        parameters: {
+          create: [
+            { parameterName: 'S. TYPHI O', referenceRange: '', unit: '', groupName: '', isQualitative: true, titerValues: '1/20,1/40,1/80,1/160,1/320' },
+            { parameterName: 'S. TYPHI H', referenceRange: '', unit: '', groupName: '', isQualitative: true, titerValues: '1/20,1/40,1/80,1/160,1/320' },
+            { parameterName: 'S. PARA TYPHI A (H)', referenceRange: '', unit: '', groupName: '', isQualitative: true, titerValues: '1/20,1/40,1/80,1/160,1/320' },
+            { parameterName: 'S. PARA TYPHI B (H)', referenceRange: '', unit: '', groupName: '', isQualitative: true, titerValues: '1/20,1/40,1/80,1/160,1/320' },
+          ]
+        }
+      }
+    });
+    console.log('Widal test auto-seeded successfully.');
+  } catch (err) {
+    console.error('Failed to seed Widal test:', err.message);
+  }
+}
+
 const PORT = process.env.PORT || 5000;
-app.listen(PORT, () => {
+app.listen(PORT, async () => {
   console.log(`Server running on port ${PORT}`);
+  await seedWidalTest();
 });
