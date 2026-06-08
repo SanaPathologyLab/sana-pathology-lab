@@ -15,6 +15,7 @@ const WidalTest = () => {
     return initial;
   });
   const [report, setReport] = useState(null);
+  const [manualResult, setManualResult] = useState(null); // null = auto, 'POSITIVE', 'NEGATIVE'
 
   const toggleCell = (antigen, titer) => {
     const key = `${antigen}|${titer}`;
@@ -32,7 +33,8 @@ const WidalTest = () => {
     setReport(null);
   };
 
-  const anyPositive = Object.values(cells).some(v => v === '+');
+  const autoPositive = Object.values(cells).some(v => v === '+');
+  const effectiveResult = manualResult || (autoPositive ? 'POSITIVE' : 'NEGATIVE');
 
   const generateReport = () => {
     const rows = ANTIGENS.map(antigen => {
@@ -56,8 +58,8 @@ const WidalTest = () => {
         <div className="bg-white rounded border border-gray-200 shadow-sm overflow-hidden">
           <div className="flex items-center justify-between px-6 py-4 bg-gray-50 border-b border-gray-200">
             <span className="text-base font-bold text-gray-800 uppercase tracking-wide">WIDAL TEST (Rapid Slid Method)</span>
-            <span className={`text-xs font-bold px-4 py-1.5 rounded-full uppercase tracking-wider ${anyPositive ? 'bg-red-100 text-red-700 border border-red-200' : 'bg-green-100 text-green-700 border border-green-200'}`}>
-              {anyPositive ? 'POSITIVE' : 'NEGATIVE'}
+            <span className={`text-xs font-bold px-4 py-1.5 rounded-full uppercase tracking-wider ${effectiveResult === 'POSITIVE' ? 'bg-red-100 text-red-700 border border-red-200' : 'bg-green-100 text-green-700 border border-green-200'}`}>
+              {effectiveResult}
             </span>
           </div>
 
@@ -125,7 +127,38 @@ const WidalTest = () => {
               </table>
             </div>
 
-            <div className="flex items-center justify-between mt-6">
+            <div className="flex items-center justify-center gap-4 mt-6 py-4 px-6 bg-gray-50 border border-gray-200 rounded">
+              <span className="text-sm font-bold text-gray-600 uppercase tracking-wide">Overall Result:</span>
+              <button
+                type="button"
+                onClick={() => setManualResult(manualResult === 'POSITIVE' ? null : 'POSITIVE')}
+                className={`px-8 py-2.5 text-sm font-bold rounded border-2 transition-all duration-100 uppercase tracking-wider ${
+                  manualResult === 'POSITIVE' ? 'bg-red-600 text-white border-red-600 shadow-sm' : effectiveResult === 'POSITIVE' && !manualResult ? 'bg-red-50 text-red-600 border-red-300' : 'bg-white text-gray-400 border-gray-300 hover:border-red-300 hover:text-red-500'
+                }`}
+              >
+                POSITIVE
+              </button>
+              <button
+                type="button"
+                onClick={() => setManualResult(manualResult === 'NEGATIVE' ? null : 'NEGATIVE')}
+                className={`px-8 py-2.5 text-sm font-bold rounded border-2 transition-all duration-100 uppercase tracking-wider ${
+                  manualResult === 'NEGATIVE' ? 'bg-green-600 text-white border-green-600 shadow-sm' : effectiveResult === 'NEGATIVE' && !manualResult ? 'bg-green-50 text-green-600 border-green-300' : 'bg-white text-gray-400 border-gray-300 hover:border-green-300 hover:text-green-500'
+                }`}
+              >
+                NEGATIVE
+              </button>
+              {manualResult && (
+                <button
+                  type="button"
+                  onClick={() => setManualResult(null)}
+                  className="text-xs text-gray-400 hover:text-gray-600 underline"
+                >
+                  (use auto)
+                </button>
+              )}
+            </div>
+
+            <div className="flex items-center justify-between mt-4">
               <button
                 type="button"
                 onClick={resetAll}
