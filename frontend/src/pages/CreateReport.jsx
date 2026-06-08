@@ -84,7 +84,6 @@ const CreateReport = () => {
             isQualitative: p.isQualitative || false,
             titerValues: p.titerValues || '',
             resultValue: initialValue,
-            suffix: '',
             flag: ''
           });
         });
@@ -145,23 +144,16 @@ const CreateReport = () => {
     if (isSubmitting) return;
     setIsSubmitting(true);
     try {
-      // Build results array (combine suffix into resultValue for qualitative params)
-      const savedResults = testResults.map(r => { 
-        let val = r.resultValue;
-        if (r.isQualitative && r.suffix) {
-          const label = val === '+' ? 'POSITIVE' : val === '-' ? 'NEGATIVE' : val;
-          val = label + ' ' + r.suffix;
-        }
-        return {
-          testId: r.testId, 
-          parameterName: r.parameterName,
-          resultValue: val,
-          flag: r.flag,
-          referenceRange: r.referenceRange,
-          unit: r.unit,
-          groupName: r.groupName
-        };
-      });
+      // Build results array
+      const savedResults = testResults.map(r => ({ 
+        testId: r.testId, 
+        parameterName: r.parameterName,
+        resultValue: r.resultValue, 
+        flag: r.flag,
+        referenceRange: r.referenceRange,
+        unit: r.unit,
+        groupName: r.groupName
+      }));
       // Add overall result for titer matrix tests
       Object.keys(overallResults).forEach(testName => {
         const ti = testResults.find(r => r.parentTestName === testName)?.testId;
@@ -331,24 +323,15 @@ const CreateReport = () => {
                         <td className="px-4 py-4 text-sm font-bold text-gray-800 pl-6">{tr.parameterName}</td>
                         <td className="px-4 py-4">
                           {tr.isQualitative ? (
-                            <div className="flex flex-wrap items-center gap-2">
-                              <select
-                                value={tr.resultValue === '+' ? 'POSITIVE' : tr.resultValue === '-' ? 'NEGATIVE' : ''}
-                                onChange={(e) => handleResultChange(tr.key, 'resultValue', e.target.value === 'POSITIVE' ? '+' : e.target.value === 'NEGATIVE' ? '-' : '')}
-                                className="border border-gray-300 rounded px-3 py-2 text-sm font-bold focus:outline-none focus:border-[#00488d]"
-                              >
-                                <option value="">-- Select --</option>
-                                <option value="POSITIVE">POSITIVE</option>
-                                <option value="NEGATIVE">NEGATIVE</option>
-                              </select>
-                              <input
-                                type="text"
-                                placeholder="Note (e.g. Test Card Enclosed)"
-                                value={tr.suffix || ''}
-                                onChange={(e) => handleResultChange(tr.key, 'suffix', e.target.value)}
-                                className="border border-gray-300 rounded px-2 py-2 text-sm focus:outline-none focus:border-[#00488d] w-44"
-                              />
-                            </div>
+                            <select
+                              value={tr.resultValue === '+' ? 'POSITIVE' : tr.resultValue === '-' ? 'NEGATIVE' : ''}
+                              onChange={(e) => handleResultChange(tr.key, 'resultValue', e.target.value === 'POSITIVE' ? '+' : e.target.value === 'NEGATIVE' ? '-' : '')}
+                              className="border border-gray-300 rounded px-3 py-2 text-sm font-bold focus:outline-none focus:border-[#00488d]"
+                            >
+                              <option value="">-- Select --</option>
+                              <option value="POSITIVE">POSITIVE</option>
+                              <option value="NEGATIVE">NEGATIVE</option>
+                            </select>
                           ) : (
                             <input type="text" value={tr.resultValue} onChange={(e) => handleResultChange(tr.key, 'resultValue', e.target.value)} className="w-full border border-gray-300 rounded px-2 py-2 text-sm font-bold focus:outline-none focus:border-[#00488d]" />
                           )}
