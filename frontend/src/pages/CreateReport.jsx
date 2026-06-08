@@ -70,7 +70,7 @@ const CreateReport = () => {
           const key = `${t.value}_${p.parameterName}`;
           const existing = testResults.find(tr => tr.key === key);
           const initialValue = p.isQualitative && p.titerValues
-            ? p.titerValues.split(',').map(v => `${v.trim()}|−`).join('||')
+            ? p.titerValues.split(',').map(v => `${v.trim()}|--`).join('||')
             : '';
           initialResults.push(existing || {
             key,
@@ -198,14 +198,14 @@ const CreateReport = () => {
             <span>{testName}</span>
             {isTiterMatrix && (
               <span className="flex items-center gap-2">
-                <span className="text-xs font-bold text-gray-400 uppercase tracking-wider">Agglutinin Titer</span>
+                <span className="text-xs font-bold text-gray-500 uppercase">Agglutinin Titer</span>
                 {(() => {
                   const anyPos = params.some(tr => {
                     const cells = tr.resultValue ? tr.resultValue.split('||').map(e => e.split('|')[1]) : [];
                     return cells.some(v => v === '+');
                   });
                   return (
-                    <span className={`text-xs font-bold px-4 py-1.5 rounded-full uppercase tracking-wider ${anyPos ? 'bg-red-100 text-red-700 border border-red-200' : 'bg-green-100 text-green-700 border border-green-200'}`}>
+                    <span className={`text-xs font-bold px-3 py-1 uppercase tracking-wider ${anyPos ? 'text-black' : 'text-gray-400'}`}>
                       {anyPos ? 'POSITIVE' : 'NEGATIVE'}
                     </span>
                   );
@@ -215,25 +215,22 @@ const CreateReport = () => {
           </h3>
 
           {isTiterMatrix ? (
-            <div className="border border-gray-300 rounded overflow-hidden">
-              <table className="w-full text-left border-collapse">
+            <div className="border border-black">
+              <table className="w-full text-left border-collapse text-black">
                 <thead>
-                  <tr className="bg-gray-100 border-b border-gray-200">
-                    <th className="px-5 py-3.5 text-xs font-bold text-gray-600 uppercase tracking-wider w-[28%]">Antigen / Organism</th>
+                  <tr className="border-b border-black">
+                    <th className="px-4 py-3 text-sm font-bold uppercase">&nbsp;</th>
                     {titerList.map((t, i) => (
-                      <th key={i} className="px-1 py-3.5 text-xs font-bold text-gray-600 uppercase text-center tracking-wider">{t.trim()}</th>
+                      <th key={i} className="px-2 py-3 text-sm font-bold text-center">{t.trim()}</th>
                     ))}
-                    <th className="px-2 py-3.5 text-xs font-bold text-gray-600 uppercase text-center tracking-wider w-[12%]">Result</th>
                   </tr>
                 </thead>
-                <tbody className="divide-y divide-gray-100">
+                <tbody>
                   {params.map((tr) => {
                     const currentResults = tr.resultValue ? tr.resultValue.split('||').map(entry => {
                       const [t, v] = entry.split('|');
-                      return { titer: t, value: v || '' };
-                    }) : [];
-                    const hasPos = currentResults.some(r => r.value === '+');
-                    const allNeg = currentResults.every(r => r.value === '−');
+                      return { titer: t, value: v || '--' };
+                    }) : TITERS.map(t => ({ titer: t, value: '--' }));
                     const updateCell = (titer, val) => {
                       const others = currentResults.filter(r => r.titer.trim() !== titer.trim());
                       const updated = [...others, { titer: titer.trim(), value: val }]
@@ -241,25 +238,23 @@ const CreateReport = () => {
                       handleResultChange(tr.key, 'resultValue', updated);
                     };
                     return (
-                      <tr key={tr.key} className="hover:bg-gray-50 transition-colors">
-                        <td className="px-5 py-4 text-sm font-bold text-gray-800">{tr.parameterName}</td>
+                      <tr key={tr.key} className="border-b border-gray-200 last:border-b-0">
+                        <td className="px-4 py-3 text-sm font-bold">{tr.parameterName}</td>
                         {titerList.map((titer) => {
-                          const val = currentResults.find(r => r.titer.trim() === titer.trim())?.value || '';
+                          const val = currentResults.find(r => r.titer.trim() === titer.trim())?.value || '--';
                           const isPos = val === '+';
                           return (
-                            <td key={titer} className="px-1 py-4 text-center">
-                              <div className="flex items-center justify-center gap-0.5">
-                                <button type="button" onClick={() => updateCell(titer, isPos ? '−' : '+')} className={`w-9 h-9 text-sm font-bold rounded border-2 transition-all duration-100 ${isPos ? 'bg-green-600 text-white border-green-600 shadow-sm' : 'bg-white text-gray-300 border-gray-200 hover:border-green-400 hover:text-green-500'}`}>+</button>
-                                <button type="button" onClick={() => updateCell(titer, isPos ? '+' : '−')} className={`w-9 h-9 text-sm font-bold rounded border-2 transition-all duration-100 ${isPos ? 'bg-white text-gray-300 border-gray-200 hover:border-red-400 hover:text-red-500' : 'bg-red-600 text-white border-red-600 shadow-sm'}`}>−</button>
-                              </div>
+                            <td key={titer} className="px-2 py-3 text-center">
+                              <button
+                                type="button"
+                                onClick={() => updateCell(titer, isPos ? '--' : '+')}
+                                className="font-mono text-sm font-bold text-black cursor-pointer hover:text-gray-600 bg-transparent border-0 outline-none w-full"
+                              >
+                                {isPos ? '+' : '--'}
+                              </button>
                             </td>
                           );
                         })}
-                        <td className="px-2 py-4 text-center">
-                          <span className={`text-sm font-bold ${hasPos ? 'text-red-600' : 'text-green-600'}`}>
-                            {hasPos ? 'POSITIVE' : 'NEGATIVE'}
-                          </span>
-                        </td>
                       </tr>
                     );
                   })}

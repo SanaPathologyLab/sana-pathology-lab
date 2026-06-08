@@ -169,6 +169,51 @@ const Tests = () => {
     setEditingId(null);
   };
 
+  const createWidalTestAuto = async () => {
+    const existing = tests.find(t => t.testCode === 'WIDAL');
+    if (existing) return alert('Widal test already exists!');
+    try {
+      let catId = categories.find(c => c.name === 'Immunology')?.id;
+      if (!catId) {
+        const catRes = await fetch('/api/tests/categories', {
+          method: 'POST',
+          headers: { 'Content-Type': 'application/json', 'Authorization': `Bearer ${user.accessToken}` },
+          body: JSON.stringify({ name: 'Immunology' })
+        });
+        const catData = await catRes.json();
+        catId = catData.id;
+        fetchCategories();
+      }
+      const res = await fetch('/api/tests', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json', 'Authorization': `Bearer ${user.accessToken}` },
+        body: JSON.stringify({
+          testName: 'WIDAL TEST (Rapid Slid Method)',
+          testCode: 'WIDAL',
+          sampleType: 'BLOOD',
+          price: 200,
+          categoryId: catId,
+          summary: 'Widal test is a serological test for detecting antibodies against Salmonella typhi and paratyphi.',
+          parameters: [
+            { parameterName: 'S. TYPHI O', referenceRange: '', unit: '', groupName: '', isQualitative: true, titerValues: '1/20,1/40,1/80,1/160,1/320' },
+            { parameterName: 'S. TYPHI H', referenceRange: '', unit: '', groupName: '', isQualitative: true, titerValues: '1/20,1/40,1/80,1/160,1/320' },
+            { parameterName: 'S. PARA TYPHI A (H)', referenceRange: '', unit: '', groupName: '', isQualitative: true, titerValues: '1/20,1/40,1/80,1/160,1/320' },
+            { parameterName: 'S. PARA TYPHI B (H)', referenceRange: '', unit: '', groupName: '', isQualitative: true, titerValues: '1/20,1/40,1/80,1/160,1/320' },
+          ]
+        })
+      });
+      if (res.ok) {
+        alert('Widal test created successfully!');
+        fetchTests();
+      } else {
+        alert('Failed to create Widal test');
+      }
+    } catch (err) {
+      console.error(err);
+      alert('Error creating Widal test');
+    }
+  };
+
   const filteredTests = tests.filter(t => 
     t.testName.toLowerCase().includes(searchTerm.toLowerCase()) || 
     t.testCode.toLowerCase().includes(searchTerm.toLowerCase())
@@ -178,12 +223,20 @@ const Tests = () => {
     <Layout>
       <div className="flex justify-between items-center mb-6">
         <h2 className="text-2xl font-bold text-[#00488d] uppercase tracking-wide">Test Directory (Panels)</h2>
-        <button 
-          onClick={openAddModal}
-          className="bg-[#00488d] hover:bg-[#003875] text-white px-6 py-2 rounded text-sm font-bold tracking-wide transition-colors flex items-center"
-        >
-          <Plus className="w-4 h-4 mr-2" /> ADD TEST PANEL
-        </button>
+        <div className="flex gap-2">
+          <button 
+            onClick={createWidalTestAuto}
+            className="bg-green-700 hover:bg-green-800 text-white px-4 py-2 rounded text-sm font-bold tracking-wide transition-colors flex items-center"
+          >
+            <Plus className="w-4 h-4 mr-2" /> CREATE WIDAL
+          </button>
+          <button 
+            onClick={openAddModal}
+            className="bg-[#00488d] hover:bg-[#003875] text-white px-6 py-2 rounded text-sm font-bold tracking-wide transition-colors flex items-center"
+          >
+            <Plus className="w-4 h-4 mr-2" /> ADD TEST PANEL
+          </button>
+        </div>
       </div>
 
       <div className="bg-white rounded border border-gray-200 overflow-hidden shadow-sm">
