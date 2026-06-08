@@ -17,6 +17,7 @@ const Appointments = lazy(() => import('./pages/Appointments'));
 const Inventory = lazy(() => import('./pages/Inventory'));
 const Staff = lazy(() => import('./pages/Staff'));
 const Settings = lazy(() => import('./pages/Settings'));
+const WidalTest = lazy(() => import('./pages/WidalTest'));
 const ReportLookup = lazy(() => import('./pages/ReportLookup'));
 const PublicPrint = lazy(() => import('./pages/PublicPrint'));
 const PublicWelcome = lazy(() => import('./pages/PublicWelcome'));
@@ -58,6 +59,7 @@ const AppContent = () => {
         <Route path="/inventory" element={<ProtectedRoute><Inventory /></ProtectedRoute>} />
         <Route path="/staff" element={<ProtectedRoute><Staff /></ProtectedRoute>} />
         <Route path="/settings" element={<ProtectedRoute><Settings /></ProtectedRoute>} />
+        <Route path="/widal" element={<ProtectedRoute><WidalTest /></ProtectedRoute>} />
       </Routes>
     </Suspense>
   );

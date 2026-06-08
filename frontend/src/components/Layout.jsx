@@ -33,6 +33,7 @@ const Layout = ({ children }) => {
       { name: 'Doctors', path: '/doctors' },
       { name: 'Dr. Analytics', path: '/doctors/analytics' },
       { name: 'Tests', path: '/tests' },
+      { name: 'Widal', path: '/widal' },
       { name: 'Reports', path: '/reports' },
       { name: 'Billing', path: '/billing' },
       { name: 'Appointments', path: '/appointments' },
