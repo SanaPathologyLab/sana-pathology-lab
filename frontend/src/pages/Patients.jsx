@@ -65,6 +65,7 @@ const Patients = () => {
         : '/api/patients';
       const method = editingId ? 'PUT' : 'POST';
 
+      const { ageType, ...apiData } = formData;
       const res = await fetch(url, {
         method,
         headers: { 
@@ -72,7 +73,7 @@ const Patients = () => {
           'Authorization': `Bearer ${user?.token || user?.accessToken}` 
         },
         body: JSON.stringify({
-          ...formData,
+          ...apiData,
           age: parseInt(formData.age)
         })
       });
