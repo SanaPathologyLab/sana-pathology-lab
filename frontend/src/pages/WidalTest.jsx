@@ -53,29 +53,31 @@ const WidalTest = () => {
         </div>
 
         <div className="bg-white border border-gray-300">
-          {/* Line 1: Label + Dropdown */}
-          <div className="flex items-center justify-between px-6 py-4 border-b border-gray-300">
+          {/* Title */}
+          <div className="px-6 py-4 text-center border-b border-gray-300">
             <span className="text-lg font-bold text-black uppercase tracking-wide">WIDAL TEST (Rapid Slid Method)</span>
-            <div className="flex items-center gap-3">
-              <span className="text-xs text-gray-500 uppercase font-bold">Result:</span>
+          </div>
+
+          <div className="p-6">
+            {/* POSITIVE / NEGATIVE Selector (center) */}
+            <div className="flex items-center justify-center gap-4 mb-6 pb-4 border-b border-gray-200">
+              <span className="text-sm font-bold text-gray-600 uppercase tracking-wide">Result:</span>
               {['POSITIVE', 'NEGATIVE'].map(opt => (
                 <button
                   key={opt}
                   type="button"
                   onClick={() => setOverallResult(opt)}
-                  className={`text-sm font-bold uppercase tracking-wide px-1 ${
+                  className={`px-6 py-2 text-sm font-bold uppercase tracking-wide border-2 rounded transition-colors ${
                     overallResult === opt
-                      ? 'text-black underline decoration-2 underline-offset-4'
-                      : 'text-gray-400 hover:text-gray-600'
+                      ? 'border-black bg-black text-white'
+                      : 'border-gray-300 text-gray-400 hover:border-gray-500 hover:text-gray-600'
                   }`}
                 >
                   {opt}
                 </button>
               ))}
             </div>
-          </div>
 
-          <div className="p-6">
             {/* Titer Table */}
             <div className="border border-black rounded">
               <table className="w-full text-left border-collapse text-black">
