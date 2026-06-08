@@ -114,6 +114,8 @@ model TestParameter {
   referenceRange String
   unit           String
   groupName      String?
+  isQualitative  Boolean  @default(false)
+  titerValues    String?  // comma-separated: "1/20,1/40,1/80,1/160,1/320"
   
   createdAt      DateTime @default(now())
   updatedAt      DateTime @updatedAt

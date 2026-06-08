@@ -69,6 +69,9 @@ const CreateReport = () => {
           // Unique key for tracking inputs (testId + parameterName)
           const key = `${t.value}_${p.parameterName}`;
           const existing = testResults.find(tr => tr.key === key);
+          const initialValue = p.isQualitative && p.titerValues
+            ? p.titerValues.split(',').map(v => [v.trim(), '']).join('||')
+            : '';
           initialResults.push(existing || {
             key,
             testId: t.value,
@@ -77,7 +80,9 @@ const CreateReport = () => {
             referenceRange: p.referenceRange,
             unit: p.unit,
             groupName: p.groupName,
-            resultValue: '',
+            isQualitative: p.isQualitative || false,
+            titerValues: p.titerValues || '',
+            resultValue: initialValue,
             flag: ''
           });
         });
@@ -210,27 +215,71 @@ const CreateReport = () => {
                       {tr.parameterName}
                     </td>
                     <td className="px-4 py-4">
-                      <input 
-                        type="text" 
-                        value={tr.resultValue}
-                        onChange={(e) => handleResultChange(tr.key, 'resultValue', e.target.value)}
-                        className="w-full border border-gray-300 rounded px-2 py-2 text-sm font-bold focus:outline-none focus:border-[#00488d]"
-                      />
+                      {tr.isQualitative ? (
+                        <div className="flex flex-wrap gap-1">
+                          {tr.titerValues ? (
+                            tr.titerValues.split(',').map((titer, ti) => {
+                              const currentResults = tr.resultValue ? tr.resultValue.split('||').map(entry => {
+                                const [t, v] = entry.split('|');
+                                return [t, v];
+                              }) : [];
+                              const currentVal = currentResults.find(([t]) => t.trim() === titer.trim())?.[1] || '';
+                              const updateTiter = (val) => {
+                                const others = currentResults.filter(([t]) => t.trim() !== titer.trim());
+                                const updated = [...others, [titer.trim(), val]]
+                                  .map(([t, v]) => `${t}|${v}`).join('||');
+                                handleResultChange(tr.key, 'resultValue', updated);
+                              };
+                              return (
+                                <div key={ti} className="flex flex-col items-center border border-gray-200 rounded p-1 bg-white">
+                                  <span className="text-[9px] font-bold text-gray-500 mb-0.5">{titer.trim()}</span>
+                                  <div className="flex gap-0.5">
+                                    <button type="button" onClick={() => updateTiter('+')} className={`w-7 h-7 text-[13px] font-bold rounded border ${currentVal === '+' ? 'bg-green-600 text-white border-green-600' : 'bg-white text-gray-400 border-gray-300 hover:border-green-400'}`}>+</button>
+                                    <button type="button" onClick={() => updateTiter('-')} className={`w-7 h-7 text-[13px] font-bold rounded border ${currentVal === '-' ? 'bg-red-600 text-white border-red-600' : 'bg-white text-gray-400 border-gray-300 hover:border-red-400'}`}>−</button>
+                                  </div>
+                                </div>
+                              );
+                            })
+                          ) : (
+                            <div className="flex gap-1">
+                              <button type="button" onClick={() => handleResultChange(tr.key, 'resultValue', '+')} className={`px-4 py-2 text-sm font-bold rounded border ${tr.resultValue === '+' ? 'bg-green-600 text-white border-green-600' : 'bg-white text-gray-400 border-gray-300 hover:border-green-400'}`}>POSITIVE</button>
+                              <button type="button" onClick={() => handleResultChange(tr.key, 'resultValue', '-')} className={`px-4 py-2 text-sm font-bold rounded border ${tr.resultValue === '-' ? 'bg-red-600 text-white border-red-600' : 'bg-white text-gray-400 border-gray-300 hover:border-red-400'}`}>NEGATIVE</button>
+                            </div>
+                          )}
+                        </div>
+                      ) : (
+                        <input 
+                          type="text" 
+                          value={tr.resultValue}
+                          onChange={(e) => handleResultChange(tr.key, 'resultValue', e.target.value)}
+                          className="w-full border border-gray-300 rounded px-2 py-2 text-sm font-bold focus:outline-none focus:border-[#00488d]"
+                        />
+                      )}
                     </td>
                     <td className="px-4 py-4 w-32">
-                      <select 
-                        value={tr.flag}
-                        onChange={(e) => handleResultChange(tr.key, 'flag', e.target.value)}
-                        className="w-full border border-gray-300 rounded px-2 py-2 text-sm focus:outline-none focus:border-[#00488d]"
-                      >
-                        <option value="">Normal</option>
-                        <option value="HIGH">HIGH</option>
-                        <option value="LOW">LOW</option>
-                      </select>
+                      {tr.isQualitative ? (
+                        <span className="text-xs text-gray-400">N/A</span>
+                      ) : (
+                        <select 
+                          value={tr.flag}
+                          onChange={(e) => handleResultChange(tr.key, 'flag', e.target.value)}
+                          className="w-full border border-gray-300 rounded px-2 py-2 text-sm focus:outline-none focus:border-[#00488d]"
+                        >
+                          <option value="">Normal</option>
+                          <option value="HIGH">HIGH</option>
+                          <option value="LOW">LOW</option>
+                        </select>
+                      )}
                     </td>
                     <td className="px-4 py-4">
-                      <p className="text-sm text-gray-600">{tr.referenceRange}</p>
-                      <p className="text-xs text-gray-400">{tr.unit}</p>
+                      {tr.isQualitative ? (
+                        <span className="text-xs text-gray-400">—</span>
+                      ) : (
+                        <>
+                          <p className="text-sm text-gray-600">{tr.referenceRange}</p>
+                          <p className="text-xs text-gray-400">{tr.unit}</p>
+                        </>
+                      )}
                     </td>
                   </tr>
                 </React.Fragment>

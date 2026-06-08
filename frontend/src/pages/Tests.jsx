@@ -17,7 +17,7 @@ const Tests = () => {
     testName: '', testCode: '', sampleType: 'Blood', price: '', categoryId: '', newCategoryName: '', summary: ''
   });
   const [parameters, setParameters] = useState([
-    { parameterName: '', referenceRange: '', unit: '', groupName: '' }
+    { parameterName: '', referenceRange: '', unit: '', groupName: '', isQualitative: false }
   ]);
 
   useEffect(() => {
@@ -50,7 +50,7 @@ const Tests = () => {
   };
 
   const addParameterRow = () => {
-    setParameters([...parameters, { parameterName: '', referenceRange: '', unit: '', groupName: '' }]);
+    setParameters([...parameters, { parameterName: '', referenceRange: '', unit: '', groupName: '', isQualitative: false }]);
   };
   const removeParameterRow = (index) => {
     const p = [...parameters];
@@ -129,7 +129,7 @@ const Tests = () => {
   const openAddModal = () => {
     setEditingId(null);
     setFormData({ testName: '', testCode: '', sampleType: 'Blood', price: '', categoryId: '', newCategoryName: '', summary: '' });
-    setParameters([{ parameterName: '', referenceRange: '', unit: '', groupName: '' }]);
+    setParameters([{ parameterName: '', referenceRange: '', unit: '', groupName: '', isQualitative: false }]);
     setIsModalOpen(true);
   };
 
@@ -279,12 +279,25 @@ const Tests = () => {
                 </div>
                 <div className="space-y-2">
                   {parameters.map((p, idx) => (
-                    <div key={idx} className="flex gap-2 items-center">
-                      <input type="text" placeholder="Group Heading (Optional)" value={p.groupName || ''} onChange={e => updateParameter(idx, 'groupName', e.target.value)} className="w-1/4 border border-gray-300 rounded px-2 py-1 text-sm focus:outline-none" />
-                      <input type="text" placeholder="Parameter Name *" required value={p.parameterName} onChange={e => updateParameter(idx, 'parameterName', e.target.value)} className="w-1/4 border border-gray-300 rounded px-2 py-1 text-sm font-bold focus:outline-none" />
-                      <input type="text" placeholder="Reference Range" value={p.referenceRange || ''} onChange={e => updateParameter(idx, 'referenceRange', e.target.value)} className="w-1/4 border border-gray-300 rounded px-2 py-1 text-sm focus:outline-none" />
-                      <input type="text" placeholder="Unit" value={p.unit || ''} onChange={e => updateParameter(idx, 'unit', e.target.value)} className="w-1/6 border border-gray-300 rounded px-2 py-1 text-sm focus:outline-none" />
-                      <button type="button" onClick={() => removeParameterRow(idx)} className="text-red-500 p-1 hover:bg-red-100 rounded"><Trash2 className="w-4 h-4" /></button>
+                    <div key={idx} className="flex gap-2 items-start">
+                      <input type="text" placeholder="Group Heading" value={p.groupName || ''} onChange={e => updateParameter(idx, 'groupName', e.target.value)} className="w-[15%] border border-gray-300 rounded px-2 py-1 text-sm focus:outline-none" />
+                      <input type="text" placeholder="Parameter Name *" required value={p.parameterName} onChange={e => updateParameter(idx, 'parameterName', e.target.value)} className="w-[20%] border border-gray-300 rounded px-2 py-1 text-sm font-bold focus:outline-none" />
+                      {p.isQualitative ? (
+                        <div className="flex gap-1 items-center w-[30%]">
+                          <span className="text-[11px] font-bold text-green-700 whitespace-nowrap">+/- Only</span>
+                          <input type="text" placeholder="Titers (e.g. 1/20,1/40,1/80)" value={p.titerValues || ''} onChange={e => updateParameter(idx, 'titerValues', e.target.value)} className="flex-1 border border-gray-300 rounded px-2 py-1 text-[11px] focus:outline-none" />
+                        </div>
+                      ) : (
+                        <>
+                          <input type="text" placeholder="Reference Range" value={p.referenceRange || ''} onChange={e => updateParameter(idx, 'referenceRange', e.target.value)} className="w-[17%] border border-gray-300 rounded px-2 py-1 text-sm focus:outline-none" />
+                          <input type="text" placeholder="Unit" value={p.unit || ''} onChange={e => updateParameter(idx, 'unit', e.target.value)} className="w-[13%] border border-gray-300 rounded px-2 py-1 text-sm focus:outline-none" />
+                        </>
+                      )}
+                      <label className="flex items-center gap-1 text-[11px] font-bold text-gray-600 cursor-pointer whitespace-nowrap pt-1">
+                        <input type="checkbox" checked={p.isQualitative} onChange={e => updateParameter(idx, 'isQualitative', e.target.checked)} className="accent-[#00488d]" />
+                        +/- Only
+                      </label>
+                      <button type="button" onClick={() => removeParameterRow(idx)} className="text-red-500 p-1 hover:bg-red-100 rounded shrink-0 mt-1"><Trash2 className="w-4 h-4" /></button>
                     </div>
                   ))}
                 </div>

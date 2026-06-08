@@ -50,7 +50,7 @@ app.get('/api/public/report-lookup', async (req, res) => {
         include: {
           patient: true,
           doctor: true,
-          results: { include: { test: { include: { category: true } } } },
+          results: { include: { test: { include: { category: true, parameters: true } } } },
           invoice: true,
         },
       });
@@ -66,7 +66,7 @@ app.get('/api/public/report-lookup', async (req, res) => {
           include: {
             patient: true,
             doctor: true,
-            results: { include: { test: { include: { category: true } } } },
+            results: { include: { test: { include: { category: true, parameters: true } } } },
             invoice: true,
           },
           orderBy: { reportDate: 'desc' },

@@ -255,16 +255,33 @@ const PrintReport = () => {
   // ── Test Results Table (Visible everywhere) ──
   const TestTable = ({ testName, rows, showHeader = true, summary = '' }) => (
     <div className="relative z-10">
-      {/* Pill-shaped Table Header */}
-      {showHeader && (
-        <div className="border border-black rounded-full px-4 py-1 mb-2 flex text-[14px] font-bold text-black">
-          <div className="w-[45%]">Investigations</div>
-          <div className="w-[15%] text-center">Results</div>
-          <div className="w-[10%] text-center">Flag</div>
-          <div className="w-[15%] text-center">Units</div>
-          <div className="w-[15%] text-center">Normal values</div>
-        </div>
-      )}
+      {/* Table Header - adapts for titer-based results */}
+      {showHeader && (() => {
+        const firstParam = rows[0]?.test?.parameters?.find(p => p.parameterName === rows[0]?.parameterName);
+        const isTiterTest = firstParam?.isQualitative && firstParam?.titerValues;
+        const titerList = isTiterTest ? firstParam.titerValues.split(',') : [];
+        return (
+          <div className="border border-black rounded-full px-4 py-1 mb-2 flex text-[13px] font-bold text-black items-center">
+            <div className={isTiterTest ? 'w-[25%]' : 'w-[45%]'}>Investigations</div>
+            {isTiterTest && titerList.map((t, i) => (
+              <div key={i} className="flex-1 text-center text-[11px]">{t.trim()}</div>
+            ))}
+            {isTiterTest ? (
+              <>
+                <div className="w-[10%] text-center text-[10px]">Unit</div>
+                <div className="w-[10%] text-center text-[10px]">Range</div>
+              </>
+            ) : (
+              <>
+                <div className="w-[15%] text-center">Results</div>
+                <div className="w-[10%] text-center">Flag</div>
+                <div className="w-[15%] text-center">Units</div>
+                <div className="w-[15%] text-center">Normal values</div>
+              </>
+            )}
+          </div>
+        );
+      })()}
 
       <div className="px-2">
         <div className="font-black text-[15px] underline uppercase tracking-wider text-black mb-2">
@@ -279,32 +296,68 @@ const PrintReport = () => {
               const isHigh = res.flag === 'HIGH';
               const isLow = res.flag === 'LOW';
               const isAbnormal = isHigh || isLow;
+              // Check if parameter is qualitative with titer values
+              const paramDef = res.test?.parameters?.find(p => p.parameterName === res.parameterName);
+              const isQual = paramDef?.isQualitative;
+              const titerVals = paramDef?.titerValues;
+              // Parse titer results from resultValue (stored as "1/20|+||1/40|+||...")
+              const titerResults = titerVals && res.resultValue
+                ? res.resultValue.split('||').map(entry => {
+                    const parts = entry.split('|');
+                    return { titer: parts[0], value: parts[1] || '' };
+                  })
+                : [];
               return (
                 <React.Fragment key={res.id || idx}>
                   {showGroup && (
                     <tr>
-                      <td colSpan="5" className="pt-2 pb-1.5 font-bold underline uppercase text-[14px] text-black">
+                      <td colSpan={titerResults.length > 0 ? (3 + titerResults.length) : 5} className="pt-2 pb-1.5 font-bold underline uppercase text-[14px] text-black">
                         {res.groupName}
                       </td>
                     </tr>
                   )}
-                  <tr>
-                    <td className={`py-1 font-semibold uppercase ${res.groupName ? '' : ''} w-[45%] align-top`}>
-                      {res.parameterName}
-                    </td>
-                    <td className="py-1 text-center w-[15%] align-top">
-                      <span className={`${isAbnormal ? 'font-black border-b-[1.5px] border-black pb-0.5' : 'font-bold'}`}>
-                        {res.resultValue}
-                      </span>
-                    </td>
-                    <td className="py-1 text-center font-bold text-[13px] w-[10%] align-top">
-                      {isHigh ? 'High' : isLow ? 'Low' : ''}
-                    </td>
-                    <td className="py-1 text-center font-semibold w-[15%] align-top">{res.unit}</td>
-                    <td className="py-1 text-center font-semibold whitespace-pre-wrap w-[15%] align-top text-[12px] leading-tight">
-                      {res.referenceRange}
-                    </td>
-                  </tr>
+                  {titerResults.length > 0 ? (
+                    <tr>
+                      <td className="py-1 font-semibold uppercase w-[25%] align-top">
+                        {res.parameterName}
+                      </td>
+                      {titerResults.map((tr, ti) => (
+                        <td key={ti} className="py-1 text-center font-bold text-[13px] align-top">
+                          <span className={`${tr.value === '+' ? 'text-green-700' : tr.value === '-' ? 'text-red-600' : 'text-gray-300'}`}>
+                            {tr.value || '—'}
+                          </span>
+                        </td>
+                      ))}
+                      <td className="py-1 text-center font-semibold text-gray-500 w-[10%] align-top text-[12px]">
+                        {res.unit || ''}
+                      </td>
+                      <td className="py-1 text-center font-semibold whitespace-pre-wrap text-gray-500 w-[10%] align-top text-[12px] leading-tight">
+                        {res.referenceRange || ''}
+                      </td>
+                    </tr>
+                  ) : (
+                    <tr>
+                      <td className={`py-1 font-semibold uppercase ${res.groupName ? '' : ''} ${isQual ? 'w-[70%]' : 'w-[45%]'} align-top`}>
+                        {res.parameterName}
+                      </td>
+                      <td className={`py-1 text-center align-top ${isQual ? 'w-[30%]' : 'w-[15%]'}`}>
+                        <span className={`${isQual ? 'font-black text-[15px] ' + (res.resultValue === '+' ? 'text-green-700' : res.resultValue === '-' ? 'text-red-600' : '') : isAbnormal ? 'font-black border-b-[1.5px] border-black pb-0.5' : 'font-bold'}`}>
+                          {res.resultValue === '+' ? 'POSITIVE' : res.resultValue === '-' ? 'NEGATIVE' : res.resultValue}
+                        </span>
+                      </td>
+                      {!isQual && (
+                        <>
+                          <td className="py-1 text-center font-bold text-[13px] w-[10%] align-top">
+                            {isHigh ? 'High' : isLow ? 'Low' : ''}
+                          </td>
+                          <td className="py-1 text-center font-semibold w-[15%] align-top">{res.unit}</td>
+                          <td className="py-1 text-center font-semibold whitespace-pre-wrap w-[15%] align-top text-[12px] leading-tight">
+                            {res.referenceRange}
+                          </td>
+                        </>
+                      )}
+                    </tr>
+                  )}
                 </React.Fragment>
               );
             })}

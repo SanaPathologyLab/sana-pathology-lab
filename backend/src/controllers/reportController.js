@@ -93,7 +93,7 @@ exports.getReportById = async (req, res) => {
         doctor: true,
         technician: true,
         results: { 
-          include: { test: true },
+          include: { test: { include: { parameters: true } } },
           orderBy: { id: 'asc' }
         }
       }
