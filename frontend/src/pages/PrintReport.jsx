@@ -198,7 +198,7 @@ const PrintReport = () => {
 
   // ── High Quality HTML Letterhead Footer (Screen & PDF share only) ──
   const LetterheadFooter = () => (
-    <footer className="absolute bottom-0 left-0 w-full px-[14mm] bg-white z-20">
+    <footer className="absolute bottom-[20mm] left-0 w-full px-[14mm] bg-white z-20">
       {/* Signature Area (Visible on print and screen) */}
       <div className="flex justify-between items-end px-12 mb-3">
         <div></div>
