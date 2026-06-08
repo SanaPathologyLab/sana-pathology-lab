@@ -70,7 +70,7 @@ const CreateReport = () => {
           const key = `${t.value}_${p.parameterName}`;
           const existing = testResults.find(tr => tr.key === key);
           const initialValue = p.isQualitative && p.titerValues
-            ? p.titerValues.split(',').map(v => [v.trim(), '']).join('||')
+            ? p.titerValues.split(',').map(v => `${v.trim()}|`).join('||')
             : '';
           initialResults.push(existing || {
             key,
