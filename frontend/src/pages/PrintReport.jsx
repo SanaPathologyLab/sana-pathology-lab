@@ -70,13 +70,14 @@ const PrintReport = () => {
       const opt = {
         margin:       0,
         filename:     `${report.reportNumber}_${patient.fullName}.pdf`,
-        image:        { type: 'png', quality: 1.0 }, // Changed to PNG for perfectly sharp text and logos
-        html2canvas:  { scale: 4, useCORS: true, windowWidth: 1024, letterRendering: true }, // Scale 4 for ultra-high resolution
+        image:        { type: 'png', quality: 0.95 },
+        html2canvas:  { scale: 2, useCORS: true, windowWidth: 1400 },
         jsPDF:        { unit: 'mm', format: 'a4', orientation: 'portrait' }
       };
 
-      // We will capture each page individually to ensure perfect A4 size without margins
+      // Enable PDF capture mode for cleaner rendering
       const pages = document.querySelectorAll('.report-page');
+      pages.forEach(p => p.classList.add('is-capturing'));
       
       let worker = html2pdf().set(opt).from(pages[0]);
       
@@ -86,6 +87,10 @@ const PrintReport = () => {
           pdf.addPage();
         }).from(pages[i]).toContainer().toCanvas().toPdf();
       }
+
+      worker = worker.toPdf().get('pdf').then(pdf => {
+        pages.forEach(p => p.classList.remove('is-capturing'));
+      });
 
       const pdfBlob = await worker.output('blob');
       
@@ -137,13 +142,13 @@ const PrintReport = () => {
 
   // ── High Quality HTML Letterhead Header (Screen & PDF share only) ──
   const LetterheadHeader = () => (
-    <div className="relative w-full print:hidden">
-      {/* Top Right Decorative Swoosh */}
-      <svg className="absolute top-0 right-0 w-[240px] h-[90px] z-0 opacity-80" viewBox="0 0 200 100" preserveAspectRatio="none">
-        <path d="M40,0 C100,50 150,80 200,100 L200,0 Z" fill="#e03a3c" opacity="0.7"/>
-        <path d="M90,0 C140,40 170,70 200,80 L200,0 Z" fill="#7a28cb" opacity="0.6"/>
-        <path d="M140,0 C170,20 185,40 200,60 L200,0 Z" fill="#00488d" opacity="0.5"/>
-      </svg>
+    <div className="relative w-full print:hidden letterhead-header">
+      {/* Decorative swoosh - simplified for PDF capture */}
+      <div className="pdf-swoosh absolute top-0 right-0 w-[240px] h-[90px] z-0 overflow-hidden">
+        <div className="absolute top-0 right-0 w-[200px] h-[100px] bg-[#e03a3c] opacity-30 rounded-bl-full"></div>
+        <div className="absolute top-0 right-0 w-[140px] h-[80px] bg-[#7a28cb] opacity-25 rounded-bl-full mt-2"></div>
+        <div className="absolute top-0 right-0 w-[100px] h-[60px] bg-[#00488d] opacity-20 rounded-bl-full mt-6"></div>
+      </div>
 
       <div className="flex items-end px-3 pt-5 pb-0.5 relative z-10 w-full">
         
@@ -158,7 +163,7 @@ const PrintReport = () => {
         {/* Right side content */}
         <div className="flex-1 flex flex-col justify-end">
           {/* Main Title */}
-          <div className="w-full text-[#1a2f4c] uppercase font-black mb-2 tracking-tight whitespace-nowrap -ml-10" style={{ fontFamily: 'Arial Black, Impact, sans-serif', fontSize: '44px', lineHeight: '0.8', transform: 'scaleY(1.05)', transformOrigin: 'bottom' }}>
+          <div className="w-full text-[#1a2f4c] uppercase font-black mb-2 tracking-tight whitespace-nowrap -ml-10 lab-title" style={{ fontFamily: 'Arial Black, Impact, sans-serif', fontSize: '44px', lineHeight: '0.8' }}>
             {settings.labName || 'SANA PATHOLOGY LAB'}
           </div>
 
@@ -437,6 +442,17 @@ const PrintReport = () => {
           .report-page:last-of-type {
             break-after: avoid !important;
             page-break-after: avoid !important;
+          }
+
+          /* PDF capture mode - simplifies header for html2canvas */
+          .report-page.is-capturing .pdf-swoosh div {
+            opacity: 0.15 !important;
+          }
+          .report-page.is-capturing .lab-title {
+            font-size: 40px !important;
+          }
+          .report-page.is-capturing .letterhead-header {
+            margin-bottom: 4px !important;
           }
 
           tr { break-inside: avoid; page-break-inside: avoid; }
