@@ -233,7 +233,7 @@ const PrintReport = () => {
       <div className="border border-black p-2 text-[13px] font-bold uppercase text-black flex-1">
         <div className="flex justify-between mb-1.5">
           <div>PATIENT'S NAME:- <span className="font-black text-[14px]">{patient.fullName}</span></div>
-          <div>AGE/SEX:- {patient.age}/{patient.gender === 'Male' ? 'M' : patient.gender === 'Female' ? 'F' : 'O'}</div>
+          <div>AGE/SEX:- {patient.age} {patient.ageType || 'Yrs'}/{patient.gender === 'Male' ? 'M' : patient.gender === 'Female' ? 'F' : 'O'}</div>
         </div>
         <div className="flex justify-between mb-1.5">
           <div>REFER BY DOCTOR:- DR. {doctor.name}</div>
