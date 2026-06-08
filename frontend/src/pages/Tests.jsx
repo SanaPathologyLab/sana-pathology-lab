@@ -52,6 +52,21 @@ const Tests = () => {
   const addParameterRow = () => {
     setParameters([...parameters, { parameterName: '', referenceRange: '', unit: '', groupName: '', isQualitative: false }]);
   };
+
+  const fillWidalPreset = () => {
+    setFormData(prev => ({
+      ...prev,
+      testName: 'WIDAL TEST',
+      testCode: 'WIDAL',
+      summary: 'Widal test is a serological test for detecting antibodies against Salmonella typhi and paratyphi. A titre of 1:80 or more for O antigen and 1:160 or more for H antigen is considered clinically significant.'
+    }));
+    setParameters([
+      { parameterName: 'S. TYPHI O', referenceRange: '', unit: '', groupName: '', isQualitative: true, titerValues: '1/20,1/40,1/80,1/160,1/320' },
+      { parameterName: 'S. TYPHI H', referenceRange: '', unit: '', groupName: '', isQualitative: true, titerValues: '1/20,1/40,1/80,1/160,1/320' },
+      { parameterName: 'S. PARA TYPHI A (H)', referenceRange: '', unit: '', groupName: '', isQualitative: true, titerValues: '1/20,1/40,1/80,1/160,1/320' },
+      { parameterName: 'S. PARA TYPHI B (H)', referenceRange: '', unit: '', groupName: '', isQualitative: true, titerValues: '1/20,1/40,1/80,1/160,1/320' },
+    ]);
+  };
   const removeParameterRow = (index) => {
     const p = [...parameters];
     p.splice(index, 1);
@@ -273,10 +288,13 @@ const Tests = () => {
               </div>
 
               <div className="border border-gray-200 rounded p-4 bg-gray-50">
-                <div className="flex justify-between items-center mb-4">
-                  <h4 className="font-bold text-[#00488d]">Test Parameters</h4>
-                  <button type="button" onClick={addParameterRow} className="text-sm font-bold text-[#00488d] border border-[#00488d] px-3 py-1 rounded hover:bg-blue-50">+ Add Row</button>
-                </div>
+                  <div className="flex justify-between items-center mb-4">
+                    <h4 className="font-bold text-[#00488d]">Test Parameters</h4>
+                    <div className="flex gap-2">
+                      <button type="button" onClick={fillWidalPreset} className="text-sm font-bold text-green-700 border border-green-600 px-3 py-1 rounded hover:bg-green-50">Quick Add Widal</button>
+                      <button type="button" onClick={addParameterRow} className="text-sm font-bold text-[#00488d] border border-[#00488d] px-3 py-1 rounded hover:bg-blue-50">+ Add Row</button>
+                    </div>
+                  </div>
                 <div className="space-y-2">
                   {parameters.map((p, idx) => (
                     <div key={idx} className="flex gap-2 items-start">
