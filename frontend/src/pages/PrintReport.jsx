@@ -62,7 +62,8 @@ const PrintReport = () => {
       const originalBodyBg = document.body.style.background;
       document.body.style.background = 'white';
       
-      const element = document.getElementById('report-content');
+      // Switch to simplified PDF capture mode
+      document.querySelectorAll('.report-page').forEach(p => p.classList.add('is-capturing'));
       
       // Dynamically import html2pdf
       const html2pdf = (await import('html2pdf.js')).default;
@@ -75,9 +76,7 @@ const PrintReport = () => {
         jsPDF:        { unit: 'mm', format: 'a4', orientation: 'portrait' }
       };
 
-      // Enable PDF capture mode for cleaner rendering
       const pages = document.querySelectorAll('.report-page');
-      pages.forEach(p => p.classList.add('is-capturing'));
       
       let worker = html2pdf().set(opt).from(pages[0]);
       
@@ -88,13 +87,10 @@ const PrintReport = () => {
         }).from(pages[i]).toContainer().toCanvas().toPdf();
       }
 
-      worker = worker.toPdf().get('pdf').then(pdf => {
-        pages.forEach(p => p.classList.remove('is-capturing'));
-      });
-
       const pdfBlob = await worker.output('blob');
       
       // Restore UI
+      document.querySelectorAll('.report-page').forEach(p => p.classList.remove('is-capturing'));
       noPrintElements.forEach(el => el.style.display = '');
       document.body.style.background = originalBodyBg;
       
@@ -142,62 +138,60 @@ const PrintReport = () => {
 
   // ── High Quality HTML Letterhead Header (Screen & PDF share only) ──
   const LetterheadHeader = () => (
-    <div className="relative w-full print:hidden letterhead-header">
-      {/* Decorative swoosh - simplified for PDF capture */}
-      <div className="pdf-swoosh absolute top-0 right-0 w-[240px] h-[90px] z-0 overflow-hidden">
-        <div className="absolute top-0 right-0 w-[200px] h-[100px] bg-[#e03a3c] opacity-30 rounded-bl-full"></div>
-        <div className="absolute top-0 right-0 w-[140px] h-[80px] bg-[#7a28cb] opacity-25 rounded-bl-full mt-2"></div>
-        <div className="absolute top-0 right-0 w-[100px] h-[60px] bg-[#00488d] opacity-20 rounded-bl-full mt-6"></div>
-      </div>
+    <div className="relative w-full print:hidden letterhead-header" style={{ background: '#fff' }}>
+      {/* Decorative swoosh - CSS only for html2canvas compatibility */}
+      <div className="absolute top-0 right-0 w-[240px] h-[90px] z-0" style={{
+        background: 'linear-gradient(135deg, transparent 40%, rgba(224,58,60,0.2) 60%, rgba(122,40,203,0.15) 80%, rgba(0,72,141,0.1) 100%)',
+        borderBottomLeftRadius: '80px'
+      }}></div>
 
-      <div className="flex items-end px-3 pt-5 pb-0.5 relative z-10 w-full">
-        
-        {/* Left: Logo */}
-        <div className="flex flex-col items-center w-[120px] shrink-0 mr-4 relative top-[5px]">
-          <Logo className="w-[100px] h-[100px] object-contain" />
-          <div className="text-[10px] font-bold text-black tracking-[0.05em] mt-1 whitespace-nowrap" style={{ fontFamily: 'Arial, sans-serif' }}>
-            SANA PATHOLOGY LAB
-          </div>
-        </div>
-
-        {/* Right side content */}
-        <div className="flex-1 flex flex-col justify-end">
-          {/* Main Title */}
-          <div className="w-full text-[#1a2f4c] uppercase font-black mb-2 tracking-tight whitespace-nowrap -ml-10 lab-title" style={{ fontFamily: 'Arial Black, Impact, sans-serif', fontSize: '44px', lineHeight: '0.8' }}>
-            {settings.labName || 'SANA PATHOLOGY LAB'}
-          </div>
-
-          {/* Sub Row */}
-          <div className="flex items-end justify-between w-full pb-1">
-            
-            {/* Mohd Altamash - Left aligned */}
-            <div className="flex flex-col items-center shrink-0" style={{ fontFamily: '"Times New Roman", Times, serif' }}>
-              <div className="text-[19px] font-bold leading-none text-black whitespace-nowrap">Mohd. Altamash</div>
-              <div className="text-[12px] font-bold leading-tight text-black mt-1 font-sans">D.M.L.T.</div>
-              <div className="text-[12px] font-bold leading-tight text-black font-sans">Technician</div>
-            </div>
-
-            {/* Fully Computerized Lab - Centered */}
-            <div className="flex flex-col items-center flex-1 px-2" style={{ fontFamily: '"Times New Roman", Times, serif' }}>
-              <div className="text-[18px] font-bold leading-none text-black tracking-wide whitespace-nowrap">Fully Computerized Lab</div>
-              <div className="bg-[#1e2a8a] text-white text-[12px] font-bold px-3 py-[2px] rounded-[3px] mt-1.5 shadow-sm font-sans tracking-wide whitespace-nowrap">
-                Emergency 24 Hours Service
+      <table style={{ width: '100%', borderCollapse: 'collapse', position: 'relative', zIndex: 10 }}>
+        <tbody>
+          <tr>
+            <td style={{ width: '120px', verticalAlign: 'bottom', padding: '12px 12px 0 8px' }}>
+              <table style={{ margin: '0 auto' }}>
+                <tbody>
+                  <tr>
+                    <td style={{ textAlign: 'center' }}>
+                      <Logo className="w-[100px] h-[100px]" />
+                      <div style={{ fontSize: '10px', fontWeight: 'bold', color: '#000', letterSpacing: '0.05em', marginTop: '4px', fontFamily: 'Arial, sans-serif', whiteSpace: 'nowrap' }}>SANA PATHOLOGY LAB</div>
+                    </td>
+                  </tr>
+                </tbody>
+              </table>
+            </td>
+            <td style={{ verticalAlign: 'bottom', padding: '12px 8px 0 0' }}>
+              <div style={{ color: '#1a2f4c', fontFamily: '"Arial Black", Impact, sans-serif', fontSize: '42px', fontWeight: '900', lineHeight: '0.85', letterSpacing: '-0.02em', whiteSpace: 'nowrap', marginLeft: '-20px' }}>
+                {settings.labName || 'SANA PATHOLOGY LAB'}
               </div>
-            </div>
 
-            {/* Phone Numbers - Right aligned */}
-            <div className="flex flex-col items-start shrink-0 text-black mb-1" style={{ fontFamily: 'Arial, sans-serif' }}>
-              <div className="text-[14px] font-bold leading-[1.2] tracking-wide whitespace-nowrap">M.:6396786939</div>
-              <div className="text-[14px] font-bold leading-[1.2] tracking-wide whitespace-nowrap">M.:6397240575</div>
-            </div>
-
-          </div>
-        </div>
-      </div>
+              <table style={{ width: '100%', marginTop: '4px' }}>
+                <tbody>
+                  <tr>
+                    <td style={{ textAlign: 'center', verticalAlign: 'bottom', width: '33%' }}>
+                      <div style={{ fontFamily: '"Times New Roman", Times, serif', fontSize: '18px', fontWeight: 'bold', color: '#000', whiteSpace: 'nowrap' }}>Mohd. Altamash</div>
+                      <div style={{ fontSize: '11px', fontWeight: 'bold', color: '#000', fontFamily: 'Arial, sans-serif' }}>D.M.L.T.</div>
+                      <div style={{ fontSize: '11px', fontWeight: 'bold', color: '#000', fontFamily: 'Arial, sans-serif' }}>Technician</div>
+                    </td>
+                    <td style={{ textAlign: 'center', verticalAlign: 'bottom', width: '34%' }}>
+                      <div style={{ fontFamily: '"Times New Roman", Times, serif', fontSize: '17px', fontWeight: 'bold', color: '#000', letterSpacing: '0.02em', whiteSpace: 'nowrap' }}>Fully Computerized Lab</div>
+                      <div style={{ background: '#1e2a8a', color: '#fff', fontSize: '11px', fontWeight: 'bold', padding: '3px 12px', borderRadius: '3px', display: 'inline-block', marginTop: '4px', fontFamily: 'Arial, sans-serif', letterSpacing: '0.03em', whiteSpace: 'nowrap' }}>Emergency 24 Hours Service</div>
+                    </td>
+                    <td style={{ textAlign: 'right', verticalAlign: 'bottom', width: '33%', paddingBottom: '2px' }}>
+                      <div style={{ fontSize: '13px', fontWeight: 'bold', color: '#000', fontFamily: 'Arial, sans-serif', whiteSpace: 'nowrap', lineHeight: 1.3 }}>M.:6396786939</div>
+                      <div style={{ fontSize: '13px', fontWeight: 'bold', color: '#000', fontFamily: 'Arial, sans-serif', whiteSpace: 'nowrap', lineHeight: 1.3 }}>M.:6397240575</div>
+                    </td>
+                  </tr>
+                </tbody>
+              </table>
+            </td>
+          </tr>
+        </tbody>
+      </table>
 
       {/* Double Border Line */}
-      <div className="mt-2 border-b-[3px] border-black"></div>
-      <div className="mt-[2px] border-b-[1px] border-black mb-3"></div>
+      <div style={{ marginTop: '8px', borderBottom: '3px solid #000' }}></div>
+      <div style={{ marginTop: '2px', borderBottom: '1px solid #000', marginBottom: '10px' }}></div>
     </div>
   );
 
@@ -444,16 +438,7 @@ const PrintReport = () => {
             page-break-after: avoid !important;
           }
 
-          /* PDF capture mode - simplifies header for html2canvas */
-          .report-page.is-capturing .pdf-swoosh div {
-            opacity: 0.15 !important;
-          }
-          .report-page.is-capturing .lab-title {
-            font-size: 40px !important;
-          }
-          .report-page.is-capturing .letterhead-header {
-            margin-bottom: 4px !important;
-          }
+          /* PDF capture mode */
 
           tr { break-inside: avoid; page-break-inside: avoid; }
           thead { display: table-header-group; }
