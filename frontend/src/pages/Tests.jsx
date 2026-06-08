@@ -14,7 +14,7 @@ const Tests = () => {
   const [editingId, setEditingId] = useState(null);
   
   const [formData, setFormData] = useState({
-    testName: '', testCode: '', sampleType: 'Blood', price: '', categoryId: '', newCategoryName: ''
+    testName: '', testCode: '', sampleType: 'Blood', price: '', categoryId: '', newCategoryName: '', summary: ''
   });
   const [parameters, setParameters] = useState([
     { parameterName: '', referenceRange: '', unit: '', groupName: '' }
@@ -98,6 +98,7 @@ const Tests = () => {
           sampleType: formData.sampleType,
           price: parseFloat(formData.price),
           categoryId: finalCategoryId,
+          summary: formData.summary || null,
           parameters: parameters.filter(p => p.parameterName.trim() !== '')
         })
       });
@@ -127,7 +128,7 @@ const Tests = () => {
 
   const openAddModal = () => {
     setEditingId(null);
-    setFormData({ testName: '', testCode: '', sampleType: 'Blood', price: '', categoryId: '', newCategoryName: '' });
+    setFormData({ testName: '', testCode: '', sampleType: 'Blood', price: '', categoryId: '', newCategoryName: '', summary: '' });
     setParameters([{ parameterName: '', referenceRange: '', unit: '', groupName: '' }]);
     setIsModalOpen(true);
   };
@@ -135,7 +136,7 @@ const Tests = () => {
   const openEditModal = (test) => {
     setEditingId(test.id);
     setFormData({
-      testName: test.testName, testCode: test.testCode, sampleType: test.sampleType, price: test.price, categoryId: test.categoryId, newCategoryName: ''
+      testName: test.testName, testCode: test.testCode, sampleType: test.sampleType, price: test.price, categoryId: test.categoryId, newCategoryName: '', summary: test.summary || ''
     });
     setParameters(test.parameters?.length > 0 ? test.parameters : [{ parameterName: '', referenceRange: '', unit: '', groupName: '' }]);
     setIsModalOpen(true);
@@ -287,6 +288,14 @@ const Tests = () => {
                     </div>
                   ))}
                 </div>
+              </div>
+
+              {/* Summary / Clinical Notes */}
+              <div className="mt-4">
+                <label className="block text-sm font-bold text-gray-700 mb-1">
+                  Summary / Clinical Notes <span className="text-gray-400 font-normal">(appears on report under this test)</span>
+                </label>
+                <textarea value={formData.summary} onChange={e => setFormData({...formData, summary: e.target.value})} rows="4" className="w-full border border-gray-300 rounded px-3 py-2 text-sm focus:outline-none focus:border-[#00488d]" placeholder="Optional: Add clinical notes, interpretations, or references to display on the report..."></textarea>
               </div>
 
               <div className="mt-8 flex justify-end space-x-4">

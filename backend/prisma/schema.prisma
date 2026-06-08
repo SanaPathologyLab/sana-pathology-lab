@@ -98,6 +98,7 @@ model Test {
   categoryId     Int
   category       TestCategory    @relation(fields: [categoryId], references: [id])
   
+  summary        String?
   parameters     TestParameter[]
   results        ReportResult[]
   

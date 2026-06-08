@@ -73,8 +73,10 @@ const PublicPrint = () => {
   const groupedTests = {};
   results.forEach(r => {
     const testName = r.test?.testName || 'Test Results';
-    if (!groupedTests[testName]) groupedTests[testName] = [];
-    groupedTests[testName].push(r);
+    if (!groupedTests[testName]) {
+      groupedTests[testName] = { rows: [], summary: r.test?.summary || '' };
+    }
+    groupedTests[testName].rows.push(r);
   });
   const testNames = Object.keys(groupedTests);
 
@@ -186,9 +188,9 @@ const PublicPrint = () => {
     </div>
   );
 
-  const TestTable = ({ testName, rows }) => (
+  const TestTable = ({ testName, rows, summary = '' }) => (
     <div className="relative z-10">
-      <div className="border border-black rounded-full px-4 py-1 mb-3 flex text-[14px] font-bold text-black">
+      <div className="border border-black rounded-full px-4 py-1 mb-2 flex text-[14px] font-bold text-black">
         <div className="w-[45%]">Investigations</div>
         <div className="w-[15%] text-center">Results</div>
         <div className="w-[10%] text-center">Flag</div>
@@ -196,7 +198,7 @@ const PublicPrint = () => {
         <div className="w-[15%] text-center">Normal values</div>
       </div>
       <div className="px-2">
-        <div className="font-black text-[15px] underline uppercase tracking-wider text-black mb-3">
+        <div className="font-black text-[15px] underline uppercase tracking-wider text-black mb-2">
           {testName}
         </div>
         <table className="w-full text-[13.5px] text-black">
@@ -211,25 +213,25 @@ const PublicPrint = () => {
                 <React.Fragment key={res.id || idx}>
                   {showGroup && (
                     <tr>
-                      <td colSpan="5" className="pt-3 pb-2 font-bold underline uppercase text-[14px] text-black">
+                      <td colSpan="5" className="pt-2 pb-1.5 font-bold underline uppercase text-[14px] text-black">
                         {res.groupName}
                       </td>
                     </tr>
                   )}
                   <tr>
-                    <td className={`py-1.5 font-semibold uppercase ${res.groupName ? '' : ''} w-[45%] align-top`}>
+                    <td className={`py-1 font-semibold uppercase ${res.groupName ? '' : ''} w-[45%] align-top`}>
                       {res.parameterName}
                     </td>
-                    <td className="py-1.5 text-center w-[15%] align-top">
+                    <td className="py-1 text-center w-[15%] align-top">
                       <span className={`${isAbnormal ? 'font-black border-b-[1.5px] border-black pb-0.5' : 'font-bold'}`}>
                         {res.resultValue}
                       </span>
                     </td>
-                    <td className="py-1.5 text-center font-bold text-[13px] w-[10%] align-top">
+                    <td className="py-1 text-center font-bold text-[13px] w-[10%] align-top">
                       {isHigh ? 'High' : isLow ? 'Low' : ''}
                     </td>
-                    <td className="py-1.5 text-center font-semibold w-[15%] align-top">{res.unit}</td>
-                    <td className="py-1.5 text-center font-semibold whitespace-pre-wrap w-[15%] align-top text-[12px] leading-tight">
+                    <td className="py-1 text-center font-semibold w-[15%] align-top">{res.unit}</td>
+                    <td className="py-1 text-center font-semibold whitespace-pre-wrap w-[15%] align-top text-[12px] leading-tight">
                       {res.referenceRange}
                     </td>
                   </tr>
@@ -238,6 +240,12 @@ const PublicPrint = () => {
             })}
           </tbody>
         </table>
+        {summary && (
+          <div className="mt-4 p-3 border border-gray-300 rounded bg-gray-50 text-[12px] text-black leading-relaxed whitespace-pre-wrap">
+            <span className="font-bold underline mr-1">Note:</span>
+            {summary}
+          </div>
+        )}
       </div>
     </div>
   );
@@ -279,7 +287,7 @@ const PublicPrint = () => {
 
       <div className="report-wrapper">
         {testNames.map((testName, pageIndex) => {
-          const rows = groupedTests[testName];
+          const { rows, summary } = groupedTests[testName];
           return (
             <div key={testName} className="report-page">
               <div className="absolute inset-0 flex flex-col items-center justify-center opacity-[0.03] pointer-events-none select-none z-0 print:hidden">
@@ -290,7 +298,7 @@ const PublicPrint = () => {
               <div className="flex-grow flex flex-col relative z-10 px-2">
                 <PatientHeader pageNum={pageIndex + 1} totalPages={totalPages} />
                 <div className="flex-grow mt-2">
-                  <TestTable testName={testName} rows={rows} />
+                  <TestTable testName={testName} rows={rows} summary={summary} />
                   {pageIndex === testNames.length - 1 && (
                     <div className="mt-12 mb-6 flex flex-col items-center justify-center w-full">
                       <div className="flex items-center w-3/4 mx-auto">

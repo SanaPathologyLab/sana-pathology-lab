@@ -45,8 +45,10 @@ const PrintReport = () => {
   const groupedTests = {};
   results.forEach(r => {
     const testName = r.test?.testName || 'Test Results';
-    if (!groupedTests[testName]) groupedTests[testName] = [];
-    groupedTests[testName].push(r);
+    if (!groupedTests[testName]) {
+      groupedTests[testName] = { rows: [], summary: r.test?.summary || '' };
+    }
+    groupedTests[testName].rows.push(r);
   });
   const testNames = Object.keys(groupedTests);
 
@@ -251,7 +253,7 @@ const PrintReport = () => {
   );
 
   // ── Test Results Table (Visible everywhere) ──
-  const TestTable = ({ testName, rows, showHeader = true }) => (
+  const TestTable = ({ testName, rows, showHeader = true, summary = '' }) => (
     <div className="relative z-10">
       {/* Pill-shaped Table Header */}
       {showHeader && (
@@ -308,6 +310,13 @@ const PrintReport = () => {
             })}
           </tbody>
         </table>
+
+        {summary && (
+          <div className="mt-4 p-3 border border-gray-300 rounded bg-gray-50 text-[12px] text-black leading-relaxed whitespace-pre-wrap">
+            <span className="font-bold underline mr-1">Note:</span>
+            {summary}
+          </div>
+        )}
       </div>
     </div>
   );
@@ -317,10 +326,10 @@ const PrintReport = () => {
   
   // 1. Calculate size for each test
   const testsWithSize = testNames.map(testName => {
-    const rows = groupedTests[testName];
+    const { rows, summary } = groupedTests[testName];
     const groupCount = new Set(rows.map(r => r.groupName).filter(Boolean)).size;
     const rowsNeeded = rows.length + 4 + (groupCount * 1.5); 
-    return { name: testName, rows, rowsNeeded };
+    return { name: testName, rows, summary, rowsNeeded };
   });
 
   // 2. Sort tests by size descending (largest first) to optimize packing
@@ -489,7 +498,7 @@ const PrintReport = () => {
                   
                   {pageData.tests.map((testData, idx) => (
                     <div key={testData.name} className={idx > 0 ? "mt-4" : ""}>
-                      <TestTable testName={testData.name} rows={testData.rows} showHeader={idx === 0} />
+                      <TestTable testName={testData.name} rows={testData.rows} showHeader={idx === 0} summary={testData.summary} />
                     </div>
                   ))}
                   
