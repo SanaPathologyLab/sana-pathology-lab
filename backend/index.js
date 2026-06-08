@@ -173,7 +173,7 @@ app.get('/api/public/tests', async (req, res) => {
         testCode: true,
         testName: true,
         price: true,
-        department: true,
+        sampleType: true,
         category: {
           select: { name: true }
         }
