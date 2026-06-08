@@ -3,14 +3,19 @@ import { AuthContext } from '../context/AuthContext';
 import { useNavigate, Link } from 'react-router-dom';
 import { User, Stethoscope, HeartPulse } from 'lucide-react';
 
+const API_BASE = 'https://sana-pathology-backend.onrender.com';
+
 const Login = () => {
   const [activeTab, setActiveTab] = useState('PATIENT'); // STAFF, DOCTOR, PATIENT
   const [isRegisteringDoctor, setIsRegisteringDoctor] = useState(false);
+  const [isRegisteringStaff, setIsRegisteringStaff] = useState(false);
   const [isRecoveringId, setIsRecoveringId] = useState(false);
   
   // Form states
   const [email, setEmail] = useState('');
   const [password, setPassword] = useState('');
+  const [regName, setRegName] = useState('');
+  const [regPhone, setRegPhone] = useState('');
   
   const [mobileNumber, setMobileNumber] = useState('');
   const [patientId, setPatientId] = useState('');
@@ -35,8 +40,27 @@ const Login = () => {
     setRecoveredId('');
     setLoading(true);
     try {
+      if (isRegisteringStaff) {
+        const response = await fetch(API_BASE + '/api/auth/register', {
+          method: 'POST',
+          headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify({ email, password, name: regName, phone: regPhone, role: 'ADMIN' })
+        });
+        const data = await response.json();
+        if (response.ok) {
+          setSuccess('Staff account created! Please sign in with your credentials.');
+          setIsRegisteringStaff(false);
+          setRegName('');
+          setRegPhone('');
+        } else {
+          setError(data.message);
+        }
+        setLoading(false);
+        return;
+      }
+
       if (isRegisteringDoctor) {
-        const response = await fetch('/api/auth/register/doctor', {
+        const response = await fetch(API_BASE + '/api/auth/register/doctor', {
           method: 'POST',
           headers: { 'Content-Type': 'application/json' },
           body: JSON.stringify({ name: docName, mobileNumber, clinicName: docClinic })
@@ -63,7 +87,7 @@ const Login = () => {
         }
 
         const endpoint = activeTab === 'PATIENT' ? '/api/auth/recover/patient' : '/api/auth/recover/doctor';
-        const response = await fetch(endpoint, {
+        const response = await fetch(API_BASE + endpoint, {
           method: 'POST',
           headers: { 'Content-Type': 'application/json' },
           body: JSON.stringify({ mobileNumber, fullName: recoverFullName })
@@ -93,7 +117,7 @@ const Login = () => {
         bodyData = { mobileNumber, doctorId };
       }
 
-      const response = await fetch(endpoint, {
+      const response = await fetch(API_BASE + endpoint, {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify(bodyData)
@@ -106,7 +130,7 @@ const Login = () => {
         setError(data.message);
       }
     } catch (err) {
-      setError('An error occurred. Please try again.');
+      setError(err.message || 'An error occurred. Please try again.');
     }
     setLoading(false);
   };
@@ -122,10 +146,10 @@ const Login = () => {
       <div className="w-full max-w-md bg-white p-8 rounded-2xl shadow-xl border border-gray-100">
         <div className="text-center mb-8">
           <h1 className="text-3xl font-black text-[#00488d] mb-1">Sana Pathology</h1>
-          <p className="text-gray-500 font-medium">{isRegisteringDoctor ? 'Register as Doctor' : 'Sign in to your account'}</p>
+          <p className="text-gray-500 font-medium">{isRegisteringDoctor ? 'Register as Doctor' : isRegisteringStaff ? 'Register Staff Account' : 'Sign in to your account'}</p>
         </div>
 
-        {!isRegisteringDoctor && !isRecoveringId && (
+        {!isRegisteringDoctor && !isRegisteringStaff && !isRecoveringId && (
           <div className="flex p-1 bg-gray-100 rounded-lg mb-6">
             {tabs.map((tab) => {
               const Icon = tab.icon;
@@ -196,8 +220,39 @@ const Login = () => {
             </>
           )}
 
+          {/* STAFF REGISTRATION */}
+          {activeTab === 'STAFF' && isRegisteringStaff && !isRecoveringId && (
+            <>
+              <div>
+                <label className="block text-sm font-bold text-gray-700 mb-1">Full Name</label>
+                <input type="text" value={regName} onChange={(e) => setRegName(e.target.value)} required
+                  className="w-full px-4 py-2 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-[#00488d] focus:border-transparent" />
+              </div>
+              <div>
+                <label className="block text-sm font-bold text-gray-700 mb-1">Email</label>
+                <input type="email" value={email} onChange={(e) => setEmail(e.target.value)} required
+                  className="w-full px-4 py-2 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-[#00488d] focus:border-transparent" />
+              </div>
+              <div>
+                <label className="block text-sm font-bold text-gray-700 mb-1">Password</label>
+                <input type="password" value={password} onChange={(e) => setPassword(e.target.value)} required
+                  className="w-full px-4 py-2 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-[#00488d] focus:border-transparent" />
+              </div>
+              <div>
+                <label className="block text-sm font-bold text-gray-700 mb-1">Phone Number</label>
+                <input type="tel" value={regPhone} onChange={(e) => setRegPhone(e.target.value)}
+                  className="w-full px-4 py-2 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-[#00488d] focus:border-transparent" />
+              </div>
+              <div className="text-right">
+                <button type="button" onClick={() => setIsRegisteringStaff(false)} className="text-sm text-[#00488d] font-semibold hover:underline">
+                  Already have an account? Sign in
+                </button>
+              </div>
+            </>
+          )}
+
           {/* STAFF LOGIN */}
-          {activeTab === 'STAFF' && !isRegisteringDoctor && !isRecoveringId && (
+          {activeTab === 'STAFF' && !isRegisteringDoctor && !isRegisteringStaff && !isRecoveringId && (
             <>
               <div>
                 <label className="block text-sm font-bold text-gray-700 mb-1">Login ID (Staff ID or Email)</label>
@@ -208,6 +263,11 @@ const Login = () => {
                 <label className="block text-sm font-bold text-gray-700 mb-1">Password</label>
                 <input type="password" value={password} onChange={(e) => setPassword(e.target.value)} required
                   className="w-full px-4 py-2 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-[#00488d] focus:border-transparent" />
+              </div>
+              <div className="text-right">
+                <button type="button" onClick={() => { setIsRegisteringStaff(true); setError(''); setSuccess(''); }} className="text-sm text-[#00488d] font-semibold hover:underline">
+                  First time? Register new account
+                </button>
               </div>
             </>
           )}
@@ -280,11 +340,11 @@ const Login = () => {
             disabled={loading || (isRecoveringId && activeTab === 'STAFF')}
             className="w-full flex justify-center py-3 px-4 rounded-lg text-sm font-bold text-white bg-[#00488d] hover:bg-blue-800 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-[#00488d] transition-colors mt-6 disabled:opacity-50"
           >
-            {loading ? 'Processing...' : (isRecoveringId ? 'Find My ID' : (isRegisteringDoctor ? 'Register' : 'Sign In'))}
+            {loading ? 'Processing...' : (isRecoveringId ? 'Find My ID' : (isRegisteringDoctor || isRegisteringStaff ? 'Register' : 'Sign In'))}
           </button>
         </form>
 
-        {!isRecoveringId && !isRegisteringDoctor && (
+        {!isRecoveringId && !isRegisteringDoctor && !isRegisteringStaff && (
           <div className="text-center mt-4">
             <button type="button" onClick={() => { setIsRecoveringId(true); setError(''); setSuccess(''); }} className="text-xs text-gray-500 font-semibold hover:text-[#00488d] hover:underline">
               Forgot ID / Password?
