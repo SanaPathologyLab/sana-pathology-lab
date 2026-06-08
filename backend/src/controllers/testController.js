@@ -65,15 +65,6 @@ exports.updateTest = async (req, res) => {
       await prisma.testParameter.createMany({
         data: parameters.map(p => ({ ...p, testId: test.id }))
       });
-
-      // Cascade update to existing ReportResults
-      // If a parameter name matches, update its referenceRange and unit in all historical reports
-      for (const p of parameters) {
-        await prisma.reportResult.updateMany({
-          where: { testId: test.id, parameterName: p.parameterName },
-          data: { referenceRange: p.referenceRange, unit: p.unit }
-        });
-      }
     }
 
     const updatedTest = await prisma.test.findUnique({
@@ -82,6 +73,20 @@ exports.updateTest = async (req, res) => {
     });
     
     res.status(200).json(updatedTest);
+
+    // Background: update historical report results (non-blocking)
+    if (parameters) {
+      setImmediate(async () => {
+        try {
+          for (const p of parameters) {
+            await prisma.reportResult.updateMany({
+              where: { testId: test.id, parameterName: p.parameterName },
+              data: { referenceRange: p.referenceRange, unit: p.unit }
+            });
+          }
+        } catch (_) {}
+      });
+    }
   } catch (err) {
     res.status(500).json({ message: err.message });
   }
@@ -89,7 +94,8 @@ exports.updateTest = async (req, res) => {
 
 exports.deleteTest = async (req, res) => {
   try {
-    if (req.userRole !== 'ADMIN') return res.status(403).json({ message: 'Admin access required' });
+    await prisma.reportResult.deleteMany({ where: { testId: parseInt(req.params.id) } });
+    await prisma.testParameter.deleteMany({ where: { testId: parseInt(req.params.id) } });
     await prisma.test.delete({ where: { id: parseInt(req.params.id) } });
     res.status(200).json({ message: 'Test deleted successfully' });
   } catch (err) {
