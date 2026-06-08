@@ -34,6 +34,7 @@ model Patient {
   gender          String
   dateOfBirth     DateTime?
   age             Int?
+  ageType         String?  @default("Years")
   mobileNumber    String
   alternateNumber String?
   email           String?

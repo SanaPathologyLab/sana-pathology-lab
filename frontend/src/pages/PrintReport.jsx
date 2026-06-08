@@ -208,7 +208,7 @@ const PrintReport = () => {
             <span>Checked by</span>
             {/* Signature Image */}
             <div className="flex flex-col items-center ml-2">
-              <img src="/Signature.png" alt="Signature" className="h-[40px] w-auto object-contain" onError={(e) => { e.target.style.display = 'none'; }} />
+              <img src={`${import.meta.env.BASE_URL}Signature.png`} alt="Signature" className="h-[40px] w-auto object-contain" onError={(e) => { e.target.style.display = 'none'; }} />
               <div className="w-[120px] border-b border-black mt-1"></div>
             </div>
           </div>

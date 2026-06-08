@@ -145,7 +145,7 @@ const PublicPrint = () => {
           <div className="flex items-center justify-end gap-2 text-[13px] font-bold italic text-black">
             <span>Checked by</span>
             <div className="flex flex-col items-center ml-2">
-              <img src="/Signature.png" alt="Signature" className="h-[40px] w-auto object-contain" onError={(e) => { e.target.style.display = 'none'; }} />
+              <img src={`${import.meta.env.BASE_URL}Signature.png`} alt="Signature" className="h-[40px] w-auto object-contain" onError={(e) => { e.target.style.display = 'none'; }} />
               <div className="w-[120px] border-b border-black mt-1"></div>
             </div>
           </div>

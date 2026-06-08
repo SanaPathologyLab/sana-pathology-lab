@@ -16,7 +16,7 @@ const Patients = () => {
   const [isModalOpen, setIsModalOpen] = useState(false);
   const [editingId, setEditingId] = useState(null);
   const [formData, setFormData] = useState({
-    fullName: '', age: '', gender: 'Male', mobileNumber: '', city: '', bloodGroup: ''
+    fullName: '', age: '', ageType: 'Years', gender: 'Male', mobileNumber: '', city: '', bloodGroup: ''
   });
 
   // Prevent duplicate / multiple submissions
@@ -113,7 +113,7 @@ const Patients = () => {
 
   const openAddModal = () => {
     setEditingId(null);
-    setFormData({ fullName: '', age: '', gender: 'Male', mobileNumber: '', city: '', bloodGroup: '' });
+    setFormData({ fullName: '', age: '', ageType: 'Years', gender: 'Male', mobileNumber: '', city: '', bloodGroup: '' });
     setIsModalOpen(true);
   };
 
@@ -122,6 +122,7 @@ const Patients = () => {
     setFormData({
       fullName: patient.fullName,
       age: patient.age,
+      ageType: patient.ageType || 'Years',
       gender: patient.gender,
       mobileNumber: patient.mobileNumber,
       city: patient.city || '',
@@ -145,7 +146,7 @@ const Patients = () => {
     const dataToExport = filteredPatients.map(p => ({
       'Patient ID': p.patientId,
       'Full Name': p.fullName,
-      'Age': p.age,
+      'Age': `${p.age} ${p.ageType || 'Yrs'}`,
       'Gender': p.gender,
       'Mobile Number': p.mobileNumber,
       'City': p.city || 'N/A',
@@ -214,7 +215,7 @@ const Patients = () => {
                       <p className="text-xs text-gray-500">BG: {p.bloodGroup || 'Unknown'}</p>
                     </td>
                     <td className="px-6 py-4 text-sm text-gray-700">
-                      {p.age} Yrs | {p.gender}
+                      {p.age} {p.ageType || 'Yrs'} | {p.gender}
                     </td>
                     <td className="px-6 py-4 text-sm text-gray-700">
                       {p.mobileNumber}
@@ -264,7 +265,14 @@ const Patients = () => {
                 <div className="grid grid-cols-2 gap-4">
                   <div>
                     <label className="block text-sm font-bold text-gray-700 mb-1">Age *</label>
-                    <input type="number" required value={formData.age} onChange={e => setFormData({...formData, age: e.target.value})} className="w-full border border-gray-300 rounded px-3 py-2 focus:outline-none focus:border-[#00488d]" />
+                    <div className="flex gap-2">
+                      <input type="number" required value={formData.age} onChange={e => setFormData({...formData, age: e.target.value})} className="w-2/3 border border-gray-300 rounded px-3 py-2 focus:outline-none focus:border-[#00488d]" />
+                      <select value={formData.ageType} onChange={e => setFormData({...formData, ageType: e.target.value})} className="w-1/3 border border-gray-300 rounded px-2 py-2 focus:outline-none focus:border-[#00488d] text-sm font-bold">
+                        <option>Years</option>
+                        <option>Months</option>
+                        <option>Days</option>
+                      </select>
+                    </div>
                   </div>
                   <div>
                     <label className="block text-sm font-bold text-gray-700 mb-1">Gender *</label>

@@ -67,7 +67,7 @@ const PatientProfile = () => {
           </div>
           <div>
             <h1 className="text-2xl font-extrabold">{patient.fullName}</h1>
-            <p className="text-blue-200 text-sm">{patient.patientId} · {patient.gender} · Age {patient.age || '—'}</p>
+            <p className="text-blue-200 text-sm">{patient.patientId} · {patient.gender} · Age {patient.age}{patient.ageType ? ' ' + patient.ageType : ' Yrs'}{patient.age ? '' : '—'}</p>
             <p className="text-blue-100 text-sm">{patient.mobileNumber}</p>
           </div>
         </div>
