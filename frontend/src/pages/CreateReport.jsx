@@ -185,110 +185,152 @@ const CreateReport = () => {
       groupedByTest[tr.parentTestName].push(tr);
     });
 
-    return Object.keys(groupedByTest).map(testName => (
-      <div key={testName} className="mb-8">
-        <h3 className="bg-[#00488d] text-white px-4 py-2 font-bold uppercase">{testName}</h3>
-        <table className="w-full text-left border-collapse">
-          <thead>
-            <tr className="bg-gray-100 border-b border-gray-200">
-              <th className="px-4 py-3 text-xs font-bold text-gray-700 uppercase">Parameter</th>
-              <th className="px-4 py-3 text-xs font-bold text-gray-700 uppercase">Observed Value</th>
-              <th className="px-4 py-3 text-xs font-bold text-gray-700 uppercase">Flag</th>
-              <th className="px-4 py-3 text-xs font-bold text-gray-700 uppercase">Reference Range</th>
-            </tr>
-          </thead>
-          <tbody className="divide-y divide-gray-200">
-            {groupedByTest[testName].map((tr, index) => {
-              // Check if we need to show groupName row
-              const showGroup = tr.groupName && (index === 0 || groupedByTest[testName][index-1].groupName !== tr.groupName);
-              return (
-                <React.Fragment key={tr.key}>
-                  {showGroup && (
-                    <tr className="bg-blue-50">
-                      <td colSpan="4" className="px-4 py-2 text-xs font-bold text-[#00488d] uppercase tracking-wide">
-                        {tr.groupName}
-                      </td>
-                    </tr>
-                  )}
-                  <tr className="hover:bg-gray-50">
-                    <td className="px-4 py-4 text-sm font-bold text-gray-800 pl-6">
-                      {tr.parameterName}
-                    </td>
-                    <td className="px-4 py-4">
-                      {tr.isQualitative ? (
-                        <div className="flex flex-wrap gap-1">
-                          {tr.titerValues ? (
-                            tr.titerValues.split(',').map((titer, ti) => {
-                              const currentResults = tr.resultValue ? tr.resultValue.split('||').map(entry => {
-                                const [t, v] = entry.split('|');
-                                return [t, v];
-                              }) : [];
-                              const currentVal = currentResults.find(([t]) => t.trim() === titer.trim())?.[1] || '';
-                              const updateTiter = (val) => {
-                                const others = currentResults.filter(([t]) => t.trim() !== titer.trim());
-                                const updated = [...others, [titer.trim(), val]]
-                                  .map(([t, v]) => `${t}|${v}`).join('||');
-                                handleResultChange(tr.key, 'resultValue', updated);
-                              };
-                              return (
-                                <div key={ti} className="flex flex-col items-center border border-gray-200 rounded p-1 bg-white">
-                                  <span className="text-[9px] font-bold text-gray-500 mb-0.5">{titer.trim()}</span>
-                                  <div className="flex gap-0.5">
-                                    <button type="button" onClick={() => updateTiter('+')} className={`w-7 h-7 text-[13px] font-bold rounded border ${currentVal === '+' ? 'bg-green-600 text-white border-green-600' : 'bg-white text-gray-400 border-gray-300 hover:border-green-400'}`}>+</button>
-                                    <button type="button" onClick={() => updateTiter('-')} className={`w-7 h-7 text-[13px] font-bold rounded border ${currentVal === '-' ? 'bg-red-600 text-white border-red-600' : 'bg-white text-gray-400 border-gray-300 hover:border-red-400'}`}>−</button>
-                                  </div>
-                                </div>
-                              );
-                            })
-                          ) : (
-                            <div className="flex gap-1">
-                              <button type="button" onClick={() => handleResultChange(tr.key, 'resultValue', '+')} className={`px-4 py-2 text-sm font-bold rounded border ${tr.resultValue === '+' ? 'bg-green-600 text-white border-green-600' : 'bg-white text-gray-400 border-gray-300 hover:border-green-400'}`}>POSITIVE</button>
-                              <button type="button" onClick={() => handleResultChange(tr.key, 'resultValue', '-')} className={`px-4 py-2 text-sm font-bold rounded border ${tr.resultValue === '-' ? 'bg-red-600 text-white border-red-600' : 'bg-white text-gray-400 border-gray-300 hover:border-red-400'}`}>NEGATIVE</button>
-                            </div>
-                          )}
-                        </div>
-                      ) : (
-                        <input 
-                          type="text" 
-                          value={tr.resultValue}
-                          onChange={(e) => handleResultChange(tr.key, 'resultValue', e.target.value)}
-                          className="w-full border border-gray-300 rounded px-2 py-2 text-sm font-bold focus:outline-none focus:border-[#00488d]"
-                        />
-                      )}
-                    </td>
-                    <td className="px-4 py-4 w-32">
-                      {tr.isQualitative ? (
-                        <span className="text-xs text-gray-400">N/A</span>
-                      ) : (
-                        <select 
-                          value={tr.flag}
-                          onChange={(e) => handleResultChange(tr.key, 'flag', e.target.value)}
-                          className="w-full border border-gray-300 rounded px-2 py-2 text-sm focus:outline-none focus:border-[#00488d]"
-                        >
-                          <option value="">Normal</option>
-                          <option value="HIGH">HIGH</option>
-                          <option value="LOW">LOW</option>
-                        </select>
-                      )}
-                    </td>
-                    <td className="px-4 py-4">
-                      {tr.isQualitative ? (
-                        <span className="text-xs text-gray-400">—</span>
-                      ) : (
-                        <>
-                          <p className="text-sm text-gray-600">{tr.referenceRange}</p>
-                          <p className="text-xs text-gray-400">{tr.unit}</p>
-                        </>
-                      )}
-                    </td>
+    return Object.keys(groupedByTest).map(testName => {
+      const params = groupedByTest[testName];
+      // Check if all params share the same titerValues (e.g., Widal matrix)
+      const titerValueSet = [...new Set(params.filter(p => p.isQualitative && p.titerValues).map(p => p.titerValues))];
+      const isTiterMatrix = titerValueSet.length === 1 && titerValueSet[0];
+      const titerList = isTiterMatrix ? titerValueSet[0].split(',') : [];
+
+      return (
+        <div key={testName} className="mb-8">
+          <h3 className="bg-[#00488d] text-white px-4 py-2 font-bold uppercase flex items-center justify-between">
+            <span>{testName}</span>
+            {isTiterMatrix && (
+              <span className="flex items-center gap-2">
+                <span className="bg-yellow-300 text-[#00488d] text-[11px] px-3 py-0.5 rounded-full font-bold">Agglutinin Titer</span>
+                {(() => {
+                  const anyPos = params.some(tr => {
+                    const cells = tr.resultValue ? tr.resultValue.split('||').map(e => e.split('|')[1]) : [];
+                    return cells.some(v => v === '+');
+                  });
+                  const allEmpty = params.every(tr => {
+                    const cells = tr.resultValue ? tr.resultValue.split('||').map(e => e.split('|')[1]) : [];
+                    return cells.every(v => v === '');
+                  });
+                  return (
+                    <span className={`text-[11px] font-bold px-3 py-0.5 rounded-full ${anyPos ? 'bg-green-100 text-green-800' : 'bg-gray-100 text-gray-500'}`}>
+                      {anyPos ? 'POSITIVE' : 'NEGATIVE'}
+                    </span>
+                  );
+                })()}
+              </span>
+            )}
+          </h3>
+
+          {isTiterMatrix ? (
+            /* Titer Matrix Layout (Widal-style) */
+            <div className="border border-gray-300 rounded overflow-hidden">
+              <table className="w-full text-left border-collapse">
+                <thead>
+                  <tr className="bg-gray-100 border-b border-gray-200">
+                    <th className="px-4 py-3 text-xs font-bold text-gray-700 uppercase w-[30%]">Organism</th>
+                    {titerList.map((t, i) => (
+                      <th key={i} className="px-2 py-3 text-xs font-bold text-gray-700 text-center">{t.trim()}</th>
+                    ))}
+                    <th className="px-2 py-3 text-xs font-bold text-gray-700 text-center w-[12%]">Result</th>
                   </tr>
-                </React.Fragment>
-              );
-            })}
-          </tbody>
-        </table>
-      </div>
-    ));
+                </thead>
+                <tbody className="divide-y divide-gray-200">
+                  {params.map((tr) => {
+                    const currentResults = tr.resultValue ? tr.resultValue.split('||').map(entry => {
+                      const [t, v] = entry.split('|');
+                      return { titer: t, value: v || '' };
+                    }) : [];
+                    const allPos = currentResults.length > 0 && currentResults.every(r => r.value === '+');
+                    const allNeg = currentResults.length > 0 && currentResults.every(r => r.value === '');
+                    const updateCell = (titer, val) => {
+                      const others = currentResults.filter(r => r.titer.trim() !== titer.trim());
+                      const updated = [...others, { titer: titer.trim(), value: val }]
+                        .map(r => `${r.titer}|${r.value}`).join('||');
+                      handleResultChange(tr.key, 'resultValue', updated);
+                    };
+                    return (
+                      <tr key={tr.key} className="hover:bg-gray-50">
+                        <td className="px-4 py-3 text-sm font-bold text-gray-800">{tr.parameterName}</td>
+                        {titerList.map((titer, ti) => {
+                          const val = currentResults.find(r => r.titer.trim() === titer.trim())?.value || '';
+                          return (
+                            <td key={ti} className="px-1 py-3 text-center">
+                              <div className="flex items-center justify-center gap-1">
+                                <button type="button" onClick={() => updateCell(titer, val === '+' ? '' : '+')} className={`w-8 h-8 text-sm font-bold rounded border ${val === '+' ? 'bg-green-600 text-white border-green-600 shadow-sm' : 'bg-white text-gray-300 border-gray-200 hover:border-green-400'}`}>+</button>
+                                <button type="button" onClick={() => updateCell(titer, val === '-' ? '' : '-')} className={`w-8 h-8 text-sm font-bold rounded border ${val === '-' ? 'bg-red-600 text-white border-red-600 shadow-sm' : 'bg-white text-gray-300 border-gray-200 hover:border-red-400'}`}>−</button>
+                              </div>
+                            </td>
+                          );
+                        })}
+                        <td className="px-2 py-3 text-center">
+                          <span className={`text-sm font-bold ${allPos ? 'text-green-700' : allNeg ? 'text-gray-400' : 'text-orange-600'}`}>
+                            {allPos ? 'POSITIVE' : allNeg ? 'NEGATIVE' : '—'}
+                          </span>
+                        </td>
+                      </tr>
+                    );
+                  })}
+                </tbody>
+              </table>
+            </div>
+          ) : (
+            /* Standard Table Layout */
+            <table className="w-full text-left border-collapse">
+              <thead>
+                <tr className="bg-gray-100 border-b border-gray-200">
+                  <th className="px-4 py-3 text-xs font-bold text-gray-700 uppercase">Parameter</th>
+                  <th className="px-4 py-3 text-xs font-bold text-gray-700 uppercase">Observed Value</th>
+                  <th className="px-4 py-3 text-xs font-bold text-gray-700 uppercase">Flag</th>
+                  <th className="px-4 py-3 text-xs font-bold text-gray-700 uppercase">Reference Range</th>
+                </tr>
+              </thead>
+              <tbody className="divide-y divide-gray-200">
+                {params.map((tr, index) => {
+                  const showGroup = tr.groupName && (index === 0 || params[index-1].groupName !== tr.groupName);
+                  return (
+                    <React.Fragment key={tr.key}>
+                      {showGroup && (
+                        <tr className="bg-blue-50">
+                          <td colSpan="4" className="px-4 py-2 text-xs font-bold text-[#00488d] uppercase tracking-wide">{tr.groupName}</td>
+                        </tr>
+                      )}
+                      <tr className="hover:bg-gray-50">
+                        <td className="px-4 py-4 text-sm font-bold text-gray-800 pl-6">{tr.parameterName}</td>
+                        <td className="px-4 py-4">
+                          {tr.isQualitative ? (
+                            <div className="flex gap-1">
+                              <button type="button" onClick={() => handleResultChange(tr.key, 'resultValue', tr.resultValue === '+' ? '' : '+')} className={`px-4 py-2 text-sm font-bold rounded border ${tr.resultValue === '+' ? 'bg-green-600 text-white border-green-600' : 'bg-white text-gray-400 border-gray-300 hover:border-green-400'}`}>POSITIVE</button>
+                              <button type="button" onClick={() => handleResultChange(tr.key, 'resultValue', tr.resultValue === '-' ? '' : '-')} className={`px-4 py-2 text-sm font-bold rounded border ${tr.resultValue === '-' ? 'bg-red-600 text-white border-red-600' : 'bg-white text-gray-400 border-gray-300 hover:border-red-400'}`}>NEGATIVE</button>
+                            </div>
+                          ) : (
+                            <input type="text" value={tr.resultValue} onChange={(e) => handleResultChange(tr.key, 'resultValue', e.target.value)} className="w-full border border-gray-300 rounded px-2 py-2 text-sm font-bold focus:outline-none focus:border-[#00488d]" />
+                          )}
+                        </td>
+                        <td className="px-4 py-4 w-32">
+                          {tr.isQualitative ? (
+                            <span className="text-xs text-gray-400">N/A</span>
+                          ) : (
+                            <select value={tr.flag} onChange={(e) => handleResultChange(tr.key, 'flag', e.target.value)} className="w-full border border-gray-300 rounded px-2 py-2 text-sm focus:outline-none focus:border-[#00488d]">
+                              <option value="">Normal</option>
+                              <option value="HIGH">HIGH</option>
+                              <option value="LOW">LOW</option>
+                            </select>
+                          )}
+                        </td>
+                        <td className="px-4 py-4">
+                          {tr.isQualitative ? (
+                            <span className="text-xs text-gray-400">—</span>
+                          ) : (
+                            <><p className="text-sm text-gray-600">{tr.referenceRange}</p><p className="text-xs text-gray-400">{tr.unit}</p></>
+                          )}
+                        </td>
+                      </tr>
+                    </React.Fragment>
+                  );
+                })}
+              </tbody>
+            </table>
+          )}
+        </div>
+      );
+    });
   };
 
   return (
