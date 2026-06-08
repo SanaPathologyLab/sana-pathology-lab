@@ -197,12 +197,12 @@ const PrintReport = () => {
 
   // ── High Quality HTML Letterhead Footer (Screen & PDF share only) ──
   const LetterheadFooter = () => (
-    <footer className="absolute bottom-[20mm] left-0 w-full px-[14mm] bg-white z-20">
+    <footer className="absolute bottom-[30mm] left-0 w-full px-[14mm] bg-white z-20">
       {/* Signature Area (Visible on print and screen) */}
-      <div className="flex justify-between items-end px-12 mb-3">
+      <div className="flex justify-between items-end px-12 mb-1">
         <div></div>
         <div className="text-right">
-          <div className="italic font-bold text-[14px] mb-1 mr-6 text-black">Thanks for Reference</div>
+          <div className="italic font-bold text-[14px] mb-0.5 mr-6 text-black">Thanks for Reference</div>
           <div className="flex items-center justify-end gap-2 text-[13px] font-bold italic text-black">
             <span>Checked by</span>
             {/* Signature Image */}
@@ -255,7 +255,7 @@ const PrintReport = () => {
     <div className="relative z-10">
       {/* Pill-shaped Table Header */}
       {showHeader && (
-        <div className="border border-black rounded-full px-4 py-1 mb-3 flex text-[14px] font-bold text-black">
+        <div className="border border-black rounded-full px-4 py-1 mb-2 flex text-[14px] font-bold text-black">
           <div className="w-[45%]">Investigations</div>
           <div className="w-[15%] text-center">Results</div>
           <div className="w-[10%] text-center">Flag</div>
@@ -265,7 +265,7 @@ const PrintReport = () => {
       )}
 
       <div className="px-2">
-        <div className="font-black text-[15px] underline uppercase tracking-wider text-black mb-3">
+        <div className="font-black text-[15px] underline uppercase tracking-wider text-black mb-2">
           {testName}
         </div>
 
@@ -281,25 +281,25 @@ const PrintReport = () => {
                 <React.Fragment key={res.id || idx}>
                   {showGroup && (
                     <tr>
-                      <td colSpan="5" className="pt-3 pb-2 font-bold underline uppercase text-[14px] text-black">
+                      <td colSpan="5" className="pt-2 pb-1.5 font-bold underline uppercase text-[14px] text-black">
                         {res.groupName}
                       </td>
                     </tr>
                   )}
                   <tr>
-                    <td className={`py-1.5 font-semibold uppercase ${res.groupName ? '' : ''} w-[45%] align-top`}>
+                    <td className={`py-1 font-semibold uppercase ${res.groupName ? '' : ''} w-[45%] align-top`}>
                       {res.parameterName}
                     </td>
-                    <td className="py-1.5 text-center w-[15%] align-top">
+                    <td className="py-1 text-center w-[15%] align-top">
                       <span className={`${isAbnormal ? 'font-black border-b-[1.5px] border-black pb-0.5' : 'font-bold'}`}>
                         {res.resultValue}
                       </span>
                     </td>
-                    <td className="py-1.5 text-center font-bold text-[13px] w-[10%] align-top">
+                    <td className="py-1 text-center font-bold text-[13px] w-[10%] align-top">
                       {isHigh ? 'High' : isLow ? 'Low' : ''}
                     </td>
-                    <td className="py-1.5 text-center font-semibold w-[15%] align-top">{res.unit}</td>
-                    <td className="py-1.5 text-center font-semibold whitespace-pre-wrap w-[15%] align-top text-[12px] leading-tight">
+                    <td className="py-1 text-center font-semibold w-[15%] align-top">{res.unit}</td>
+                    <td className="py-1 text-center font-semibold whitespace-pre-wrap w-[15%] align-top text-[12px] leading-tight">
                       {res.referenceRange}
                     </td>
                   </tr>
@@ -495,7 +495,7 @@ const PrintReport = () => {
                   
                   {/* Premium End of Report Marker - Only on last page */}
                   {pageIndex === pages.length - 1 && (
-                    <div className="mt-12 mb-6 flex flex-col items-center justify-center w-full">
+                    <div className="mt-8 mb-4 flex flex-col items-center justify-center w-full">
                       <div className="flex items-center w-3/4 mx-auto">
                         <div className="flex-1 border-t border-gray-300"></div>
                         <div className="mx-4 text-[12px] font-bold tracking-[0.2em] text-[#1a2f4c] uppercase font-sans">

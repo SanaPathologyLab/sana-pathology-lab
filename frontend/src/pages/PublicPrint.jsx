@@ -141,7 +141,7 @@ const PublicPrint = () => {
       <div className="flex justify-between items-end px-12 mb-3">
         <div></div>
         <div className="text-right">
-          <div className="italic font-bold text-[14px] mb-6 mr-6 text-black">Thanks for Reference</div>
+          <div className="italic font-bold text-[14px] mb-1 mr-6 text-black">Thanks for Reference</div>
           <div className="flex items-center justify-end gap-2 text-[13px] font-bold italic text-black">
             <span>Checked by</span>
             <div className="flex flex-col items-center ml-2">
