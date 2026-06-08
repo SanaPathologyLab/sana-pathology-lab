@@ -323,9 +323,16 @@ const CreateReport = () => {
                         <td className="px-4 py-4 text-sm font-bold text-gray-800 pl-6">{tr.parameterName}</td>
                         <td className="px-4 py-4">
                           {tr.isQualitative ? (
-                            <div className="flex gap-1">
-                              <button type="button" onClick={() => handleResultChange(tr.key, 'resultValue', tr.resultValue === '+' ? '' : '+')} className={`px-4 py-2 text-sm font-bold rounded border ${tr.resultValue === '+' ? 'bg-green-600 text-white border-green-600' : 'bg-white text-gray-400 border-gray-300 hover:border-green-400'}`}>POSITIVE</button>
-                              <button type="button" onClick={() => handleResultChange(tr.key, 'resultValue', tr.resultValue === '-' ? '' : '-')} className={`px-4 py-2 text-sm font-bold rounded border ${tr.resultValue === '-' ? 'bg-red-600 text-white border-red-600' : 'bg-white text-gray-400 border-gray-300 hover:border-red-400'}`}>NEGATIVE</button>
+                            <div className="flex items-center gap-2">
+                              <select
+                                value={tr.resultValue === '+' ? 'POSITIVE' : tr.resultValue === '-' ? 'NEGATIVE' : ''}
+                                onChange={(e) => handleResultChange(tr.key, 'resultValue', e.target.value === 'POSITIVE' ? '+' : e.target.value === 'NEGATIVE' ? '-' : '')}
+                                className="border border-gray-300 rounded px-3 py-2 text-sm font-bold focus:outline-none focus:border-[#00488d]"
+                              >
+                                <option value="">-- Select --</option>
+                                <option value="POSITIVE">POSITIVE</option>
+                                <option value="NEGATIVE">NEGATIVE</option>
+                              </select>
                             </div>
                           ) : (
                             <input type="text" value={tr.resultValue} onChange={(e) => handleResultChange(tr.key, 'resultValue', e.target.value)} className="w-full border border-gray-300 rounded px-2 py-2 text-sm font-bold focus:outline-none focus:border-[#00488d]" />
