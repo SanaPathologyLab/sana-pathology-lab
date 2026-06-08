@@ -144,17 +144,34 @@ const CreateReport = () => {
     if (isSubmitting) return;
     setIsSubmitting(true);
     try {
+      // Build results array
+      const savedResults = testResults.map(r => ({ 
+        testId: r.testId, 
+        parameterName: r.parameterName,
+        resultValue: r.resultValue, 
+        flag: r.flag,
+        referenceRange: r.referenceRange,
+        unit: r.unit,
+        groupName: r.groupName
+      }));
+      // Add overall result for titer matrix tests
+      Object.keys(overallResults).forEach(testName => {
+        const ti = testResults.find(r => r.parentTestName === testName)?.testId;
+        if (ti) {
+          savedResults.push({
+            testId: ti,
+            parameterName: '',
+            resultValue: overallResults[testName],
+            flag: '',
+            referenceRange: '',
+            unit: '',
+            groupName: `__OVERALL__${testName}`
+          });
+        }
+      });
       const payload = {
         patientId: selectedPatient.value,
-        results: testResults.map(r => ({ 
-          testId: r.testId, 
-          parameterName: r.parameterName,
-          resultValue: r.resultValue, 
-          flag: r.flag,
-          referenceRange: r.referenceRange,
-          unit: r.unit,
-          groupName: r.groupName
-        }))
+        results: savedResults
       };
       if (selectedDoctor) payload.doctorId = selectedDoctor.value;
 

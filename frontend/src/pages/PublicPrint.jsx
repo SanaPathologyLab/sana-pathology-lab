@@ -188,11 +188,14 @@ const PublicPrint = () => {
     </div>
   );
 
-  const TestTable = ({ testName, rows, summary = '' }) => (
+  const TestTable = ({ testName, rows, summary = '' }) => {
+    const overallIdx = rows.findIndex(r => r.groupName === `__OVERALL__${testName}`);
+    const overallResult = overallIdx !== -1 ? rows[overallIdx] : null;
+    const filteredRows = overallResult ? rows.filter((_, i) => i !== overallIdx) : rows;
+    return (
     <div className="relative z-10">
-      {/* Table Header - adapts for titer-based results */}
       {(() => {
-        const firstParam = rows[0]?.test?.parameters?.find(p => p.parameterName === rows[0]?.parameterName);
+        const firstParam = filteredRows[0]?.test?.parameters?.find(p => p.parameterName === filteredRows[0]?.parameterName);
         const isTiterTest = firstParam?.isQualitative && firstParam?.titerValues;
         const titerList = isTiterTest ? firstParam.titerValues.split(',') : [];
         return (
@@ -223,7 +226,7 @@ const PublicPrint = () => {
         </div>
         <table className="w-full text-[13.5px] text-black">
           <tbody>
-            {rows.map((res, idx, arr) => {
+            {filteredRows.map((res, idx, arr) => {
               const prevGroup = idx > 0 ? arr[idx - 1].groupName : null;
               const showGroup = res.groupName && res.groupName !== prevGroup;
               const isHigh = res.flag === 'HIGH';
@@ -280,6 +283,12 @@ const PublicPrint = () => {
             })}
           </tbody>
         </table>
+        {overallResult && (
+          <div className="mt-3 flex items-center justify-between text-[14px] font-bold uppercase text-black border-t border-black pt-2">
+            <span>Result:</span>
+            <span>{overallResult.resultValue}</span>
+          </div>
+        )}
         {summary && (
           <div className="mt-4 p-3 border border-gray-300 rounded bg-gray-50 text-[12px] text-black leading-relaxed whitespace-pre-wrap">
             <span className="font-bold underline mr-1">Note:</span>
@@ -289,6 +298,7 @@ const PublicPrint = () => {
       </div>
     </div>
   );
+  };
 
   const totalPages = testNames.length;
 
