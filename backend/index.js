@@ -282,23 +282,23 @@ app.get('/', (req, res) => {
 // ─── Auto-seed Widal test if not exists ───
 async function seedWidalTest() {
   try {
-    const existing = await prisma.test.findFirst({ where: { testName: 'WIDAL TEST' } });
+    const existing = await prisma.test.findFirst({ where: { testCode: 'WIDAL' } });
     if (existing) {
       console.log('Widal test already exists, skipping seed.');
       return;
     }
-    let serologyCat = await prisma.testCategory.findFirst({ where: { name: 'Serology' } });
-    if (!serologyCat) {
-      serologyCat = await prisma.testCategory.create({ data: { name: 'Serology' } });
-      console.log('Created Serology category.');
+    let immunoCat = await prisma.testCategory.findFirst({ where: { name: 'Immunology' } });
+    if (!immunoCat) {
+      immunoCat = await prisma.testCategory.create({ data: { name: 'Immunology' } });
+      console.log('Created Immunology category.');
     }
     await prisma.test.create({
       data: {
-        testName: 'WIDAL TEST',
+        testName: 'WIDAL TEST (Rapid Slid Method)',
         testCode: 'WIDAL',
-        sampleType: 'Blood',
-        price: 300,
-        categoryId: serologyCat.id,
+        sampleType: 'BLOOD',
+        price: 200,
+        categoryId: immunoCat.id,
         summary: 'Widal test is a serological test for detecting antibodies against Salmonella typhi and paratyphi. A titre of 1:80 or more for O antigen and 1:160 or more for H antigen is considered clinically significant.',
         parameters: {
           create: [

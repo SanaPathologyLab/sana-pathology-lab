@@ -1,9 +1,11 @@
 import React, { useState, useEffect, useContext } from 'react';
+import { useNavigate } from 'react-router-dom';
 import Layout from '../components/Layout';
 import { AuthContext } from '../context/AuthContext';
-import { Plus, Search, Tag, Edit2, Trash2, X } from 'lucide-react';
+import { Plus, Search, Tag, Edit2, Trash2, ExternalLink, X } from 'lucide-react';
 
 const Tests = () => {
+  const navigate = useNavigate();
   const { user } = useContext(AuthContext);
   const [tests, setTests] = useState([]);
   const [categories, setCategories] = useState([]);
@@ -56,10 +58,15 @@ const Tests = () => {
   const fillWidalPreset = () => {
     setFormData(prev => ({
       ...prev,
-      testName: 'WIDAL TEST',
+      testName: 'WIDAL TEST (Rapid Slid Method)',
       testCode: 'WIDAL',
+      sampleType: 'BLOOD',
+      price: '200',
       summary: 'Widal test is a serological test for detecting antibodies against Salmonella typhi and paratyphi. A titre of 1:80 or more for O antigen and 1:160 or more for H antigen is considered clinically significant.'
     }));
+    // Auto-select Immunology category if it exists
+    const immunoCat = categories.find(c => c.name === 'Immunology');
+    if (immunoCat) setFormData(prev => ({ ...prev, categoryId: immunoCat.id }));
     setParameters([
       { parameterName: 'S. TYPHI O', referenceRange: '', unit: '', groupName: '', isQualitative: true, titerValues: '1/20,1/40,1/80,1/160,1/320' },
       { parameterName: 'S. TYPHI H', referenceRange: '', unit: '', groupName: '', isQualitative: true, titerValues: '1/20,1/40,1/80,1/160,1/320' },
@@ -209,7 +216,13 @@ const Tests = () => {
                 filteredTests.map(t => (
                   <tr key={t.id} className="hover:bg-[#f2f7fc] transition-colors">
                     <td className="px-6 py-4">
-                      <p className="text-sm font-bold text-[#00488d]">{t.testName}</p>
+                      {t.testCode === 'WIDAL' ? (
+                        <p className="text-sm font-bold text-[#00488d] cursor-pointer hover:text-blue-700 flex items-center gap-1" onClick={() => navigate('/widal')}>
+                          {t.testName} <ExternalLink className="w-3.5 h-3.5 inline opacity-50" />
+                        </p>
+                      ) : (
+                        <p className="text-sm font-bold text-[#00488d]">{t.testName}</p>
+                      )}
                       <p className="text-xs font-medium text-gray-500 font-mono mt-1">{t.testCode} • {t.parameters?.length || 0} Params</p>
                     </td>
                     <td className="px-6 py-4">
