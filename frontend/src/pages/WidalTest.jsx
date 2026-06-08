@@ -9,7 +9,7 @@ const WidalTest = () => {
     const initial = {};
     ANTIGENS.forEach(a => {
       TITERS.forEach(t => {
-        initial[`${a}|${t}`] = '';
+        initial[`${a}|${t}`] = '−';
       });
     });
     return initial;
@@ -18,14 +18,14 @@ const WidalTest = () => {
 
   const toggleCell = (antigen, titer) => {
     const key = `${antigen}|${titer}`;
-    setCells(prev => ({ ...prev, [key]: prev[key] === '+' ? '' : '+' }));
+    setCells(prev => ({ ...prev, [key]: prev[key] === '+' ? '−' : '+' }));
   };
 
   const resetAll = () => {
     const cleared = {};
     ANTIGENS.forEach(a => {
       TITERS.forEach(t => {
-        cleared[`${a}|${t}`] = '';
+        cleared[`${a}|${t}`] = '−';
       });
     });
     setCells(cleared);
@@ -38,10 +38,10 @@ const WidalTest = () => {
     const rows = ANTIGENS.map(antigen => {
       const titerResults = TITERS.map(titer => ({
         titer,
-        value: cells[`${antigen}|${titer}`] || ''
+        value: cells[`${antigen}|${titer}`]
       }));
-      const hasPositive = titerResults.some(r => r.value === '+');
-      return { antigen, titerResults, reactive: hasPositive };
+      const reactive = titerResults.some(r => r.value === '+');
+      return { antigen, titerResults, reactive };
     });
     setReport(rows);
   };
@@ -75,14 +75,15 @@ const WidalTest = () => {
                 </thead>
                 <tbody className="divide-y divide-gray-100">
                   {ANTIGENS.map((antigen) => {
-                    const titerResults = TITERS.map(t => ({ titer: t, value: cells[`${antigen}|${t}`] || '' }));
+                    const titerResults = TITERS.map(t => ({ titer: t, value: cells[`${antigen}|${t}`] }));
                     const hasPos = titerResults.some(r => r.value === '+');
-                    const allNeg = titerResults.every(r => r.value === '');
+                    const allNeg = titerResults.every(r => r.value === '−');
                     return (
                       <tr key={antigen} className="hover:bg-gray-50 transition-colors">
                         <td className="px-5 py-4 text-sm font-bold text-gray-800">{antigen}</td>
                         {TITERS.map((titer) => {
-                          const val = cells[`${antigen}|${titer}`] || '';
+                          const val = cells[`${antigen}|${titer}`];
+                          const isPos = val === '+';
                           return (
                             <td key={titer} className="px-1 py-4 text-center">
                               <div className="flex items-center justify-center gap-0.5">
@@ -90,7 +91,7 @@ const WidalTest = () => {
                                   type="button"
                                   onClick={() => toggleCell(antigen, titer)}
                                   className={`w-9 h-9 text-sm font-bold rounded border-2 transition-all duration-100 ${
-                                    val === '+'
+                                    isPos
                                       ? 'bg-green-600 text-white border-green-600 shadow-sm'
                                       : 'bg-white text-gray-300 border-gray-200 hover:border-green-400 hover:text-green-500'
                                   }`}
@@ -101,7 +102,7 @@ const WidalTest = () => {
                                   type="button"
                                   onClick={() => toggleCell(antigen, titer)}
                                   className={`w-9 h-9 text-sm font-bold rounded border-2 transition-all duration-100 ${
-                                    val === '+'
+                                    isPos
                                       ? 'bg-white text-gray-300 border-gray-200 hover:border-red-400 hover:text-red-500'
                                       : 'bg-red-600 text-white border-red-600 shadow-sm'
                                   }`}
@@ -113,8 +114,8 @@ const WidalTest = () => {
                           );
                         })}
                         <td className="px-2 py-4 text-center">
-                          <span className={`text-sm font-bold ${hasPos ? 'text-red-600' : allNeg ? 'text-gray-400' : 'text-orange-500'}`}>
-                            {hasPos ? 'POSITIVE' : allNeg ? 'NEGATIVE' : '—'}
+                          <span className={`text-sm font-bold ${hasPos ? 'text-red-600' : 'text-green-600'}`}>
+                            {hasPos ? 'POSITIVE' : 'NEGATIVE'}
                           </span>
                         </td>
                       </tr>
@@ -147,7 +148,7 @@ const WidalTest = () => {
                 <div className="space-y-3">
                   {report.map((row) => {
                     const posTiters = row.titerResults.filter(r => r.value === '+').map(r => r.titer);
-                    const negTiters = row.titerResults.filter(r => r.value === '').map(r => r.titer);
+                    const negTiters = row.titerResults.filter(r => r.value === '−').map(r => r.titer);
                     return (
                       <div key={row.antigen} className="bg-white border border-gray-200 rounded p-4">
                         <div className="flex items-center justify-between mb-2">
