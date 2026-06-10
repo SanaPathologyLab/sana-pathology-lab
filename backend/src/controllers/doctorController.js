@@ -130,8 +130,7 @@ exports.updateDoctor = async (req, res) => {
 
 exports.deleteDoctor = async (req, res) => {
   try {
-    if (req.userRole?.toUpperCase() !== 'ADMIN') return res.status(403).json({ message: 'Admin access required' });
-    
+    // Removed role check to allow deletion by any staff member
     const doctorId = parseInt(req.params.id);
 
     // Unlink the doctor from any existing reports to prevent foreign key errors
