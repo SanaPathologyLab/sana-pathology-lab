@@ -273,6 +273,19 @@ const Doctors = () => {
                 </div>
               </div>
               <div className="mt-8 flex justify-end space-x-4">
+                {editingId && (
+                  <button 
+                    type="button" 
+                    onClick={() => {
+                      handleDelete(editingId);
+                      closeModal();
+                    }}
+                    disabled={submitting}
+                    className="px-6 py-2 border border-red-500 text-red-500 rounded font-bold hover:bg-red-50 disabled:opacity-50"
+                  >
+                    Delete
+                  </button>
+                )}
                 <button type="button" onClick={closeModal} disabled={submitting} className="px-6 py-2 border border-gray-300 rounded text-gray-700 font-bold hover:bg-gray-50 disabled:opacity-50">
                   Cancel
                 </button>
