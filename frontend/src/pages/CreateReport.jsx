@@ -236,10 +236,8 @@ const CreateReport = () => {
 
   // Group results for UI rendering
   const renderGroupedResults = () => {
-    // Group by test (skip immunology group, rendered separately)
     const groupedByTest = {};
     testResults.forEach(tr => {
-      if (tr.groupName === 'IMMUNOLOGY & SEROLOGY TEST') return;
       if (!groupedByTest[tr.parentTestName]) groupedByTest[tr.parentTestName] = [];
       groupedByTest[tr.parentTestName].push(tr);
     });
@@ -550,7 +548,6 @@ const CreateReport = () => {
         {step === 2 && (
           <div className="p-0">
             <div className="p-6 bg-white min-h-[50vh]">
-              {renderImmunologySection()}
               {renderGroupedResults()}
             </div>
             <div className="p-6 bg-gray-50 border-t border-gray-200 flex justify-between items-center">
