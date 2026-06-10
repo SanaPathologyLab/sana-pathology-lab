@@ -6,7 +6,7 @@ import {
   Microscope, FlaskConical, Clock, Mail, MapPin,
   Syringe, Pill, Activity, Users, BadgeCheck,
   ChevronRight, BookOpen, Lightbulb,
-  Thermometer, Droplets, Wind, HeartPulse
+  Thermometer, Droplets, Wind, HeartPulse, Phone
 } from 'lucide-react';
 import { useNavigate } from 'react-router-dom';
 import Loader from '../components/Loader';
