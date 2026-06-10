@@ -184,6 +184,13 @@ const PublicWelcome = () => {
     setSelectedTests([]);
   };
 
+  const scrollToSection = (id) => {
+    const element = document.getElementById(id);
+    if (element) {
+      element.scrollIntoView({ behavior: 'smooth' });
+    }
+  };
+
   const handleBookingChange = (e) => {
     const { name, value, type, checked } = e.target;
     setBookingForm(prev => ({
@@ -277,12 +284,12 @@ const PublicWelcome = () => {
           
           <div className="flex items-center gap-3">
             <div className="hidden md:flex items-center gap-8 mr-4">
-              <a href="#stats" className="text-sm font-bold text-slate-600 hover:text-primary transition-colors">Why Us</a>
-              <a href="#packages" className="text-sm font-bold text-slate-600 hover:text-primary transition-colors">Packages</a>
-              <a href="#services" className="text-sm font-bold text-slate-600 hover:text-primary transition-colors">Test Finder</a>
-              <a href="#booking" className="text-sm font-bold text-slate-600 hover:text-primary transition-colors">Book Online</a>
-              <a href="#faq" className="text-sm font-bold text-slate-600 hover:text-primary transition-colors">FAQ</a>
-              <a href="#contact" className="text-sm font-bold text-slate-600 hover:text-primary transition-colors">Contact</a>
+              <a href="#stats" onClick={(e) => { e.preventDefault(); scrollToSection('stats'); }} className="text-sm font-bold text-slate-600 hover:text-primary transition-colors">Why Us</a>
+              <a href="#packages" onClick={(e) => { e.preventDefault(); scrollToSection('packages'); }} className="text-sm font-bold text-slate-600 hover:text-primary transition-colors">Packages</a>
+              <a href="#services" onClick={(e) => { e.preventDefault(); scrollToSection('services'); }} className="text-sm font-bold text-slate-600 hover:text-primary transition-colors">Test Finder</a>
+              <a href="#booking" onClick={(e) => { e.preventDefault(); scrollToSection('booking'); }} className="text-sm font-bold text-slate-600 hover:text-primary transition-colors">Book Online</a>
+              <a href="#faq" onClick={(e) => { e.preventDefault(); scrollToSection('faq'); }} className="text-sm font-bold text-slate-600 hover:text-primary transition-colors">FAQ</a>
+              <a href="#contact" onClick={(e) => { e.preventDefault(); scrollToSection('contact'); }} className="text-sm font-bold text-slate-600 hover:text-primary transition-colors">Contact</a>
             </div>
             
             <button 
@@ -332,13 +339,15 @@ const PublicWelcome = () => {
           <div className="flex flex-col sm:flex-row items-center justify-center gap-4 mb-16">
             <a 
               href="#packages"
-              className="w-full sm:w-auto min-h-[44px] bg-accent hover:bg-amber-600 text-white px-8 py-4 rounded-full font-bold text-lg transition-all shadow-lg shadow-accent/30 hover:-translate-y-1 text-center"
+              onClick={(e) => { e.preventDefault(); scrollToSection('packages'); }}
+              className="w-full sm:w-auto min-h-[44px] bg-accent hover:bg-amber-600 text-white px-8 py-4 rounded-full font-bold text-lg transition-all shadow-lg shadow-accent/30 hover:-translate-y-1 text-center cursor-pointer"
             >
               Explore Packages
             </a>
             <a 
               href="#services"
-              className="w-full sm:w-auto min-h-[44px] bg-white/10 hover:bg-white/20 text-white border border-white/30 px-8 py-4 rounded-full font-bold text-lg transition-all text-center"
+              onClick={(e) => { e.preventDefault(); scrollToSection('services'); }}
+              className="w-full sm:w-auto min-h-[44px] bg-white/10 hover:bg-white/20 text-white border border-white/30 px-8 py-4 rounded-full font-bold text-lg transition-all text-center cursor-pointer"
             >
               Find a Test
             </a>
@@ -729,7 +738,8 @@ const PublicWelcome = () => {
 
                     <a 
                       href="#booking"
-                      className="w-full min-h-[44px] bg-accent hover:bg-amber-600 text-white font-bold text-sm py-3 rounded-xl transition-all shadow-md shadow-accent/20 hover:-translate-y-0.5 flex items-center justify-center gap-1.5"
+                      onClick={(e) => { e.preventDefault(); scrollToSection('booking'); }}
+                      className="w-full min-h-[44px] bg-accent hover:bg-amber-600 text-white font-bold text-sm py-3 rounded-xl transition-all shadow-md shadow-accent/20 hover:-translate-y-0.5 flex items-center justify-center gap-1.5 cursor-pointer"
                     >
                       <span>Proceed to Booking</span>
                       <ArrowRight size={14} />
@@ -1205,11 +1215,11 @@ const PublicWelcome = () => {
           <div>
             <h4 className="font-bold text-white mb-4">Quick Links</h4>
             <ul className="space-y-2 text-sm opacity-80">
-              <li><a href="#stats" className="hover:text-white transition-colors">Why Us</a></li>
-              <li><a href="#packages" className="hover:text-white transition-colors">Packages</a></li>
-              <li><a href="#services" className="hover:text-white transition-colors">Test Finder</a></li>
-              <li><a href="#booking" className="hover:text-white transition-colors">Book Online</a></li>
-              <li><a href="#faq" className="hover:text-white transition-colors">FAQ</a></li>
+              <li><a href="#stats" onClick={(e) => { e.preventDefault(); scrollToSection('stats'); }} className="hover:text-white transition-colors">Why Us</a></li>
+              <li><a href="#packages" onClick={(e) => { e.preventDefault(); scrollToSection('packages'); }} className="hover:text-white transition-colors">Packages</a></li>
+              <li><a href="#services" onClick={(e) => { e.preventDefault(); scrollToSection('services'); }} className="hover:text-white transition-colors">Test Finder</a></li>
+              <li><a href="#booking" onClick={(e) => { e.preventDefault(); scrollToSection('booking'); }} className="hover:text-white transition-colors">Book Online</a></li>
+              <li><a href="#faq" onClick={(e) => { e.preventDefault(); scrollToSection('faq'); }} className="hover:text-white transition-colors">FAQ</a></li>
               <li><button onClick={() => navigate('/login')} className="hover:text-white transition-colors">Patient Portal</button></li>
             </ul>
           </div>
