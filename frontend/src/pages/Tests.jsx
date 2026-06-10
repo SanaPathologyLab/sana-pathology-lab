@@ -297,7 +297,7 @@ const Tests = () => {
         method: 'POST',
         headers: { 'Content-Type': 'application/json', 'Authorization': `Bearer ${user.accessToken}` },
         body: JSON.stringify({
-          testName: 'MALARIA PARASITE IDENTIFICATION',
+          testName: 'Malaria Micro',
           testCode: 'MALARIA-01',
           sampleType: 'Whole Blood',
           price: 150,
