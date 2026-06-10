@@ -241,7 +241,7 @@ const PublicPrint = () => {
                     return { titer: parts[0], value: parts[1] || '' };
                   })
                 : [];
-              const isImmunology = res.groupName === 'IMMUNOLOGY & SEROLOGY TEST';
+              const isImmunology = false; // Disable special immunology layout to keep columns aligned
               const colCount = titerResults.length > 0 ? (3 + titerResults.length) : 5;
               return (
                 <React.Fragment key={res.id || idx}>
