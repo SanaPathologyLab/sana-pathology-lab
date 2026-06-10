@@ -399,7 +399,7 @@ const PublicWelcome = () => {
       </section>
 
       {/* Floating Lab Result Search Card */}
-      <section className="relative z-20 -mt-16 px-4 sm:px-6 lg:px-8">
+      <section id="search-section" className="relative z-20 -mt-16 px-4 sm:px-6 lg:px-8">
         <div className="max-w-4xl mx-auto bg-white rounded-2xl shadow-xl border border-gray-100 p-6 md:p-8">
           <div className="flex items-center gap-3 mb-6">
             <div className="bg-primary-pale p-3 rounded-xl text-primary">
@@ -932,6 +932,35 @@ const PublicWelcome = () => {
                     >
                       <MessageCircle size={20} />
                       <span>Alert via WhatsApp</span>
+                    </button>
+                    <button
+                      onClick={async () => {
+                        setSearchType('appointment');
+                        setSearchQuery(bookingForm.mobile);
+                        scrollToSection('search-section');
+                        setSearchLoading(true);
+                        setSearchError('');
+                        try {
+                          const res = await fetch(`/api/public/appointment-lookup?mobile=${encodeURIComponent(bookingForm.mobile.trim())}`);
+                          const data = await res.json();
+                          if (res.ok) {
+                            setAppointmentResults(data);
+                            if (data.length === 0) {
+                              setSearchError('No collection requests found for this mobile number.');
+                            }
+                          } else {
+                            setSearchError(data.message || 'No collection requests found.');
+                          }
+                        } catch (err) {
+                          setSearchError('Failed to fetch tracking data. Please try again.');
+                        } finally {
+                          setSearchLoading(false);
+                        }
+                      }}
+                      className="bg-primary text-white hover:bg-primary-light px-8 py-3.5 rounded-xl font-bold text-base shadow-lg shadow-primary/20 transition-all flex items-center justify-center gap-2"
+                    >
+                      <Activity size={20} />
+                      <span>Track Status</span>
                     </button>
                     <button
                       onClick={() => {
