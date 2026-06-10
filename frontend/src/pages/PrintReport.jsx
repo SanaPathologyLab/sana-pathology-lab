@@ -336,12 +336,12 @@ const PrintReport = () => {
         <div className="relative z-10 w-full mb-6" style={{ fontFamily: 'Georgia, serif', color: '#000' }}>
           <h3 className="text-[17px] font-black underline uppercase text-center mb-8">IMMUNOLOGY & SEROLOGY TEST</h3>
           
-          <div className="flex justify-between items-start mb-8">
-            <div className="flex flex-col items-center">
+          <div className="grid grid-cols-2 mb-8 items-center">
+            <div className="flex flex-col items-start">
               <div className="font-bold text-[15px] uppercase tracking-wide">MALARIA PARASITE IDENTIFICATION</div>
-              <div className="text-[12px] font-bold mt-0.5">(MICROSCOPY)</div>
+              <div className="text-[12px] font-bold mt-0.5 w-full text-center" style={{ maxWidth: '280px' }}>(MICROSCOPY)</div>
             </div>
-            <div className="font-black text-[16px] uppercase tracking-wide">{resultValue}</div>
+            <div className="font-black text-[16px] uppercase tracking-wide pl-8">{resultValue}</div>
           </div>
 
           <div className="mt-6 text-[13px] leading-relaxed">
