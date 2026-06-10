@@ -255,7 +255,7 @@ const PrintReport = () => {
   // ── Test Results Table (Visible everywhere) ──
   const TestTable = ({ testName, rows, showHeader = true, summary = '' }) => {
     const isMantoux = testName.toUpperCase().includes('MANTOUX') || (rows[0] && rows[0].test?.testCode === 'MANTOUX-01');
-    const isMalaria = testName.toUpperCase().includes('MALARIA PARASITE') || testName.toUpperCase().includes('MALARIA MICRO') || (rows[0] && rows[0].test?.testCode === 'MALARIA-01');
+    const isMalaria = testName.toUpperCase().includes('MALARIA MICRO') || (rows[0] && rows[0].test?.testCode === 'MALARIA-01');
 
     if (isMantoux) {
       const doseRow = rows.find(r => r.parameterName.includes('Dose')) || rows[0];
