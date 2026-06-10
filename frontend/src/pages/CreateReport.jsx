@@ -194,11 +194,52 @@ const CreateReport = () => {
     }
   };
 
+  const renderImmunologySection = () => {
+    const immunologyParams = testResults.filter(
+      tr => tr.groupName === 'IMMUNOLOGY & SEROLOGY TEST'
+    );
+    if (immunologyParams.length === 0) return null;
+
+    return (
+      <div className="mb-8">
+        <div className="border border-black">
+          <h4 className="font-black text-[15px] underline uppercase tracking-wider text-black px-4 py-2 border-b border-black" style={{ fontFamily: 'Georgia, serif' }}>
+            IMMUNOLOGY &amp; SEROLOGY TEST
+          </h4>
+          <div className="divide-y divide-black">
+            {immunologyParams.map(tr => (
+              <div key={tr.key} className="flex items-center px-4 py-3">
+                <span className="font-bold text-sm whitespace-nowrap" style={{ fontFamily: 'Georgia, serif' }}>
+                  {tr.parameterName}
+                </span>
+                <div className="flex-1 mx-3 self-center" style={{
+                  borderBottom: '1px dotted #999',
+                  minWidth: '20px',
+                  height: '1px'
+                }}></div>
+                <select
+                  value={tr.resultValue || 'NON-REACTIVE'}
+                  onChange={e => handleResultChange(tr.key, 'resultValue', e.target.value)}
+                  className="font-bold text-sm border-0 bg-transparent focus:outline-none cursor-pointer text-right appearance-none"
+                  style={{ fontFamily: 'Georgia, serif' }}
+                >
+                  <option value="NON-REACTIVE">NON-REACTIVE</option>
+                  <option value="REACTIVE">REACTIVE</option>
+                </select>
+              </div>
+            ))}
+          </div>
+        </div>
+      </div>
+    );
+  };
+
   // Group results for UI rendering
   const renderGroupedResults = () => {
-    // Group by test
+    // Group by test (skip immunology group, rendered separately)
     const groupedByTest = {};
     testResults.forEach(tr => {
+      if (tr.groupName === 'IMMUNOLOGY & SEROLOGY TEST') return;
       if (!groupedByTest[tr.parentTestName]) groupedByTest[tr.parentTestName] = [];
       groupedByTest[tr.parentTestName].push(tr);
     });
@@ -209,30 +250,124 @@ const CreateReport = () => {
       const titerValueSet = [...new Set(params.filter(p => p.isQualitative && p.titerValues).map(p => p.titerValues))];
       const isTiterMatrix = titerValueSet.length === 1 && titerValueSet[0];
       const titerList = isTiterMatrix ? titerValueSet[0].split(',') : [];
+      const isMantoux = params[0]?.test?.testCode === 'MANTOUX-01' || testName.toUpperCase().includes('MANTOUX');
 
       return (
         <div key={testName} className="mb-8">
           <h3 className="bg-[#00488d] text-white px-4 py-2 font-bold uppercase flex items-center justify-between">
             <span>{testName}</span>
-            {isTiterMatrix && (
-              <span className="flex items-center gap-2">
-                <span className="text-xs font-bold text-gray-500 uppercase">Agglutinin Titer</span>
-                {(() => {
-                  const anyPos = params.some(tr => {
-                    const cells = tr.resultValue ? tr.resultValue.split('||').map(e => e.split('|')[1]) : [];
-                    return cells.some(v => v === '+');
-                  });
-                  return (
-                    <span className={`text-xs font-bold px-3 py-1 uppercase tracking-wider ${anyPos ? 'text-black' : 'text-gray-400'}`}>
-                      {anyPos ? 'POSITIVE' : 'NEGATIVE'}
-                    </span>
-                  );
-                })()}
-              </span>
-            )}
           </h3>
 
-          {isTiterMatrix ? (
+          {isMantoux ? (
+            <div className="p-6 border border-gray-300 rounded-b-lg bg-gray-50 max-w-2xl mx-auto mt-4 shadow-sm" style={{ fontFamily: 'Georgia, serif' }}>
+              <div className="text-center mb-6">
+                <h4 className="text-lg font-black underline uppercase text-black">{testName}</h4>
+                <p className="text-sm font-semibold text-gray-700 mt-1">(Interdermal Skin Test)</p>
+              </div>
+
+              {/* Top Data Table */}
+              <div className="border border-black mb-6 bg-white">
+                <table className="w-full border-collapse">
+                  <tbody>
+                    <tr className="border-b border-black">
+                      <td className="w-1/2 p-3 font-bold border-r border-black text-black">Tuberculin Dose</td>
+                      <td className="w-1/2 p-2">
+                        <input 
+                          type="text" 
+                          value={(() => {
+                            const p = params.find(p => p.parameterName.includes('Dose')) || params[0];
+                            if (p && !p.resultValue) p.resultValue = '0.1 mL of TU PPD';
+                            return p?.resultValue || '0.1 mL of TU PPD';
+                          })()} 
+                          onChange={e => {
+                            const p = params.find(p => p.parameterName.includes('Dose')) || params[0];
+                            if (p) handleResultChange(p.key, 'resultValue', e.target.value);
+                          }} 
+                          className="w-full border border-gray-300 rounded px-2 py-1 text-sm font-bold text-black focus:outline-none focus:ring-1 focus:ring-black"
+                        />
+                      </td>
+                    </tr>
+                    <tr className="border-b border-black">
+                      <td className="w-1/2 p-3 font-bold border-r border-black text-black">Induration (mm)</td>
+                      <td className="w-1/2 p-2">
+                        <input 
+                          type="text" 
+                          placeholder="e.g. 02X02"
+                          value={(() => {
+                            const p = params.find(p => p.parameterName.includes('Induration')) || params[1];
+                            return p?.resultValue || '';
+                          })()} 
+                          onChange={e => {
+                            const p = params.find(p => p.parameterName.includes('Induration')) || params[1];
+                            if (p) handleResultChange(p.key, 'resultValue', e.target.value);
+                          }} 
+                          className="w-full border border-gray-300 rounded px-2 py-1 text-sm font-bold text-black focus:outline-none focus:ring-1 focus:ring-black"
+                        />
+                      </td>
+                    </tr>
+                    <tr>
+                      <td className="w-1/2 p-3 font-bold border-r border-black text-black">Result after 48 hours</td>
+                      <td className="w-1/2 p-2">
+                        <select 
+                          value={(() => {
+                            const p = params.find(p => p.parameterName.includes('Result')) || params[2];
+                            return p?.resultValue || '';
+                          })()} 
+                          onChange={e => {
+                            const p = params.find(p => p.parameterName.includes('Result')) || params[2];
+                            if (p) handleResultChange(p.key, 'resultValue', e.target.value);
+                          }} 
+                          className="w-full border border-gray-300 rounded px-2 py-1 text-sm font-bold text-black focus:outline-none focus:ring-1 focus:ring-black cursor-pointer"
+                        >
+                          <option value="">-- Select --</option>
+                          <option value="NEGATIVE">NEGATIVE</option>
+                          <option value="POSITIVE">POSITIVE</option>
+                        </select>
+                      </td>
+                    </tr>
+                  </tbody>
+                </table>
+              </div>
+
+              {/* Interpretation Section */}
+              <div className="mb-6 text-black text-sm leading-relaxed">
+                <p className="font-bold mb-1">Interpretation:</p>
+                <p className="text-gray-800">
+                  Induration measuring 10 mm more is considered positive which shows hypersensitivity to <span className="italic underline">tuberculoprotein</span>. It indicates past or present infection with <span className="italic underline">Mycobacterium</span> tuberculosis.
+                </p>
+              </div>
+
+              {/* Induration Size Reference Table */}
+              <div className="border border-black bg-white">
+                <table className="w-full border-collapse text-left text-xs text-black">
+                  <thead>
+                    <tr className="bg-gray-100 border-b border-black font-bold">
+                      <th className="p-2 border-r border-black w-1/3">Induration Size</th>
+                      <th className="p-2 w-2/3">Interpretation</th>
+                    </tr>
+                  </thead>
+                  <tbody className="divide-y divide-black">
+                    <tr>
+                      <td className="p-2 border-r border-black font-semibold">&lt; 5 mm</td>
+                      <td className="p-2">A negative result, indicating no exposure to TB</td>
+                    </tr>
+                    <tr>
+                      <td className="p-2 border-r border-black font-semibold">5–9 mm</td>
+                      <td className="p-2">Usually considered positive for people who are immunocompromised or have other risk factors for TB</td>
+                    </tr>
+                    <tr>
+                      <td className="p-2 border-r border-black font-semibold">10–14 mm</td>
+                      <td className="p-2">Usually considered positive for people with medical risk factors for TB, recent immigrants from areas with high TB prevalence, or close contacts with people with TB</td>
+                    </tr>
+                    <tr>
+                      <td className="p-2 border-r border-black font-semibold">&gt; 15 mm</td>
+                      <td className="p-2">Usually considered positive for people with no known risk factors for TB</td>
+                    </tr>
+                  </tbody>
+                </table>
+              </div>
+            </div>
+          ) : isTiterMatrix ? (
             <React.Fragment>
               <div className="border border-black">
                 <table className="w-full text-left border-collapse text-black">
@@ -415,6 +550,7 @@ const CreateReport = () => {
         {step === 2 && (
           <div className="p-0">
             <div className="p-6 bg-white min-h-[50vh]">
+              {renderImmunologySection()}
               {renderGroupedResults()}
             </div>
             <div className="p-6 bg-gray-50 border-t border-gray-200 flex justify-between items-center">

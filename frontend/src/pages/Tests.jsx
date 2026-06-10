@@ -214,6 +214,60 @@ const Tests = () => {
     }
   };
 
+  const createMantouxTestAuto = async () => {
+    const existing = tests.find(t => t.testCode === 'MANTOUX-01');
+    if (existing) {
+      if (!window.confirm('Mantoux test already exists. Do you want to overwrite it with standard Mantoux parameters?')) return;
+      try {
+        await fetch(`/api/tests/${existing.id}`, {
+          method: 'DELETE',
+          headers: { 'Authorization': `Bearer ${user.accessToken}` }
+        });
+      } catch (err) {
+        console.error(err);
+      }
+    }
+    try {
+      let catId = categories.find(c => c.name === 'Clinical Pathology')?.id;
+      if (!catId) {
+        const catRes = await fetch('/api/tests/categories', {
+          method: 'POST',
+          headers: { 'Content-Type': 'application/json', 'Authorization': `Bearer ${user.accessToken}` },
+          body: JSON.stringify({ name: 'Clinical Pathology' })
+        });
+        const catData = await catRes.json();
+        catId = catData.id;
+        fetchCategories();
+      }
+      const res = await fetch('/api/tests', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json', 'Authorization': `Bearer ${user.accessToken}` },
+        body: JSON.stringify({
+          testName: 'MANTOUX TEST (TUBERCULIN SKIN TEST)',
+          testCode: 'MANTOUX-01',
+          sampleType: 'Skin',
+          price: 250,
+          categoryId: catId,
+          summary: 'Induration measuring 10 mm more is considered positive which shows hypersensitivity to tuberculoprotein. It indicates past or present infection with Mycobacterium tuberculosis.',
+          parameters: [
+            { parameterName: 'Tuberculin Dose', referenceRange: '0.1 mL of TU PPD', unit: '', groupName: 'MANTOUX TEST (Interdermal Skin Test)' },
+            { parameterName: 'Induration (mm)', referenceRange: '', unit: 'mm', groupName: 'MANTOUX TEST (Interdermal Skin Test)' },
+            { parameterName: 'Result after 48 hours', referenceRange: 'NEGATIVE / POSITIVE', unit: '', groupName: 'MANTOUX TEST (Interdermal Skin Test)', isQualitative: true },
+          ]
+        })
+      });
+      if (res.ok) {
+        alert('Mantoux test created successfully!');
+        fetchTests();
+      } else {
+        alert('Failed to create Mantoux test');
+      }
+    } catch (err) {
+      console.error(err);
+      alert('Error creating Mantoux test');
+    }
+  };
+
   const filteredTests = tests.filter(t => 
     t.testName.toLowerCase().includes(searchTerm.toLowerCase()) || 
     t.testCode.toLowerCase().includes(searchTerm.toLowerCase())
@@ -229,6 +283,12 @@ const Tests = () => {
             className="bg-green-700 hover:bg-green-800 text-white px-4 py-2 rounded text-sm font-bold tracking-wide transition-colors flex items-center"
           >
             <Plus className="w-4 h-4 mr-2" /> CREATE WIDAL
+          </button>
+          <button 
+            onClick={createMantouxTestAuto}
+            className="bg-purple-700 hover:bg-purple-800 text-white px-4 py-2 rounded text-sm font-bold tracking-wide transition-colors flex items-center"
+          >
+            <Plus className="w-4 h-4 mr-2" /> CREATE MANTOUX
           </button>
           <button 
             onClick={openAddModal}

@@ -275,10 +275,6 @@ app.get('/api/dashboard/stats', verifyToken, async (req, res) => {
   }
 });
 
-app.get('/', (req, res) => {
-  res.json({ message: 'Sana Pathology Lab API is running' });
-});
-
 // ─── Auto-seed Widal test if not exists ───
 async function seedWidalTest() {
   try {
@@ -315,6 +311,28 @@ async function seedWidalTest() {
     console.error('Failed to seed Widal test:', err.message);
   }
 }
+
+// Serve frontend production build as static files
+const path = require('path');
+const frontendDist = path.join(__dirname, '..', 'frontend', 'dist');
+app.use(express.static(frontendDist));
+
+// Debug endpoint to check database
+app.get('/api/debug/tests', async (req, res) => {
+  try {
+    const tests = await prisma.test.findMany({ include: { parameters: true } });
+    res.json({ count: tests.length, tests: tests.map(t => ({ id: t.id, testName: t.testName, testCode: t.testCode })) });
+  } catch (err) {
+    res.status(500).json({ error: err.message });
+  }
+});
+
+// SPA fallback - serve index.html for any non-API route
+app.get('/{*path}', (req, res) => {
+  if (!req.path.startsWith('/api')) {
+    res.sendFile(path.join(frontendDist, 'index.html'));
+  }
+});
 
 const PORT = process.env.PORT || 5000;
 app.listen(PORT, async () => {

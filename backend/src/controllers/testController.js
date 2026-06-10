@@ -40,11 +40,14 @@ exports.createTest = async (req, res) => {
 
 exports.getTests = async (req, res) => {
   try {
+    console.log('getTests called, user:', req.userId);
     const tests = await prisma.test.findMany({
       include: { category: true, parameters: true }
     });
+    console.log('getTests found:', tests.length, 'tests');
     res.status(200).json(tests);
   } catch (err) {
+    console.error('getTests error:', err.message);
     res.status(500).json({ message: err.message });
   }
 };
