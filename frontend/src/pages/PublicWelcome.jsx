@@ -93,18 +93,46 @@ const PublicWelcome = () => {
     isHomeCollection: true
   });
   const [bookingSuccess, setBookingSuccess] = useState(false);
+  const [createdAppointment, setCreatedAppointment] = useState(null);
   const [bookingLoading, setBookingLoading] = useState(false);
   const [bookingError, setBookingError] = useState('');
 
+  const [appointmentResults, setAppointmentResults] = useState([]);
+  const [searchLoading, setSearchLoading] = useState(false);
+  const [searchError, setSearchError] = useState('');
+
   const slides = ['/slide1.png', '/slide2.png', '/slide3.png'];
 
-  const handleSearch = (e) => {
+  const handleSearch = async (e) => {
     e.preventDefault();
     if (!searchQuery.trim()) return;
-    if (searchType === 'mobile') {
-      navigate(`/report-lookup?mobile=${encodeURIComponent(searchQuery.trim())}`);
+    setSearchError('');
+    setAppointmentResults([]);
+
+    if (searchType === 'appointment') {
+      setSearchLoading(true);
+      try {
+        const res = await fetch(`/api/public/appointment-lookup?mobile=${encodeURIComponent(searchQuery.trim())}`);
+        const data = await res.json();
+        if (res.ok) {
+          setAppointmentResults(data);
+          if (data.length === 0) {
+            setSearchError('No collection requests found for this mobile number.');
+          }
+        } else {
+          setSearchError(data.message || 'No collection requests found.');
+        }
+      } catch (err) {
+        setSearchError('Failed to fetch tracking data. Please try again.');
+      } finally {
+        setSearchLoading(false);
+      }
     } else {
-      navigate(`/report-lookup?reportNumber=${encodeURIComponent(searchQuery.trim())}`);
+      if (searchType === 'mobile') {
+        navigate(`/report-lookup?mobile=${encodeURIComponent(searchQuery.trim())}`);
+      } else {
+        navigate(`/report-lookup?reportNumber=${encodeURIComponent(searchQuery.trim())}`);
+      }
     }
   };
 
@@ -228,6 +256,8 @@ const PublicWelcome = () => {
       });
 
       if (response.ok) {
+        const data = await response.json();
+        setCreatedAppointment(data.appointment);
         setBookingSuccess(true);
       } else {
         const data = await response.json();
@@ -376,17 +406,17 @@ const PublicWelcome = () => {
               <FileText className="w-6 h-6" />
             </div>
             <div>
-              <h3 className="text-2xl font-bold text-slate-800">Check Your Lab Results</h3>
-              <p className="text-slate-500 text-sm mt-1">Enter your details below to instantly view or download your reports</p>
+              <h3 className="text-2xl font-bold text-slate-800">Check Reports & Track Bookings</h3>
+              <p className="text-slate-500 text-sm mt-1">Enter your details to download report pdfs or track sample collection request status</p>
             </div>
           </div>
           
           <form onSubmit={handleSearch} className="flex flex-col md:flex-row gap-4">
-            <div className="flex bg-slate-100 p-1 rounded-xl md:w-64 shrink-0">
+            <div className="flex bg-slate-100 p-1 rounded-xl md:w-80 shrink-0">
               <button
                 type="button"
-                onClick={() => setSearchType('mobile')}
-                className={`flex-1 py-2 rounded-lg text-sm font-bold transition-all ${
+                onClick={() => { setSearchType('mobile'); setAppointmentResults([]); setSearchError(''); }}
+                className={`flex-1 py-2 rounded-lg text-xs md:text-sm font-bold transition-all ${
                   searchType === 'mobile' ? 'bg-white text-primary shadow-sm' : 'text-slate-500 hover:text-slate-700'
                 }`}
               >
@@ -394,18 +424,33 @@ const PublicWelcome = () => {
               </button>
               <button
                 type="button"
-                onClick={() => setSearchType('report')}
-                className={`flex-1 py-2 rounded-lg text-sm font-bold transition-all ${
+                onClick={() => { setSearchType('report'); setAppointmentResults([]); setSearchError(''); }}
+                className={`flex-1 py-2 rounded-lg text-xs md:text-sm font-bold transition-all ${
                   searchType === 'report' ? 'bg-white text-primary shadow-sm' : 'text-slate-500 hover:text-slate-700'
                 }`}
               >
                 Report No
               </button>
+              <button
+                type="button"
+                onClick={() => { setSearchType('appointment'); setAppointmentResults([]); setSearchError(''); }}
+                className={`flex-1 py-2 rounded-lg text-xs md:text-sm font-bold transition-all ${
+                  searchType === 'appointment' ? 'bg-white text-primary shadow-sm' : 'text-slate-500 hover:text-slate-700'
+                }`}
+              >
+                Track Request
+              </button>
             </div>
             <div className="relative flex-1">
               <input
-                type={searchType === 'mobile' ? 'tel' : 'text'}
-                placeholder={searchType === 'mobile' ? 'Enter Mobile Number...' : 'e.g. RPT-000001'}
+                type={searchType === 'report' ? 'text' : 'tel'}
+                placeholder={
+                  searchType === 'mobile'
+                    ? 'Enter Mobile Number to check Reports...'
+                    : searchType === 'report'
+                      ? 'e.g. RPT-000001'
+                      : 'Enter Mobile Number to track collection requests...'
+                }
                 value={searchQuery}
                 onChange={(e) => setSearchQuery(e.target.value)}
                 className="w-full h-full min-h-[48px] pl-4 pr-4 border-2 border-slate-200 rounded-xl focus:border-primary focus:ring-0 outline-none transition-colors"
@@ -417,9 +462,100 @@ const PublicWelcome = () => {
               className="bg-primary hover:bg-primary-light text-white px-8 py-3 rounded-xl font-bold transition-colors flex items-center justify-center gap-2 shadow-md shadow-primary/20"
             >
               <Search className="w-5 h-5" />
-              Find Report
+              {searchType === 'appointment' ? 'Track Request' : 'Find Report'}
             </button>
           </form>
+
+          {/* Appointment Tracking Results */}
+          {searchType === 'appointment' && (searchLoading || appointmentResults.length > 0 || searchError) && (
+            <div className="mt-6 border-t border-slate-100 pt-6 animate-fade-in-up">
+              {searchLoading && (
+                <div className="flex items-center justify-center py-6 gap-2 text-slate-500 font-semibold text-sm">
+                  <Loader type="button" className="text-primary" />
+                  <span>Searching collection requests...</span>
+                </div>
+              )}
+              
+              {searchError && (
+                <div className="bg-red-50 text-red-700 border border-red-200 px-4 py-3 rounded-xl text-sm font-semibold flex items-center gap-2">
+                  <ShieldAlert size={16} className="text-red-600 shrink-0" />
+                  <span>{searchError}</span>
+                </div>
+              )}
+
+              {appointmentResults.length > 0 && (
+                <div className="space-y-4">
+                  <h4 className="font-extrabold text-slate-800 text-sm uppercase tracking-wider">
+                    Found {appointmentResults.length} Collection Request{appointmentResults.length > 1 ? 's' : ''}
+                  </h4>
+                  <div className="space-y-3 max-h-[300px] overflow-y-auto pr-1">
+                    {appointmentResults.map((apt) => {
+                      let testDetails = 'Routine checkup';
+                      if (apt.notes) {
+                        const match = apt.notes.match(/Tests\/Packages:\s*(.*)\.\s*Mode:/) || apt.notes.match(/Selected tests:\s*(.*)\.\s*Mode:/);
+                        if (match && match[1]) {
+                          testDetails = match[1];
+                        } else {
+                          testDetails = apt.notes;
+                        }
+                      }
+                      
+                      const refId = `SPL-APT-${apt.id.toString().padStart(6, '0')}`;
+                      const isHome = !apt.notes || !apt.notes.includes('Mode: Lab Visit');
+                      
+                      const statusMap = {
+                        SCHEDULED: { text: '⏳ Pending Confirmation', cls: 'bg-amber-50 text-amber-800 border-amber-200' },
+                        CONFIRMED: { text: '✓ Confirmed / Scheduled', cls: 'bg-blue-50 text-blue-800 border-blue-200' },
+                        COMPLETED: { text: '✓ Sample Collected', cls: 'bg-emerald-50 text-emerald-800 border-emerald-200' },
+                        CANCELLED: { text: '❌ Cancelled', cls: 'bg-red-50 text-red-800 border-red-200' }
+                      };
+                      
+                      const statusInfo = statusMap[apt.status] || { text: apt.status, cls: 'bg-slate-50 text-slate-800 border-slate-200' };
+
+                      return (
+                        <div key={apt.id} className="bg-slate-50 border border-slate-100 rounded-xl p-4 flex flex-col md:flex-row justify-between items-start md:items-center gap-4 hover:border-primary-light transition-colors animate-fade-in-up">
+                          <div className="space-y-1">
+                            <div className="flex items-center gap-2">
+                              <span className="font-bold text-slate-800 text-sm">{refId}</span>
+                              <span className={`text-[10px] font-extrabold px-2 py-0.5 rounded border ${statusInfo.cls}`}>
+                                {statusInfo.text}
+                              </span>
+                            </div>
+                            <p className="text-xs text-slate-600 font-semibold">{testDetails}</p>
+                            <div className="flex flex-wrap items-center gap-x-3 gap-y-1 text-[11px] text-slate-400">
+                              <span className="flex items-center gap-1">
+                                <Calendar size={12} /> {new Date(apt.date).toLocaleDateString('en-IN', { day: 'numeric', month: 'short', year: 'numeric' })}
+                              </span>
+                              <span>•</span>
+                              <span className="flex items-center gap-1">
+                                <Clock size={12} /> {apt.time}
+                              </span>
+                              <span>•</span>
+                              <span className="flex items-center gap-1">
+                                <MapPin size={12} /> {isHome ? 'Home Collection' : 'Lab Visit'}
+                              </span>
+                            </div>
+                          </div>
+                          
+                          {apt.status === 'SCHEDULED' && (
+                            <button
+                              onClick={() => {
+                                const msg = `*Inquiry about Booking ${refId}*\n\n*Patient:* ${apt.patient?.fullName}\n*Date/Time:* ${new Date(apt.date).toLocaleDateString()} ${apt.time}\n*Status:* Pending Confirmation\n\n*Tests Requested:*\n${testDetails}`;
+                                window.open(`https://wa.me/916396786939?text=${encodeURIComponent(msg)}`, '_blank');
+                              }}
+                              className="text-xs font-bold text-white bg-[#25D366] hover:bg-[#128C7E] px-3.5 py-2 rounded-lg transition-colors flex items-center gap-1"
+                            >
+                              <MessageCircle size={14} /> Contact Lab
+                            </button>
+                          )}
+                        </div>
+                      );
+                    })}
+                  </div>
+                </div>
+              )}
+            </div>
+          )}
         </div>
       </section>
 
@@ -772,14 +908,22 @@ const PublicWelcome = () => {
             <div className="p-6 md:p-8">
               
               {bookingSuccess ? (
-                <div className="text-center py-8">
+                <div className="text-center py-8 animate-fade-in-up">
                   <div className="w-20 h-20 bg-emerald-100 rounded-full flex items-center justify-center mx-auto mb-6">
                     <CheckCircle2 size={40} className="text-emerald-600" />
                   </div>
                   <h3 className="text-2xl font-bold text-slate-800 mb-2">Request Submitted Successfully!</h3>
-                  <p className="text-slate-600 mb-8 max-w-md mx-auto text-sm">
+                  <p className="text-slate-600 mb-6 max-w-md mx-auto text-sm">
                     Thank you, {bookingForm.name}. We have received your booking request. To ensure priority processing, please alert our lab coordinator on WhatsApp immediately.
                   </p>
+                  
+                  {createdAppointment && (
+                    <div className="mb-8 bg-primary-pale/50 border border-primary/15 rounded-2xl p-4 max-w-md mx-auto">
+                      <p className="text-[10px] font-extrabold text-primary uppercase tracking-wider">Your Tracking Reference ID</p>
+                      <p className="text-2xl font-black text-primary mt-1">SPL-APT-{createdAppointment.id.toString().padStart(6, '0')}</p>
+                      <p className="text-[11px] text-slate-500 mt-2 font-medium">Use this ID to track your request status using the <b>Track Request</b> option in the search card at the top of the page.</p>
+                    </div>
+                  )}
                   
                   <div className="flex flex-col sm:flex-row gap-3 justify-center">
                     <button

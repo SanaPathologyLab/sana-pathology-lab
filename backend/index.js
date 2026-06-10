@@ -164,6 +164,39 @@ app.post('/api/public/book-appointment', async (req, res) => {
   }
 });
 
+// ─── PUBLIC: Appointment Lookup (no auth required) ───
+app.get('/api/public/appointment-lookup', async (req, res) => {
+  try {
+    const { mobile } = req.query;
+    if (!mobile) {
+      return res.status(400).json({ message: 'Provide mobile number.' });
+    }
+
+    const patient = await prisma.patient.findFirst({
+      where: { mobileNumber: mobile.trim() },
+    });
+
+    if (!patient) {
+      return res.status(404).json({ message: 'No patient record found for this mobile number.' });
+    }
+
+    const appointments = await prisma.appointment.findMany({
+      where: { patientId: patient.id },
+      include: {
+        patient: true,
+        doctor: true,
+      },
+      orderBy: { date: 'desc' },
+      take: 10,
+    });
+
+    res.json(appointments);
+  } catch (err) {
+    console.error(err);
+    res.status(500).json({ message: err.message });
+  }
+});
+
 // ─── PUBLIC: Get Tests ───
 app.get('/api/public/tests', async (req, res) => {
   try {
