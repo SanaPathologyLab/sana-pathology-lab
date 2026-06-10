@@ -65,12 +65,18 @@ exports.updatePatient = async (req, res) => {
 
 exports.deletePatient = async (req, res) => {
   try {
-    // Only Admin can delete
-    if (req.userRole !== 'ADMIN') return res.status(403).json({ message: 'Admin access required' });
-    
-    await prisma.patient.delete({ where: { id: parseInt(req.params.id) } });
+    const patientId = parseInt(req.params.id);
+
+    // Delete dependent records first to avoid foreign key constraint errors
+    // Order matters: Invoice references Report, so delete invoices first
+    await prisma.invoice.deleteMany({ where: { patientId } });
+    await prisma.report.deleteMany({ where: { patientId } });
+    await prisma.appointment.deleteMany({ where: { patientId } });
+
+    await prisma.patient.delete({ where: { id: patientId } });
     res.status(200).json({ message: 'Patient deleted successfully' });
   } catch (err) {
-    res.status(500).json({ message: err.message });
+    console.error('Delete Patient Error:', err);
+    res.status(500).json({ message: err.message || 'Unknown error occurred while deleting the patient' });
   }
 };
