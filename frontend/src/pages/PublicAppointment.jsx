@@ -1,4 +1,4 @@
-import React, { useState } from 'react';
+import React, { useState, useEffect } from 'react';
 import { useNavigate } from 'react-router-dom';
 import { ArrowLeft, CheckCircle, Calendar, User, Phone, MapPin, Clock } from 'lucide-react';
 import Loader from '../components/Loader';
@@ -18,6 +18,17 @@ const PublicAppointment = () => {
   const [loading, setLoading] = useState(false);
   const [success, setSuccess] = useState(false);
   const [error, setError] = useState('');
+
+  useEffect(() => {
+    const params = new URLSearchParams(window.location.search);
+    const testName = params.get('test');
+    const packageName = params.get('package');
+    if (testName) {
+      setFormData(prev => ({ ...prev, notes: `Booking Test: ${testName}` }));
+    } else if (packageName) {
+      setFormData(prev => ({ ...prev, notes: `Booking Package: ${packageName}` }));
+    }
+  }, []);
 
   const handleChange = (e) => {
     setFormData({ ...formData, [e.target.name]: e.target.value });

@@ -3,9 +3,69 @@ import { useNavigate } from 'react-router-dom';
 import { 
   Phone, MapPin, Clock, CheckCircle2, Activity, Microscope, 
   UserCircle, Star, ChevronDown, ChevronUp, MessageCircle, ShieldCheck,
-  Search, FileText
+  Search, FileText, Heart, Filter, Sparkles, Check, Info, Trash2, Calendar,
+  ArrowRight, Award, ShieldAlert, BadgePercent
 } from 'lucide-react';
 import Logo from '../components/Logo';
+import Loader from '../components/Loader';
+
+const DEFAULT_TESTS = [
+  { testName: 'Complete Blood Count (CBC)', testCode: 'CBC', price: 300, sampleType: 'Blood', category: { name: 'Hematology' } },
+  { testName: 'Fasting Blood Sugar (FBS)', testCode: 'FBS', price: 150, sampleType: 'Blood', category: { name: 'Biochemistry' } },
+  { testName: 'Lipid Profile', testCode: 'LIPID', price: 400, sampleType: 'Blood', category: { name: 'Biochemistry' } },
+  { testName: 'Thyroid Profile (T3, T4, TSH)', testCode: 'THYROID', price: 550, sampleType: 'Blood', category: { name: 'Immunology' } },
+  { testName: 'Urine Routine Examination', testCode: 'URINE', price: 200, sampleType: 'Urine', category: { name: 'Urine Analysis' } },
+  { testName: 'Liver Function Test (LFT)', testCode: 'LFT', price: 600, sampleType: 'Blood', category: { name: 'Biochemistry' } },
+  { testName: 'Kidney Function Test (KFT)', testCode: 'KFT', price: 600, sampleType: 'Blood', category: { name: 'Biochemistry' } },
+  { testName: 'Vitamin D (25-OH)', testCode: 'VITD', price: 800, sampleType: 'Blood', category: { name: 'Immunology' } },
+  { testName: 'WIDAL Test (Typhoid)', testCode: 'WIDAL', price: 200, sampleType: 'Blood', category: { name: 'Immunology' } },
+  { testName: 'Hemoglobin (Hb) Only', testCode: 'HB', price: 100, sampleType: 'Blood', category: { name: 'Hematology' } },
+  { testName: 'Blood Grouping & Rh Typing', testCode: 'BGRP', price: 150, sampleType: 'Blood', category: { name: 'Hematology' } },
+  { testName: 'Uric Acid', testCode: 'URIC', price: 180, sampleType: 'Blood', category: { name: 'Biochemistry' } },
+  { testName: 'HbA1c (Glycated Hemoglobin)', testCode: 'HBA1C', price: 350, sampleType: 'Blood', category: { name: 'Biochemistry' } },
+  { testName: 'Calcium Serum', testCode: 'CA', price: 220, sampleType: 'Blood', category: { name: 'Biochemistry' } },
+  { testName: 'Dengue NS1 Antigen', testCode: 'DENGUENS1', price: 600, sampleType: 'Blood', category: { name: 'Immunology' } },
+  { testName: 'ESR (Erythrocyte Sedimentation Rate)', testCode: 'ESR', price: 100, sampleType: 'Blood', category: { name: 'Hematology' } },
+];
+
+const HEALTH_PACKAGES = [
+  {
+    name: 'Sana Fit Active (Basic Health)',
+    code: 'PKG-FIT',
+    price: 699,
+    originalPrice: 999,
+    tests: ['Complete Blood Count (CBC)', 'Fasting Blood Sugar', 'Lipid Profile', 'Urine Routine'],
+    badge: 'Popular',
+    desc: 'Ideal for routine wellness screening and baseline tracking.'
+  },
+  {
+    name: 'Sana Women Premium (Special Care)',
+    code: 'PKG-WOMEN',
+    price: 1899,
+    originalPrice: 2999,
+    tests: ['CBC', 'Thyroid Profile', 'LFT', 'KFT', 'Vitamin D', 'Vitamin B12', 'Fasting Sugar'],
+    badge: 'Best Value',
+    desc: 'Comprehensive checkup tailored specifically for women health.'
+  },
+  {
+    name: 'Sana Senior Citizen (Elderly Care)',
+    code: 'PKG-SENIOR',
+    price: 1399,
+    originalPrice: 2299,
+    tests: ['CBC', 'Blood Sugar Fasting', 'HbA1c', 'LFT', 'KFT', 'Lipid Profile', 'Urine Routine'],
+    badge: 'Elderly Care',
+    desc: 'Recommended for annual evaluation for people aged 60+.'
+  },
+  {
+    name: 'Sana Heart Health (Cardiac Profile)',
+    code: 'PKG-HEART',
+    price: 1199,
+    originalPrice: 1799,
+    tests: ['Lipid Profile', 'HbA1c', 'Complete Blood Count (CBC)', 'Blood Sugar', 'Uric Acid'],
+    badge: 'Advanced',
+    desc: 'Comprehensive risk assessment for cardiovascular diseases.'
+  }
+];
 
 const PublicWelcome = () => {
   const navigate = useNavigate();
@@ -13,6 +73,29 @@ const PublicWelcome = () => {
   const [currentSlide, setCurrentSlide] = useState(0);
   const [searchType, setSearchType] = useState('mobile');
   const [searchQuery, setSearchQuery] = useState('');
+  
+  // Dynamic Test Explorer States
+  const [tests, setTests] = useState([]);
+  const [categories, setCategories] = useState(['All']);
+  const [selectedCategory, setSelectedCategory] = useState('All');
+  const [searchQueryTest, setSearchQueryTest] = useState('');
+  const [selectedTests, setSelectedTests] = useState([]);
+  const [loadingTests, setLoadingTests] = useState(true);
+
+  // Booking Form States
+  const [bookingForm, setBookingForm] = useState({
+    name: '',
+    mobile: '',
+    gender: 'MALE',
+    address: '',
+    preferredDate: new Date(Date.now() + 86400000).toISOString().split('T')[0], // tomorrow
+    preferredTime: '08:00',
+    isHomeCollection: true
+  });
+  const [bookingSuccess, setBookingSuccess] = useState(false);
+  const [bookingLoading, setBookingLoading] = useState(false);
+  const [bookingError, setBookingError] = useState('');
+
   const slides = ['/slide1.png', '/slide2.png', '/slide3.png'];
 
   const handleSearch = (e) => {
@@ -29,7 +112,7 @@ const PublicWelcome = () => {
   useEffect(() => {
     const timer = setInterval(() => {
       setCurrentSlide((prev) => (prev + 1) % slides.length);
-    }, 4000);
+    }, 5000);
     return () => clearInterval(timer);
   }, [slides.length]);
 
@@ -38,21 +121,135 @@ const PublicWelcome = () => {
     window.scrollTo(0, 0);
   }, []);
 
+  // Load tests from API
+  useEffect(() => {
+    const fetchTests = async () => {
+      try {
+        const response = await fetch('/api/public/tests');
+        if (response.ok) {
+          const data = await response.json();
+          if (data && data.length > 0) {
+            setTests(data);
+            const cats = new Set(data.map(t => t.category?.name || 'Other'));
+            setCategories(['All', ...Array.from(cats)]);
+          } else {
+            setTests(DEFAULT_TESTS);
+            const cats = new Set(DEFAULT_TESTS.map(t => t.category?.name || 'Other'));
+            setCategories(['All', ...Array.from(cats)]);
+          }
+        } else {
+          setTests(DEFAULT_TESTS);
+          const cats = new Set(DEFAULT_TESTS.map(t => t.category?.name || 'Other'));
+          setCategories(['All', ...Array.from(cats)]);
+        }
+      } catch (err) {
+        console.error('Failed to fetch tests', err);
+        setTests(DEFAULT_TESTS);
+        const cats = new Set(DEFAULT_TESTS.map(t => t.category?.name || 'Other'));
+        setCategories(['All', ...Array.from(cats)]);
+      } finally {
+        setLoadingTests(false);
+      }
+    };
+    fetchTests();
+  }, []);
+
   const toggleFaq = (index) => {
     if (openFaq === index) setOpenFaq(null);
     else setOpenFaq(index);
   };
 
-  const services = [
-    { name: 'Complete Blood Count (CBC)', price: '₹300', time: '6 Hours', icon: <Activity className="w-8 h-8 text-primary" /> },
-    { name: 'Fasting Blood Sugar', price: '₹150', time: '4 Hours', icon: <Activity className="w-8 h-8 text-primary" /> },
-    { name: 'Lipid Profile', price: '₹400', time: '12 Hours', icon: <Activity className="w-8 h-8 text-primary" /> },
-    { name: 'Thyroid Profile (T3/T4/TSH)', price: '₹550', time: '12 Hours', icon: <Microscope className="w-8 h-8 text-primary" /> },
-    { name: 'Urine Routine', price: '₹200', time: '4 Hours', icon: <Microscope className="w-8 h-8 text-primary" /> },
-    { name: 'Liver Function Test (LFT)', price: '₹600', time: '12 Hours', icon: <Activity className="w-8 h-8 text-primary" /> },
-    { name: 'Kidney Function Test (KFT)', price: '₹600', time: '12 Hours', icon: <Activity className="w-8 h-8 text-primary" /> },
-    { name: 'Vitamin D (25-OH)', price: '₹800', time: '24 Hours', icon: <Microscope className="w-8 h-8 text-primary" /> },
-  ];
+  // Dynamic test selection logic
+  const toggleTestSelection = (testItem, isPkg = false) => {
+    const key = isPkg ? testItem.code : testItem.testCode;
+    const isSelected = selectedTests.some(t => t.testCode === key);
+    
+    if (isSelected) {
+      setSelectedTests(prev => prev.filter(t => t.testCode !== key));
+    } else {
+      setSelectedTests(prev => [...prev, {
+        name: isPkg ? testItem.name : testItem.testName,
+        price: testItem.price,
+        testCode: key,
+        isPackage: isPkg
+      }]);
+    }
+  };
+
+  const removeSelectedTest = (code) => {
+    setSelectedTests(prev => prev.filter(t => t.testCode !== code));
+  };
+
+  const clearSelection = () => {
+    setSelectedTests([]);
+  };
+
+  const handleBookingChange = (e) => {
+    const { name, value, type, checked } = e.target;
+    setBookingForm(prev => ({
+      ...prev,
+      [name]: type === 'checkbox' ? checked : value
+    }));
+  };
+
+  const handleHomepageBookSubmit = async (e) => {
+    e.preventDefault();
+    if (selectedTests.length === 0) {
+      setBookingError('Please select at least one test or health package above to submit booking.');
+      return;
+    }
+    setBookingLoading(true);
+    setBookingError('');
+    setBookingSuccess(false);
+
+    const testListStr = selectedTests.map(t => `${t.name} (₹${t.price})`).join(', ');
+    const notesContent = `Requested via Home Page. Tests/Packages: ${testListStr}. Mode: ${bookingForm.isHomeCollection ? 'Home Collection' : 'Lab Visit'}`;
+
+    try {
+      const response = await fetch('/api/public/book-appointment', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({
+          name: bookingForm.name,
+          mobile: bookingForm.mobile,
+          gender: bookingForm.gender,
+          address: bookingForm.isHomeCollection ? bookingForm.address : 'Lab Visit',
+          preferredDate: bookingForm.preferredDate,
+          preferredTime: bookingForm.preferredTime,
+          notes: notesContent
+        })
+      });
+
+      if (response.ok) {
+        setBookingSuccess(true);
+      } else {
+        const data = await response.json();
+        setBookingError(data.message || 'Failed to submit appointment. Please try again.');
+      }
+    } catch (err) {
+      setBookingError('Network error. Failed to connect to diagnostic server.');
+    } finally {
+      setBookingLoading(false);
+    }
+  };
+
+  const handleAlertWhatsApp = () => {
+    const testListStr = selectedTests.map(t => `- ${t.name} (₹${t.price})`).join('\n');
+    const msg = `*New Appointment Request (Home Page)*\n\n*Name:* ${bookingForm.name}\n*Mobile:* ${bookingForm.mobile}\n*Gender:* ${bookingForm.gender}\n*Date:* ${bookingForm.preferredDate} ${bookingForm.preferredTime}\n*Mode:* ${bookingForm.isHomeCollection ? 'Home Collection' : 'Clinic Visit'}\n*Address:* ${bookingForm.isHomeCollection ? bookingForm.address : 'N/A'}\n\n*Selected Tests/Packages:*\n${testListStr}\n\n*Total Amount:* ₹${selectedTests.reduce((acc, t) => acc + t.price, 0)}`;
+    const labPhone = "916396786939"; 
+    window.open(`https://wa.me/${labPhone}?text=${encodeURIComponent(msg)}`, '_blank');
+  };
+
+  // Filter tests matching criteria
+  const activeTests = tests.length > 0 ? tests : DEFAULT_TESTS;
+  const filteredTests = activeTests.filter(t => {
+    const matchesCategory = selectedCategory === 'All' || (t.category?.name || 'Other') === selectedCategory;
+    const matchesSearch = t.testName.toLowerCase().includes(searchQueryTest.toLowerCase()) || 
+                          t.testCode.toLowerCase().includes(searchQueryTest.toLowerCase());
+    return matchesCategory && matchesSearch;
+  });
+
+  const totalPrice = selectedTests.reduce((acc, t) => acc + t.price, 0);
 
   const faqs = [
     { q: "Do I need to fast before a blood test?", a: "It depends on the test. Tests like Fasting Blood Sugar and Lipid Profile require 8-12 hours of fasting. Please check with our lab when booking." },
@@ -63,12 +260,12 @@ const PublicWelcome = () => {
   ];
 
   return (
-    <div className="min-h-screen bg-bg relative font-sans text-slate-800">
+    <div className="min-h-screen bg-bg relative font-sans text-slate-800 scroll-smooth">
       
       {/* Header */}
       <header className="sticky top-0 w-full z-50 bg-white/90 backdrop-blur-md shadow-sm border-b border-gray-100 transition-all duration-300">
         <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 h-20 flex items-center justify-between">
-          <div className="flex items-center gap-3 cursor-pointer" onClick={() => window.scrollTo(0,0)}>
+          <div className="flex items-center gap-3 cursor-pointer" onClick={() => window.scrollTo({ top: 0, behavior: 'smooth' })}>
             <Logo className="w-12 h-12 md:w-14 md:h-14 drop-shadow-md" />
             <div>
               <h1 className="text-2xl font-heading text-primary tracking-tight leading-none">
@@ -80,7 +277,10 @@ const PublicWelcome = () => {
           
           <div className="flex items-center gap-3">
             <div className="hidden md:flex items-center gap-8 mr-4">
-              <a href="#services" className="text-sm font-bold text-slate-600 hover:text-primary transition-colors">Services</a>
+              <a href="#stats" className="text-sm font-bold text-slate-600 hover:text-primary transition-colors">Why Us</a>
+              <a href="#packages" className="text-sm font-bold text-slate-600 hover:text-primary transition-colors">Packages</a>
+              <a href="#services" className="text-sm font-bold text-slate-600 hover:text-primary transition-colors">Test Finder</a>
+              <a href="#booking" className="text-sm font-bold text-slate-600 hover:text-primary transition-colors">Book Online</a>
               <a href="#faq" className="text-sm font-bold text-slate-600 hover:text-primary transition-colors">FAQ</a>
               <a href="#contact" className="text-sm font-bold text-slate-600 hover:text-primary transition-colors">Contact</a>
             </div>
@@ -102,43 +302,59 @@ const PublicWelcome = () => {
         {slides.map((slide, index) => (
           <div 
             key={index}
-            className={`absolute inset-0 transition-opacity duration-1000 ease-in-out ${index === currentSlide ? 'opacity-100' : 'opacity-0'}`}
+            className={`absolute inset-0 transition-opacity duration-1000 ease-in-out ${index === currentSlide ? 'opacity-15' : 'opacity-0'}`}
           >
             <img src={slide} alt="Lab background" className="w-full h-full object-cover" />
           </div>
         ))}
         {/* Dark Teal Gradient Overlay */}
-        <div className="absolute inset-0 bg-gradient-to-r from-[#085041]/95 to-[#1D9E75]/85"></div>
+        <div className="absolute inset-0 bg-gradient-to-br from-[#085041]/95 via-[#0A5D4C]/90 to-[#128362]/80"></div>
+        <div className="absolute top-0 left-0 right-0 h-40 bg-gradient-to-b from-black/20 to-transparent pointer-events-none"></div>
+
+        {/* Decorative Blobs */}
+        <div className="absolute top-1/4 left-10 w-72 h-72 bg-primary-light/10 rounded-full blur-3xl animate-blob"></div>
+        <div className="absolute bottom-1/4 right-10 w-96 h-96 bg-accent/5 rounded-full blur-3xl animate-blob" style={{ animationDelay: '3s' }}></div>
 
         <div className="relative z-10 max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 text-center">
-          <h2 className="text-5xl md:text-6xl lg:text-7xl font-heading text-white mb-6 leading-tight max-w-4xl mx-auto">
-            Trusted Pathology Lab in Your City
+          <div className="inline-flex items-center gap-2 px-4 py-1.5 rounded-full bg-white/10 text-primary-pale text-xs font-semibold tracking-wider uppercase mb-6 backdrop-blur-md border border-white/20">
+            <Sparkles size={14} className="text-accent" />
+            <span>NABL Standards • 100% Quality Assured</span>
+          </div>
+
+          <h2 className="text-5xl md:text-6xl lg:text-7xl font-heading text-white mb-6 leading-tight max-w-4xl mx-auto drop-shadow-sm">
+            Trusted Pathology Lab <span className="text-[#F1C40F]">in Your City</span>
           </h2>
           
-          <p className="text-lg md:text-xl text-primary-pale mb-10 max-w-2xl mx-auto">
-            Accurate reports. Fast results. Home collection available.
+          <p className="text-lg md:text-xl text-primary-pale mb-10 max-w-2xl mx-auto font-light">
+            Providing high-precision diagnostics, blood tests, and health packages with free home collection at your convenience.
           </p>
 
           <div className="flex flex-col sm:flex-row items-center justify-center gap-4 mb-16">
-            <button 
-              onClick={() => navigate('/book-appointment')}
-              className="w-full sm:w-auto min-h-[44px] bg-accent hover:bg-amber-600 text-white px-8 py-4 rounded-full font-bold text-lg transition-all shadow-lg shadow-accent/30 hover:-translate-y-1"
+            <a 
+              href="#packages"
+              className="w-full sm:w-auto min-h-[44px] bg-accent hover:bg-amber-600 text-white px-8 py-4 rounded-full font-bold text-lg transition-all shadow-lg shadow-accent/30 hover:-translate-y-1 text-center"
             >
-              Book a Test
-            </button>
+              Explore Packages
+            </a>
+            <a 
+              href="#services"
+              className="w-full sm:w-auto min-h-[44px] bg-white/10 hover:bg-white/20 text-white border border-white/30 px-8 py-4 rounded-full font-bold text-lg transition-all text-center"
+            >
+              Find a Test
+            </a>
             <a 
               href="tel:+916396786939"
-              className="w-full sm:w-auto min-h-[44px] border-2 border-white text-white hover:bg-white hover:text-primary px-8 py-4 rounded-full font-bold text-lg transition-all"
+              className="w-full sm:w-auto min-h-[44px] border-2 border-[#F1C40F] text-[#F1C40F] hover:bg-[#F1C40F] hover:text-primary px-8 py-4 rounded-full font-bold text-lg transition-all text-center"
             >
-              Call Now
+              Call: +91 6396786939
             </a>
           </div>
 
           <div className="flex flex-wrap justify-center gap-4 sm:gap-8 lg:gap-12 text-white">
-            <div className="flex items-center gap-2"><CheckCircle2 className="text-accent" size={20} /><span className="font-medium">10,000+ Patients</span></div>
-            <div className="flex items-center gap-2"><Clock className="text-accent" size={20} /><span className="font-medium">24hr Reports</span></div>
-            <div className="flex items-center gap-2"><Phone className="text-accent" size={20} /><span className="font-medium">Home Collection</span></div>
-            <div className="flex items-center gap-2"><ShieldCheck className="text-accent" size={20} /><span className="font-medium">NABL Accredited</span></div>
+            <div className="flex items-center gap-2 bg-white/5 px-4 py-2 rounded-xl border border-white/10 backdrop-blur-sm"><CheckCircle2 className="text-[#F1C40F]" size={20} /><span className="font-medium">15,000+ Patients</span></div>
+            <div className="flex items-center gap-2 bg-white/5 px-4 py-2 rounded-xl border border-white/10 backdrop-blur-sm"><Clock className="text-[#F1C40F]" size={20} /><span className="font-medium">6-12hr Turnaround</span></div>
+            <div className="flex items-center gap-2 bg-white/5 px-4 py-2 rounded-xl border border-white/10 backdrop-blur-sm"><Phone className="text-[#F1C40F]" size={20} /><span className="font-medium">Free Home Collection</span></div>
+            <div className="flex items-center gap-2 bg-white/5 px-4 py-2 rounded-xl border border-white/10 backdrop-blur-sm"><ShieldCheck className="text-[#F1C40F]" size={20} /><span className="font-medium">NABL Accredited</span></div>
           </div>
         </div>
       </section>
@@ -189,7 +405,7 @@ const PublicWelcome = () => {
             </div>
             <button
               type="submit"
-              className="bg-primary hover:bg-primary-light text-white px-8 py-3 rounded-xl font-bold transition-colors flex items-center justify-center gap-2"
+              className="bg-primary hover:bg-primary-light text-white px-8 py-3 rounded-xl font-bold transition-colors flex items-center justify-center gap-2 shadow-md shadow-primary/20"
             >
               <Search className="w-5 h-5" />
               Find Report
@@ -198,59 +414,669 @@ const PublicWelcome = () => {
         </div>
       </section>
 
-      {/* Why Choose Us */}
-      <section className="py-20 bg-bg px-4 sm:px-6 lg:px-8">
+      {/* Dynamic Lab Statistics Grid */}
+      <section id="stats" className="py-20 bg-bg px-4 sm:px-6 lg:px-8">
         <div className="max-w-7xl mx-auto">
           <div className="text-center mb-16">
-            <h2 className="text-4xl font-heading text-primary">Why Choose Us</h2>
+            <h2 className="text-4xl font-heading text-primary">Sana Pathology at a Glance</h2>
+            <p className="text-slate-500 mt-2 max-w-xl mx-auto">Committed to clinical excellence, patient care, and accurate reporting standards.</p>
             <div className="w-16 h-1 bg-accent mx-auto mt-4 rounded-full"></div>
           </div>
           
-          <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-8">
+          <div className="grid grid-cols-2 lg:grid-cols-4 gap-6 md:gap-8">
             {[
-              { title: 'NABL Accredited', desc: 'Highest standard of testing quality and lab practices.' },
-              { title: 'Home Sample Collection', desc: 'Free and safe blood collection at your doorstep.' },
-              { title: 'Digital Reports in 24hrs', desc: 'Get accurate reports quickly via WhatsApp & Email.' },
-              { title: '15+ Years Experience', desc: 'Trusted by thousands of doctors and patients.' },
+              { title: '15,000+', desc: 'Happy Patients Served', color: 'border-emerald-500', icon: <UserCircle className="w-8 h-8 text-emerald-600" /> },
+              { title: '250+', desc: 'Comprehensive Lab Tests', color: 'border-blue-500', icon: <Microscope className="w-8 h-8 text-blue-600" /> },
+              { title: '6 Hours', desc: 'Average Report Delivery', color: 'border-amber-500', icon: <Clock className="w-8 h-8 text-amber-600" /> },
+              { title: '100%', desc: 'Accurate & NABL Standard', color: 'border-red-500', icon: <Award className="w-8 h-8 text-red-600" /> },
             ].map((item, i) => (
-              <div key={i} className="bg-white p-8 rounded-2xl shadow-sm border-t-4 border-primary hover:shadow-md transition-shadow">
-                <CheckCircle2 className="w-10 h-10 text-primary mb-4" />
-                <h3 className="text-xl font-bold mb-2 text-slate-800">{item.title}</h3>
-                <p className="text-slate-600 leading-relaxed">{item.desc}</p>
+              <div key={i} className={`bg-white p-6 md:p-8 rounded-2xl shadow-sm border-b-4 ${item.color} flex flex-col items-center text-center hover:shadow-lg transition-all duration-300 hover:-translate-y-1`}>
+                <div className="p-3 bg-slate-50 rounded-2xl mb-4">{item.icon}</div>
+                <h3 className="text-3xl md:text-4xl font-extrabold text-slate-800 tracking-tight">{item.title}</h3>
+                <p className="text-slate-500 mt-2 text-sm font-semibold">{item.desc}</p>
               </div>
             ))}
           </div>
         </div>
       </section>
 
-      {/* Our Services */}
-      <section id="services" className="py-20 bg-primary-pale px-4 sm:px-6 lg:px-8">
+      {/* Pathology Testing Journey (Interactive Visual Stepper) */}
+      <section className="py-20 bg-primary-pale/30 px-4 sm:px-6 lg:px-8 border-y border-emerald-100">
         <div className="max-w-7xl mx-auto">
           <div className="text-center mb-16">
-            <h2 className="text-4xl font-heading text-primary">Our Services</h2>
-            <p className="text-slate-600 mt-4 max-w-2xl mx-auto">Book individual tests directly with guaranteed fast turnaround times.</p>
+            <span className="text-xs font-bold tracking-widest text-primary uppercase bg-primary-pale px-3 py-1 rounded-full">Process</span>
+            <h2 className="text-4xl font-heading text-primary mt-2">How It Works</h2>
+            <p className="text-slate-500 mt-2">Get tested in 5 simple, secure steps without leaving your home.</p>
             <div className="w-16 h-1 bg-accent mx-auto mt-4 rounded-full"></div>
           </div>
 
-          <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-6">
-            {services.map((svc, i) => (
-              <div key={i} className="bg-white rounded-2xl p-6 shadow-sm flex flex-col items-center text-center border border-slate-100">
-                <div className="w-16 h-16 bg-primary-pale rounded-full flex items-center justify-center mb-4">
-                  {svc.icon}
+          <div className="grid grid-cols-1 md:grid-cols-5 gap-8 relative">
+            {[
+              { step: '01', title: 'Select Tests', desc: 'Choose tests or wellness packages below.' },
+              { step: '02', title: 'Schedule Collection', desc: 'Provide date, time, and address.' },
+              { step: '03', title: 'Sample Collection', desc: 'Certified phlebotomist collects at your doorstep.' },
+              { step: '04', title: 'Lab Processing', desc: 'High-tech processing with barcoded safety.' },
+              { step: '05', title: 'Digital Reports', desc: 'Get reports on WhatsApp & download online.' }
+            ].map((item, index) => (
+              <div key={index} className="relative flex flex-col items-center text-center group">
+                <div className="w-16 h-16 rounded-full bg-white border-2 border-primary-light flex items-center justify-center text-primary font-bold text-xl shadow-md group-hover:bg-primary group-hover:text-white transition-all duration-300 z-10">
+                  {item.step}
                 </div>
-                <h3 className="text-lg font-bold text-slate-800 mb-2">{svc.name}</h3>
-                <div className="mt-auto w-full">
-                  <div className="flex justify-between items-center mb-4 text-sm text-slate-600 border-t border-slate-100 pt-4 mt-2">
-                    <span className="font-semibold text-primary">{svc.price}</span>
-                    <span>{svc.time}</span>
-                  </div>
-                  <button onClick={() => navigate('/book-appointment')} className="w-full min-h-[44px] bg-primary-pale text-primary hover:bg-primary hover:text-white font-bold py-2 rounded-xl transition-colors">
-                    Book Now
-                  </button>
-                </div>
+                <h3 className="font-bold text-slate-800 mt-4 mb-2 text-lg">{item.title}</h3>
+                <p className="text-slate-500 text-sm max-w-[200px] leading-relaxed">{item.desc}</p>
+                {index < 4 && (
+                  <div className="hidden md:block absolute top-8 left-[60%] w-[80%] h-[2px] bg-slate-200 z-0"></div>
+                )}
               </div>
             ))}
           </div>
+        </div>
+      </section>
+
+      {/* Curated Health & Wellness Packages */}
+      <section id="packages" className="py-20 bg-bg px-4 sm:px-6 lg:px-8">
+        <div className="max-w-7xl mx-auto">
+          <div className="text-center mb-16">
+            <span className="text-xs font-bold tracking-widest text-[#BA7517] uppercase bg-accent-pale px-3 py-1 rounded-full">Sana Care</span>
+            <h2 className="text-4xl font-heading text-primary mt-2">Popular Health Packages</h2>
+            <p className="text-slate-500 mt-2 max-w-2xl mx-auto">Complete medical profile checks at highly subsidized rates. Free home collection included.</p>
+            <div className="w-16 h-1 bg-accent mx-auto mt-4 rounded-full"></div>
+          </div>
+
+          <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-8">
+            {HEALTH_PACKAGES.map((pkg, i) => {
+              const isSelected = selectedTests.some(t => t.testCode === pkg.code);
+              return (
+                <div key={i} className="bg-white rounded-3xl p-6 shadow-sm border border-slate-100 flex flex-col justify-between hover:shadow-xl transition-all duration-300 relative group overflow-hidden">
+                  {/* Top highlights */}
+                  <div>
+                    <div className="flex justify-between items-center mb-4">
+                      <span className="text-xs font-extrabold text-[#BA7517] bg-accent-pale px-2.5 py-1 rounded-full uppercase">
+                        {pkg.badge}
+                      </span>
+                      <span className="text-xs text-slate-400 font-bold uppercase">Package</span>
+                    </div>
+                    <h3 className="text-xl font-bold text-slate-800 mb-2 group-hover:text-primary transition-colors">{pkg.name}</h3>
+                    <p className="text-slate-500 text-xs mb-4 leading-relaxed">{pkg.desc}</p>
+
+                    {/* Includes list */}
+                    <div className="border-t border-slate-100 pt-4 mb-6">
+                      <p className="text-xs font-bold text-slate-700 uppercase tracking-wider mb-2 flex items-center gap-1">
+                        <BadgePercent size={14} className="text-primary" /> Includes {pkg.tests.length} tests:
+                      </p>
+                      <ul className="space-y-1.5">
+                        {pkg.tests.map((t, idx) => (
+                          <li key={idx} className="text-slate-600 text-xs flex items-center gap-1.5 font-medium">
+                            <Check size={12} className="text-primary-light shrink-0" />
+                            <span className="truncate">{t}</span>
+                          </li>
+                        ))}
+                      </ul>
+                    </div>
+                  </div>
+
+                  {/* Pricing and Action */}
+                  <div className="mt-auto pt-4 border-t border-slate-50">
+                    <div className="flex items-baseline gap-2 mb-4">
+                      <span className="text-2xl font-extrabold text-primary">₹{pkg.price}</span>
+                      <span className="text-slate-400 line-through text-xs">₹{pkg.originalPrice}</span>
+                      <span className="text-emerald-600 font-bold text-xs bg-emerald-50 px-1.5 py-0.5 rounded">
+                        {Math.round(((pkg.originalPrice - pkg.price) / pkg.originalPrice) * 100)}% OFF
+                      </span>
+                    </div>
+
+                    <div className="flex gap-2">
+                      <button 
+                        onClick={() => toggleTestSelection(pkg, true)}
+                        className={`flex-1 min-h-[44px] rounded-xl font-bold text-sm transition-all flex items-center justify-center gap-1.5 ${
+                          isSelected 
+                            ? 'bg-emerald-600 text-white hover:bg-emerald-700' 
+                            : 'bg-primary-pale text-primary hover:bg-primary hover:text-white'
+                        }`}
+                      >
+                        {isSelected ? (
+                          <>
+                            <Check size={16} />
+                            <span>Selected</span>
+                          </>
+                        ) : (
+                          <span>Select Package</span>
+                        )}
+                      </button>
+                    </div>
+                  </div>
+                </div>
+              );
+            })}
+          </div>
+        </div>
+      </section>
+
+      {/* Dynamic Test Catalog & Interactive Explorer */}
+      <section id="services" className="py-20 bg-primary-pale/25 px-4 sm:px-6 lg:px-8 border-y border-slate-100">
+        <div className="max-w-7xl mx-auto">
+          <div className="text-center mb-12">
+            <span className="text-xs font-bold tracking-widest text-primary uppercase bg-primary-pale px-3 py-1 rounded-full">Catalog</span>
+            <h2 className="text-4xl font-heading text-primary mt-2">Interactive Test Explorer</h2>
+            <p className="text-slate-500 mt-2 max-w-xl mx-auto">Search and filter our complete pathology catalog. Select multiple tests to build your custom appointment.</p>
+            <div className="w-16 h-1 bg-accent mx-auto mt-4 rounded-full"></div>
+          </div>
+
+          <div className="grid grid-cols-1 lg:grid-cols-4 gap-8 items-start">
+            
+            {/* Catalog Main Panel */}
+            <div className="lg:col-span-3 space-y-6">
+              
+              {/* Search & Categories Bar */}
+              <div className="bg-white rounded-2xl p-4 md:p-6 shadow-sm border border-slate-100 space-y-4">
+                <div className="flex flex-col md:flex-row gap-4">
+                  {/* Search */}
+                  <div className="relative flex-1">
+                    <Search className="absolute left-4 top-3.5 text-slate-400 w-5 h-5" />
+                    <input
+                      type="text"
+                      placeholder="Search for blood test, sugar, thyroid, widal, CBC..."
+                      value={searchQueryTest}
+                      onChange={(e) => setSearchQueryTest(e.target.value)}
+                      className="w-full pl-12 pr-4 py-3 border border-slate-200 rounded-xl focus:border-primary focus:ring-1 focus:ring-primary outline-none transition-colors text-sm font-medium"
+                    />
+                  </div>
+                </div>
+
+                {/* Categories Pills */}
+                <div className="flex flex-wrap gap-2 pt-2 border-t border-slate-100">
+                  <span className="text-xs font-bold text-slate-400 uppercase mr-2 flex items-center gap-1">
+                    <Filter size={12} /> Filter:
+                  </span>
+                  {categories.map((cat, i) => (
+                    <button
+                      key={i}
+                      onClick={() => setSelectedCategory(cat)}
+                      className={`text-xs px-3 py-1.5 rounded-full font-bold transition-all ${
+                        selectedCategory === cat
+                          ? 'bg-primary text-white shadow-sm'
+                          : 'bg-slate-100 text-slate-600 hover:bg-slate-200'
+                      }`}
+                    >
+                      {cat}
+                    </button>
+                  ))}
+                </div>
+              </div>
+
+              {/* Test List Grid */}
+              {loadingTests ? (
+                <div className="flex flex-col items-center justify-center py-20 bg-white rounded-2xl border border-slate-100">
+                  <Loader type="page" size="md" />
+                  <p className="text-slate-500 text-sm font-medium mt-4">Loading clinical test catalog...</p>
+                </div>
+              ) : filteredTests.length === 0 ? (
+                <div className="p-12 text-center bg-white rounded-2xl border border-slate-100">
+                  <div className="w-12 h-12 bg-slate-100 text-slate-400 rounded-full flex items-center justify-center mx-auto mb-4">
+                    <Info size={24} />
+                  </div>
+                  <h3 className="text-lg font-bold text-slate-700">No Tests Found</h3>
+                  <p className="text-slate-500 text-sm mt-1">We couldn't find tests matching "{searchQueryTest}". Try searching for standard terms like CBC, Sugar, or Liver.</p>
+                  <button 
+                    onClick={() => { setSearchQueryTest(''); setSelectedCategory('All'); }}
+                    className="mt-4 px-4 py-2 bg-primary text-white text-xs font-bold rounded-lg hover:bg-primary-light transition-colors"
+                  >
+                    Reset Filter
+                  </button>
+                </div>
+              ) : (
+                <div className="grid grid-cols-1 md:grid-cols-2 gap-4 max-h-[500px] overflow-y-auto pr-2 custom-scrollbar">
+                  {filteredTests.map((test, index) => {
+                    const isSelected = selectedTests.some(t => t.testCode === test.testCode);
+                    return (
+                      <div 
+                        key={index} 
+                        onClick={() => toggleTestSelection(test, false)}
+                        className={`bg-white rounded-2xl p-4 border transition-all duration-300 flex items-center justify-between cursor-pointer group ${
+                          isSelected 
+                            ? 'border-primary bg-primary/5 shadow-sm' 
+                            : 'border-slate-100 hover:border-primary-light hover:shadow-sm'
+                        }`}
+                      >
+                        <div className="flex-1 min-w-0 pr-4">
+                          <div className="flex items-center gap-2 mb-1.5">
+                            <span className="text-[10px] font-bold text-primary bg-primary-pale px-2 py-0.5 rounded uppercase tracking-wider">
+                              {test.category?.name || 'Test'}
+                            </span>
+                            <span className="text-[10px] text-slate-400 font-medium tracking-wide">
+                              Code: {test.testCode}
+                            </span>
+                          </div>
+                          <h4 className="font-bold text-slate-800 text-sm sm:text-base group-hover:text-primary transition-colors truncate">
+                            {test.testName}
+                          </h4>
+                          <div className="flex items-center gap-3 mt-2 text-xs text-slate-500">
+                            <span className="flex items-center gap-1 font-semibold text-[#BA7517]">
+                              ₹{test.price}
+                            </span>
+                            <span className="w-1.5 h-1.5 rounded-full bg-slate-300"></span>
+                            <span>{test.sampleType || 'Blood'} Sample</span>
+                          </div>
+                        </div>
+                        
+                        <div className={`w-8 h-8 rounded-full flex items-center justify-center border transition-all ${
+                          isSelected 
+                            ? 'bg-primary border-primary text-white' 
+                            : 'border-slate-200 bg-white group-hover:border-primary group-hover:bg-primary-pale text-transparent'
+                        }`}>
+                          <Check size={16} className={isSelected ? 'text-white' : 'text-primary group-hover:text-primary'} />
+                        </div>
+                      </div>
+                    );
+                  })}
+                </div>
+              )}
+            </div>
+
+            {/* Test Selection Sidebar (Booking Cart) */}
+            <div className="bg-white rounded-3xl p-6 shadow-md border border-slate-100 sticky top-24 space-y-6">
+              <div className="flex justify-between items-center pb-4 border-b border-slate-100">
+                <h3 className="font-extrabold text-slate-800 text-lg flex items-center gap-2">
+                  <Heart className="text-red-500 fill-red-500 w-5 h-5" />
+                  <span>Your Booking</span>
+                </h3>
+                {selectedTests.length > 0 && (
+                  <button 
+                    onClick={clearSelection}
+                    className="text-xs text-red-500 hover:text-red-700 font-bold flex items-center gap-0.5"
+                  >
+                    <Trash2 size={12} /> Clear
+                  </button>
+                )}
+              </div>
+
+              {selectedTests.length === 0 ? (
+                <div className="py-12 text-center text-slate-400">
+                  <div className="w-12 h-12 rounded-full bg-slate-50 flex items-center justify-center mx-auto mb-4 text-slate-300">
+                    <Check size={20} />
+                  </div>
+                  <p className="text-xs font-semibold">No tests selected yet.</p>
+                  <p className="text-[11px] mt-1">Click on any package or test in the list to select it for your booking.</p>
+                </div>
+              ) : (
+                <>
+                  <div className="space-y-2.5 max-h-[220px] overflow-y-auto pr-1">
+                    {selectedTests.map((t, idx) => (
+                      <div key={idx} className="flex justify-between items-start gap-2 bg-slate-50 p-2.5 rounded-xl border border-slate-100 relative group">
+                        <div className="min-w-0 flex-1">
+                          <p className="text-xs font-bold text-slate-800 truncate">{t.name}</p>
+                          <p className="text-[10px] text-slate-500 font-medium mt-0.5">₹{t.price} • {t.isPackage ? 'Package' : 'Test'}</p>
+                        </div>
+                        <button 
+                          onClick={() => removeSelectedTest(t.testCode)}
+                          className="text-slate-400 hover:text-red-500 shrink-0 self-center"
+                        >
+                          <Trash2 size={13} />
+                        </button>
+                      </div>
+                    ))}
+                  </div>
+
+                  <div className="border-t border-slate-100 pt-4 space-y-3">
+                    <div className="flex justify-between items-center text-sm">
+                      <span className="text-slate-500 font-bold">Total Tests:</span>
+                      <span className="font-extrabold text-slate-800">{selectedTests.length}</span>
+                    </div>
+                    <div className="flex justify-between items-center text-base">
+                      <span className="text-primary font-bold">Estimated Cost:</span>
+                      <span className="font-extrabold text-slate-800 text-lg">₹{totalPrice}</span>
+                    </div>
+
+                    <a 
+                      href="#booking"
+                      className="w-full min-h-[44px] bg-accent hover:bg-amber-600 text-white font-bold text-sm py-3 rounded-xl transition-all shadow-md shadow-accent/20 hover:-translate-y-0.5 flex items-center justify-center gap-1.5"
+                    >
+                      <span>Proceed to Booking</span>
+                      <ArrowRight size={14} />
+                    </a>
+                  </div>
+                </>
+              )}
+            </div>
+
+          </div>
+        </div>
+      </section>
+
+      {/* Direct Online Booking Form */}
+      <section id="booking" className="py-20 bg-bg px-4 sm:px-6 lg:px-8 scroll-mt-20">
+        <div className="max-w-3xl mx-auto">
+          
+          <div className="bg-white rounded-3xl shadow-xl border border-slate-100 overflow-hidden">
+            <div className="bg-primary p-6 md:p-8 text-white relative">
+              <div className="absolute top-0 right-0 w-32 h-32 bg-white/5 rounded-full -mr-8 -mt-8 blur-2xl"></div>
+              <span className="text-xs font-bold uppercase tracking-wider text-[#F1C40F] bg-white/10 px-3 py-1 rounded-full border border-white/10">
+                1-Minute Booking
+              </span>
+              <h2 className="text-2xl md:text-3xl font-heading mt-3">Book Home Sample Collection</h2>
+              <p className="text-primary-pale text-xs md:text-sm mt-1 leading-relaxed">
+                Fill in the details below. We collect samples safely from your home or office.
+              </p>
+            </div>
+
+            <div className="p-6 md:p-8">
+              
+              {bookingSuccess ? (
+                <div className="text-center py-8">
+                  <div className="w-20 h-20 bg-emerald-100 rounded-full flex items-center justify-center mx-auto mb-6">
+                    <CheckCircle2 size={40} className="text-emerald-600" />
+                  </div>
+                  <h3 className="text-2xl font-bold text-slate-800 mb-2">Request Submitted Successfully!</h3>
+                  <p className="text-slate-600 mb-8 max-w-md mx-auto text-sm">
+                    Thank you, {bookingForm.name}. We have received your booking request. To ensure priority processing, please alert our lab coordinator on WhatsApp immediately.
+                  </p>
+                  
+                  <div className="flex flex-col sm:flex-row gap-3 justify-center">
+                    <button
+                      onClick={handleAlertWhatsApp}
+                      className="bg-[#25D366] text-white hover:bg-[#128C7E] px-8 py-3.5 rounded-xl font-bold text-base shadow-lg shadow-green-200 transition-all flex items-center justify-center gap-2"
+                    >
+                      <MessageCircle size={20} />
+                      <span>Alert via WhatsApp</span>
+                    </button>
+                    <button
+                      onClick={() => {
+                        setBookingSuccess(false);
+                        clearSelection();
+                      }}
+                      className="bg-slate-100 text-slate-700 hover:bg-slate-200 px-6 py-3.5 rounded-xl font-bold text-base transition-colors"
+                    >
+                      Book Another Test
+                    </button>
+                  </div>
+                </div>
+              ) : (
+                <form onSubmit={handleHomepageBookSubmit} className="space-y-6">
+                  
+                  {/* Selection Display */}
+                  <div className="bg-slate-50 p-4 rounded-2xl border border-slate-100 space-y-3">
+                    <label className="text-xs font-bold text-slate-500 uppercase tracking-wider block">
+                      Selected Tests / Packages ({selectedTests.length})
+                    </label>
+                    
+                    {selectedTests.length === 0 ? (
+                      <div className="text-sm text-slate-500 py-1.5 flex items-center gap-1.5">
+                        <ShieldAlert size={16} className="text-amber-500 shrink-0" />
+                        <span>No tests selected. Scroll to the <b>Test Explorer</b> catalog above to select tests first.</span>
+                      </div>
+                    ) : (
+                      <div className="flex flex-wrap gap-1.5 max-h-[120px] overflow-y-auto pr-1">
+                        {selectedTests.map((t, idx) => (
+                          <span key={idx} className="inline-flex items-center gap-1 bg-primary-pale text-primary text-xs font-bold px-3 py-1.5 rounded-lg border border-primary/10">
+                            {t.name} (₹{t.price})
+                            <button 
+                              type="button" 
+                              onClick={() => removeSelectedTest(t.testCode)}
+                              className="text-primary-light hover:text-red-600 font-extrabold ml-1"
+                            >
+                              ×
+                            </button>
+                          </span>
+                        ))}
+                      </div>
+                    )}
+                    
+                    {selectedTests.length > 0 && (
+                      <div className="flex justify-between items-center pt-2.5 border-t border-slate-200 text-sm">
+                        <span className="text-slate-500 font-semibold">Total Price (Pay at time of Collection):</span>
+                        <span className="font-extrabold text-primary text-base">₹{totalPrice}</span>
+                      </div>
+                    )}
+                  </div>
+
+                  {bookingError && (
+                    <div className="p-4 bg-red-50 text-red-700 border-l-4 border-red-500 rounded-r-lg text-sm font-semibold">
+                      {bookingError}
+                    </div>
+                  )}
+
+                  <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
+                    {/* Name */}
+                    <div className="space-y-2">
+                      <label className="text-xs font-bold text-slate-700 uppercase tracking-wider block">
+                        Patient Name *
+                      </label>
+                      <input
+                        type="text"
+                        name="name"
+                        required
+                        value={bookingForm.name}
+                        onChange={handleBookingChange}
+                        placeholder="Enter full name"
+                        className="w-full px-4 py-3 rounded-xl border border-slate-200 focus:ring-1 focus:ring-primary focus:border-primary outline-none transition-all text-sm font-medium"
+                      />
+                    </div>
+
+                    {/* Mobile */}
+                    <div className="space-y-2">
+                      <label className="text-xs font-bold text-slate-700 uppercase tracking-wider block">
+                        Mobile Number *
+                      </label>
+                      <input
+                        type="tel"
+                        name="mobile"
+                        required
+                        maxLength="10"
+                        pattern="[0-9]{10}"
+                        value={bookingForm.mobile}
+                        onChange={handleBookingChange}
+                        placeholder="10-digit mobile number"
+                        className="w-full px-4 py-3 rounded-xl border border-slate-200 focus:ring-1 focus:ring-primary focus:border-primary outline-none transition-all text-sm font-medium"
+                      />
+                    </div>
+                  </div>
+
+                  <div className="grid grid-cols-1 md:grid-cols-3 gap-6 items-center">
+                    {/* Gender */}
+                    <div className="space-y-2">
+                      <label className="text-xs font-bold text-slate-700 uppercase tracking-wider block">
+                        Gender *
+                      </label>
+                      <select
+                        name="gender"
+                        value={bookingForm.gender}
+                        onChange={handleBookingChange}
+                        className="w-full px-4 py-3 rounded-xl border border-slate-200 focus:ring-1 focus:ring-primary focus:border-primary outline-none transition-all text-sm font-bold bg-white"
+                      >
+                        <option value="MALE">Male</option>
+                        <option value="FEMALE">Female</option>
+                        <option value="OTHER">Other</option>
+                      </select>
+                    </div>
+
+                    {/* Preferred Date */}
+                    <div className="space-y-2">
+                      <label className="text-xs font-bold text-slate-700 uppercase tracking-wider block">
+                        Preferred Date *
+                      </label>
+                      <input
+                        type="date"
+                        name="preferredDate"
+                        required
+                        min={new Date().toISOString().split('T')[0]}
+                        value={bookingForm.preferredDate}
+                        onChange={handleBookingChange}
+                        className="w-full px-4 py-3 rounded-xl border border-slate-200 focus:ring-1 focus:ring-primary focus:border-primary outline-none transition-all text-sm font-medium"
+                      />
+                    </div>
+
+                    {/* Preferred Time */}
+                    <div className="space-y-2">
+                      <label className="text-xs font-bold text-slate-700 uppercase tracking-wider block">
+                        Preferred Time *
+                      </label>
+                      <input
+                        type="time"
+                        name="preferredTime"
+                        required
+                        value={bookingForm.preferredTime}
+                        onChange={handleBookingChange}
+                        className="w-full px-4 py-3 rounded-xl border border-slate-200 focus:ring-1 focus:ring-primary focus:border-primary outline-none transition-all text-sm font-medium"
+                      />
+                    </div>
+                  </div>
+
+                  {/* Visit Mode Toggle */}
+                  <div className="space-y-3 pt-2">
+                    <label className="text-xs font-bold text-slate-700 uppercase tracking-wider block">
+                      Sample Collection Mode
+                    </label>
+                    <div className="grid grid-cols-2 gap-4">
+                      <button
+                        type="button"
+                        onClick={() => setBookingForm(prev => ({ ...prev, isHomeCollection: true }))}
+                        className={`py-3 px-4 rounded-xl border font-bold text-sm transition-all flex items-center justify-center gap-1.5 ${
+                          bookingForm.isHomeCollection
+                            ? 'border-primary bg-primary/5 text-primary'
+                            : 'border-slate-200 text-slate-500 hover:bg-slate-50'
+                        }`}
+                      >
+                        <MapPin size={16} />
+                        <span>Home Collection (Free)</span>
+                      </button>
+                      <button
+                        type="button"
+                        onClick={() => setBookingForm(prev => ({ ...prev, isHomeCollection: false }))}
+                        className={`py-3 px-4 rounded-xl border font-bold text-sm transition-all flex items-center justify-center gap-1.5 ${
+                          !bookingForm.isHomeCollection
+                            ? 'border-primary bg-primary/5 text-primary'
+                            : 'border-slate-200 text-slate-500 hover:bg-slate-50'
+                        }`}
+                      >
+                        <Microscope size={16} />
+                        <span>Visit Our Laboratory</span>
+                      </button>
+                    </div>
+                  </div>
+
+                  {/* Address (conditional) */}
+                  {bookingForm.isHomeCollection && (
+                    <div className="space-y-2">
+                      <label className="text-xs font-bold text-slate-700 uppercase tracking-wider block">
+                        Full Address (with Landmark) *
+                      </label>
+                      <textarea
+                        name="address"
+                        required
+                        rows="3"
+                        value={bookingForm.address}
+                        onChange={handleBookingChange}
+                        placeholder="House Number, Sector/Colony, Landmark, City, Pin Code"
+                        className="w-full px-4 py-3 rounded-xl border border-slate-200 focus:ring-1 focus:ring-primary focus:border-primary outline-none transition-all text-sm font-medium resize-none"
+                      ></textarea>
+                    </div>
+                  )}
+
+                  <button
+                    type="submit"
+                    disabled={bookingLoading}
+                    className="w-full min-h-[48px] bg-primary hover:bg-primary-light text-white font-bold text-lg py-4 rounded-xl transition-all shadow-lg shadow-primary/20 hover:-translate-y-0.5 disabled:opacity-75 disabled:cursor-not-allowed flex items-center justify-center gap-2"
+                  >
+                    {bookingLoading ? (
+                      <Loader type="button" className="text-white" />
+                    ) : (
+                      'Request Collection Booking'
+                    )}
+                  </button>
+
+                </form>
+              )}
+
+            </div>
+          </div>
+
+        </div>
+      </section>
+
+      {/* Pathologists Panel & Trust Panel */}
+      <section className="py-20 bg-primary-pale/20 px-4 sm:px-6 lg:px-8 border-y border-emerald-100">
+        <div className="max-w-7xl mx-auto flex flex-col lg:flex-row items-center gap-12">
+          
+          <div className="flex-1 space-y-6">
+            <span className="text-xs font-bold tracking-widest text-[#BA7517] uppercase bg-accent-pale px-3 py-1 rounded-full">
+              Clinical Quality
+            </span>
+            <h2 className="text-4xl font-heading text-primary leading-tight">
+              Verified by Certified Medical Pathologists
+            </h2>
+            <p className="text-slate-600 leading-relaxed">
+              Every single report generated at Sana Pathology undergoes multi-level verification checkups. Our laboratory operates with strict internal and external quality control guidelines.
+            </p>
+            
+            <div className="grid grid-cols-1 sm:grid-cols-2 gap-6 pt-4">
+              <div className="flex items-start gap-3">
+                <CheckCircle2 className="text-primary mt-1 shrink-0" size={18} />
+                <div>
+                  <h4 className="font-bold text-slate-800 text-sm">Certified Signatures</h4>
+                  <p className="text-slate-500 text-xs mt-0.5">All reports are digitally signed by a registered M.D. Pathologist.</p>
+                </div>
+              </div>
+              <div className="flex items-start gap-3">
+                <CheckCircle2 className="text-primary mt-1 shrink-0" size={18} />
+                <div>
+                  <h4 className="font-bold text-slate-800 text-sm">NABL Quality Audits</h4>
+                  <p className="text-slate-500 text-xs mt-0.5">We adhere to global standards in accuracy, hygiene, and machinery.</p>
+                </div>
+              </div>
+              <div className="flex items-start gap-3">
+                <CheckCircle2 className="text-primary mt-1 shrink-0" size={18} />
+                <div>
+                  <h4 className="font-bold text-slate-800 text-sm">Barcoded Specimen</h4>
+                  <p className="text-slate-500 text-xs mt-0.5">No sample mix-ups. Safe barcoding processes from the collection phase.</p>
+                </div>
+              </div>
+              <div className="flex items-start gap-3">
+                <CheckCircle2 className="text-primary mt-1 shrink-0" size={18} />
+                <div>
+                  <h4 className="font-bold text-slate-800 text-sm">Automated Analyzers</h4>
+                  <p className="text-slate-500 text-xs mt-0.5">Minimal human error through high-fidelity diagnostic machinery.</p>
+                </div>
+              </div>
+            </div>
+          </div>
+
+          <div className="flex-1 bg-white rounded-3xl p-8 shadow-sm border border-emerald-50 max-w-md w-full relative">
+            <div className="absolute top-4 right-4 bg-emerald-50 text-emerald-800 text-xs font-bold px-3 py-1 rounded-full uppercase tracking-wider">
+              NABL Standard
+            </div>
+            
+            <div className="flex items-center gap-4 pb-6 border-b border-slate-100">
+              <div className="w-16 h-16 rounded-full bg-primary flex items-center justify-center text-white font-heading text-2xl font-bold">
+                DR
+              </div>
+              <div>
+                <h4 className="font-bold text-slate-800 text-lg">Dr. Sana (M.D.)</h4>
+                <p className="text-slate-500 text-xs font-semibold">Chief Pathologist & Director</p>
+                <p className="text-slate-400 text-[10px] mt-0.5">Reg No. UP-1029384</p>
+              </div>
+            </div>
+
+            <div className="py-6 space-y-4">
+              <div className="flex justify-between items-center text-xs">
+                <span className="text-slate-500 font-bold">Verification:</span>
+                <span className="text-emerald-600 font-bold bg-emerald-50 px-2 py-0.5 rounded">Active & Verified</span>
+              </div>
+              <div className="flex justify-between items-center text-xs">
+                <span className="text-slate-500 font-bold">Specialization:</span>
+                <span className="text-slate-700 font-bold">Hematology & Cytopathology</span>
+              </div>
+              <div className="flex justify-between items-center text-xs">
+                <span className="text-slate-500 font-bold">Lab Experience:</span>
+                <span className="text-slate-700 font-bold">15+ Years Trust</span>
+              </div>
+            </div>
+
+            <div className="bg-slate-50 p-4 rounded-2xl text-[11px] text-slate-500 leading-relaxed border border-slate-100 flex items-center gap-2">
+              <Info size={16} className="text-primary shrink-0" />
+              <span>Patients can securely search their reports on our home page. All reports contain a verified QR Code pointing directly to our secure cloud server database.</span>
+            </div>
+          </div>
+
         </div>
       </section>
 
@@ -268,7 +1094,7 @@ const PublicWelcome = () => {
               { name: 'Priya Patel', review: 'Highly accurate results. My doctor specifically recommended Sana Pathology for the thyroid tests.' },
               { name: 'Amit Kumar', review: 'Excellent service. Received my reports on WhatsApp within 6 hours as promised. Very convenient!' },
             ].map((t, i) => (
-              <div key={i} className="bg-white p-8 rounded-2xl shadow-sm border border-slate-100">
+              <div key={i} className="bg-white p-8 rounded-2xl shadow-sm border border-slate-100 hover:shadow-md transition-shadow">
                 <div className="flex gap-1 mb-4">
                   {[...Array(5)].map((_, j) => <Star key={j} className="w-5 h-5 fill-accent text-accent" />)}
                 </div>
@@ -286,7 +1112,7 @@ const PublicWelcome = () => {
       </section>
 
       {/* FAQ Section */}
-      <section id="faq" className="py-20 bg-primary-pale px-4 sm:px-6 lg:px-8">
+      <section id="faq" className="py-20 bg-primary-pale/35 px-4 sm:px-6 lg:px-8">
         <div className="max-w-3xl mx-auto">
           <div className="text-center mb-12">
             <h2 className="text-4xl font-heading text-primary">Frequently Asked Questions</h2>
@@ -379,9 +1205,11 @@ const PublicWelcome = () => {
           <div>
             <h4 className="font-bold text-white mb-4">Quick Links</h4>
             <ul className="space-y-2 text-sm opacity-80">
-              <li><a href="#services" className="hover:text-white transition-colors">Our Services</a></li>
+              <li><a href="#stats" className="hover:text-white transition-colors">Why Us</a></li>
+              <li><a href="#packages" className="hover:text-white transition-colors">Packages</a></li>
+              <li><a href="#services" className="hover:text-white transition-colors">Test Finder</a></li>
+              <li><a href="#booking" className="hover:text-white transition-colors">Book Online</a></li>
               <li><a href="#faq" className="hover:text-white transition-colors">FAQ</a></li>
-              <li><button onClick={() => navigate('/book-appointment')} className="hover:text-white transition-colors">Book Home Collection</button></li>
               <li><button onClick={() => navigate('/login')} className="hover:text-white transition-colors">Patient Portal</button></li>
             </ul>
           </div>
@@ -396,7 +1224,7 @@ const PublicWelcome = () => {
           <div>
             <h4 className="font-bold text-white mb-4">Certifications</h4>
             <div className="inline-block bg-white/10 px-4 py-2 rounded-lg border border-white/20">
-              <span className="font-bold tracking-widest">NABL ACCREDITED</span>
+              <span className="font-bold tracking-widest text-white text-xs">NABL ACCREDITED</span>
             </div>
           </div>
         </div>
@@ -421,7 +1249,7 @@ const PublicWelcome = () => {
           className="flex items-center gap-3 bg-[#25D366] text-white px-5 h-14 rounded-full shadow-xl shadow-green-900/20 hover:scale-105 transition-transform group"
         >
           <MessageCircle className="w-6 h-6" />
-          <span className="font-bold whitespace-nowrap hidden group-hover:block transition-all">Book Test</span>
+          <span className="font-bold whitespace-nowrap hidden group-hover:block transition-all text-sm">Book Test</span>
         </a>
       </div>
 
