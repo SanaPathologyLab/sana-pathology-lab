@@ -422,9 +422,12 @@ const CreateReport = () => {
                         return { titer: t, value: v || '--' };
                       }) : titerList.map(t => ({ titer: t.trim(), value: '--' }));
                       const updateCell = (titer, val) => {
-                        const others = currentResults.filter(r => r.titer.trim() !== titer.trim());
-                        const updated = [...others, { titer: titer.trim(), value: val }]
-                          .map(r => `${r.titer}|${r.value}`).join('||');
+                        const updated = currentResults.map(r => {
+                          if (r.titer.trim() === titer.trim()) {
+                            return { ...r, value: val };
+                          }
+                          return r;
+                        }).map(r => `${r.titer}|${r.value}`).join('||');
                         handleResultChange(tr.key, 'resultValue', updated);
                       };
                       return (

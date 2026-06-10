@@ -376,7 +376,15 @@ const PublicPrint = () => {
                   ) : titerResults.length > 0 ? (
                     <tr>
                       <td className="py-1 font-semibold uppercase w-[25%] align-top">{res.parameterName}</td>
-                      {titerResults.map((tr, ti) => (
+                      {titerVals ? titerVals.split(',').map((titer, ti) => {
+                        const tr = titerResults.find(r => r.titer.trim() === titer.trim());
+                        const val = tr ? tr.value : '--';
+                        return (
+                          <td key={ti} className="py-1 text-center font-bold text-[13px] align-top">
+                            <span className={`${val === '+' ? 'text-green-700' : val === '-' ? 'text-red-600' : 'text-gray-300'}`}>{val || '—'}</span>
+                          </td>
+                        );
+                      }) : titerResults.map((tr, ti) => (
                         <td key={ti} className="py-1 text-center font-bold text-[13px] align-top">
                           <span className={`${tr.value === '+' ? 'text-green-700' : tr.value === '-' ? 'text-red-600' : 'text-gray-300'}`}>{tr.value || '—'}</span>
                         </td>
