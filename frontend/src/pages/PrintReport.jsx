@@ -268,21 +268,21 @@ const PrintReport = () => {
         const titerList = isTiterTest ? firstParam.titerValues.split(',') : [];
         return (
           <div className="border border-black rounded-full px-4 py-1 mb-2 flex text-[13px] font-bold text-black items-center">
-            <div className={isTiterTest ? 'w-[25%]' : 'w-[45%]'}>Investigations</div>
+            <div className={isTiterTest ? 'w-[25%]' : 'w-[35%]'}>Investigations</div>
             {isTiterTest && titerList.map((t, i) => (
               <div key={i} className="flex-1 text-center text-[11px]">{t.trim()}</div>
             ))}
             {isTiterTest ? (
               <>
                 <div className="w-[10%] text-center text-[10px]">Unit</div>
-                <div className="w-[10%] text-center text-[10px]">Range</div>
+                <div className="w-[20%] text-center text-[10px]">Range</div>
               </>
             ) : (
               <>
                 <div className="w-[15%] text-center">Results</div>
                 <div className="w-[10%] text-center">Flag</div>
                 <div className="w-[15%] text-center">Units</div>
-                <div className="w-[15%] text-center">Normal values</div>
+                <div className="w-[25%] text-center">Normal values</div>
               </>
             )}
           </div>
@@ -313,16 +313,37 @@ const PrintReport = () => {
                     return { titer: parts[0], value: parts[1] || '' };
                   })
                 : [];
+              const isImmunology = res.groupName === 'IMMUNOLOGY & SEROLOGY TEST';
+              const colCount = titerResults.length > 0 ? (3 + titerResults.length) : 5;
               return (
                 <React.Fragment key={res.id || idx}>
-                  {showGroup && (
+                  {showGroup && !isImmunology && (
                     <tr>
-                      <td colSpan={titerResults.length > 0 ? (3 + titerResults.length) : 5} className="pt-2 pb-1.5 font-bold underline uppercase text-[14px] text-black">
+                      <td colSpan={colCount} className="pt-2 pb-1.5 font-bold underline uppercase text-[14px] text-black">
                         {res.groupName}
                       </td>
                     </tr>
                   )}
-                  {titerResults.length > 0 ? (
+                  {isImmunology ? (
+                    <>
+                      {showGroup && (
+                        <tr>
+                          <td colSpan={colCount} className="pt-3 pb-1 font-black text-[15px] underline uppercase tracking-wider text-black" style={{ fontFamily: 'Georgia, serif' }}>
+                            {res.groupName}
+                          </td>
+                        </tr>
+                      )}
+                      <tr>
+                        <td colSpan={colCount} className="py-1">
+                          <div className="flex items-center" style={{ fontFamily: 'Georgia, serif' }}>
+                            <span className="font-semibold uppercase text-[13.5px]">{res.parameterName}</span>
+                            <div className="flex-1 mx-3" style={{ borderBottom: '1px dotted #999', height: '1px' }}></div>
+                            <span className="font-black text-[15px]">{res.resultValue}</span>
+                          </div>
+                        </td>
+                      </tr>
+                    </>
+                  ) : titerResults.length > 0 ? (
                     <tr>
                       <td className="py-1 font-semibold uppercase w-[25%] align-top">
                         {res.parameterName}
@@ -337,13 +358,13 @@ const PrintReport = () => {
                       <td className="py-1 text-center font-semibold text-gray-500 w-[10%] align-top text-[12px]">
                         {res.unit || ''}
                       </td>
-                      <td className="py-1 text-center font-semibold whitespace-pre-wrap text-gray-500 w-[10%] align-top text-[12px] leading-tight">
+                      <td className="py-1 text-center font-semibold whitespace-nowrap text-gray-500 w-[20%] align-top text-[12px] leading-tight">
                         {res.referenceRange || ''}
                       </td>
                     </tr>
                   ) : (
                     <tr>
-                      <td className={`py-1 font-semibold uppercase ${res.groupName ? '' : ''} ${isQual ? 'w-[70%]' : 'w-[45%]'} align-top`}>
+                      <td className={`py-1 font-semibold uppercase ${res.groupName ? '' : ''} ${isQual ? 'w-[70%]' : 'w-[35%]'} align-top`}>
                         {res.parameterName}
                       </td>
                       <td className={`py-1 text-center align-top ${isQual ? 'w-[30%]' : 'w-[15%]'}`}>
@@ -357,7 +378,7 @@ const PrintReport = () => {
                             {isHigh ? 'High' : isLow ? 'Low' : ''}
                           </td>
                           <td className="py-1 text-center font-semibold w-[15%] align-top">{res.unit}</td>
-                          <td className="py-1 text-center font-semibold whitespace-pre-wrap w-[15%] align-top text-[12px] leading-tight">
+                          <td className="py-1 text-center font-semibold whitespace-nowrap w-[25%] align-top text-[12px] leading-tight">
                             {res.referenceRange}
                           </td>
                         </>
