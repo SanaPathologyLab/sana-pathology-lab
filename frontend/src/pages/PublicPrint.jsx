@@ -190,78 +190,7 @@ const PublicPrint = () => {
 
   const TestTable = ({ testName, rows, summary = '' }) => {
     const isMantoux = testName.toUpperCase().includes('MANTOUX') || (rows[0] && rows[0].test?.testCode === 'MANTOUX-01');
-    if (isMantoux) {
-      const doseRow = rows.find(r => r.parameterName.includes('Dose')) || rows[0];
-      const indurationRow = rows.find(r => r.parameterName.includes('Induration')) || rows[1];
-      const resultRow = rows.find(r => r.parameterName.includes('Result')) || rows[2];
 
-      return (
-        <div className="relative z-10 w-full" style={{ fontFamily: 'Georgia, serif', color: '#000' }}>
-          <div className="text-center mb-4 mt-2">
-            <h3 className="text-[17px] font-black underline uppercase tracking-wide">{testName}</h3>
-            <p className="text-[13px] font-bold mt-1 text-gray-800">(Interdermal Skin Test)</p>
-          </div>
-
-          {/* Top Data Table */}
-          <div className="border border-black mb-4">
-            <table className="w-full border-collapse text-[13.5px]">
-              <tbody>
-                <tr className="border-b border-black">
-                  <td className="w-1/2 p-2.5 font-bold border-r border-black">Tuberculin Dose</td>
-                  <td className="w-1/2 p-2.5 font-bold">{doseRow?.resultValue || '0.1 mL of TU PPD'}</td>
-                </tr>
-                <tr className="border-b border-black">
-                  <td className="w-1/2 p-2.5 font-bold border-r border-black">Induration (mm)</td>
-                  <td className="w-1/2 p-2.5 font-bold">{indurationRow?.resultValue || '—'}</td>
-                </tr>
-                <tr>
-                  <td className="w-1/2 p-2.5 font-bold border-r border-black">Result after 48 hours</td>
-                  <td className="w-1/2 p-2.5 font-black text-[15px]">{resultRow?.resultValue || '—'}</td>
-                </tr>
-              </tbody>
-            </table>
-          </div>
-
-          {/* Interpretation Section */}
-          <div className="mb-4 text-[13.5px] leading-relaxed text-black">
-            <p className="font-bold mb-1">Interpretation:</p>
-            <p className="text-justify text-gray-900">
-              Induration measuring 10 mm more is considered positive which shows hypersensitivity to <span className="italic underline">tuberculoprotein</span>. It indicates past or present infection with <span className="italic underline">Mycobacterium</span> tuberculosis.
-            </p>
-          </div>
-
-          {/* Induration Size Reference Table */}
-          <div className="border border-black text-[11px] mb-2">
-            <table className="w-full border-collapse text-left">
-              <thead>
-                <tr className="bg-gray-100 border-b border-black font-bold">
-                  <th className="p-2 border-r border-black w-1/3">Induration Size</th>
-                  <th className="p-2 w-2/3">Interpretation</th>
-                </tr>
-              </thead>
-              <tbody className="divide-y divide-black">
-                <tr>
-                  <td className="p-2 border-r border-black font-semibold">&lt; 5 mm</td>
-                  <td className="p-2">A negative result, indicating no exposure to TB</td>
-                </tr>
-                <tr>
-                  <td className="p-2 border-r border-black font-semibold">5–9 mm</td>
-                  <td className="p-2">Usually considered positive for people who are immunocompromised or have other risk factors for TB</td>
-                </tr>
-                <tr>
-                  <td className="p-2 border-r border-black font-semibold">10–14 mm</td>
-                  <td className="p-2">Usually considered positive for people with medical risk factors for TB, recent immigrants from areas with high TB prevalence, or close contacts with people with TB</td>
-                </tr>
-                <tr>
-                  <td className="p-2 border-r border-black font-semibold">&gt; 15 mm</td>
-                  <td className="p-2">Usually considered positive for people with no known risk factors for TB</td>
-                </tr>
-              </tbody>
-            </table>
-          </div>
-        </div>
-      );
-    }
 
     const overallIdx = rows.findIndex(r => r.groupName === `__OVERALL__${testName}`);
     const overallResult = overallIdx !== -1 ? rows[overallIdx] : null;
@@ -358,8 +287,8 @@ const PublicPrint = () => {
                     </tr>
                   ) : (
                     <tr>
-                      <td className={`py-1 font-semibold uppercase ${isQual ? 'w-[70%]' : 'w-[35%]'} align-top`}>{res.parameterName}</td>
-                      <td className={`py-1 text-center align-top ${isQual ? 'w-[30%]' : 'w-[15%]'}`}>
+                      <td className={`py-1 font-semibold uppercase ${isQual ? 'w-[35%]' : 'w-[35%]'} align-top`}>{res.parameterName}</td>
+                      <td colSpan={isQual ? 4 : 1} className={`py-1 ${isQual ? 'text-left pl-4' : 'text-center'} align-top ${isQual ? 'w-[65%]' : 'w-[15%]'}`}>
                         <span className={`${isQual ? 'font-black text-[15px]' + (res.resultValue?.startsWith('POSITIVE') ? ' text-green-700' : res.resultValue?.startsWith('NEGATIVE') ? ' text-red-600' : '') : isAbnormal ? 'font-black border-b-[1.5px] border-black pb-0.5' : 'font-bold'}`}>
                           {res.resultValue === '+' ? 'POSITIVE' : res.resultValue === '-' ? 'NEGATIVE' : res.resultValue}
                         </span>
@@ -368,7 +297,7 @@ const PublicPrint = () => {
                         <>
                           <td className="py-1 text-center font-bold text-[13px] w-[10%] align-top">{isHigh ? 'High' : isLow ? 'Low' : ''}</td>
                           <td className="py-1 text-center font-semibold w-[15%] align-top">{res.unit}</td>
-                          <td className="py-1 text-center font-semibold whitespace-nowrap w-[25%] align-top text-[12px] leading-tight">{res.referenceRange}</td>
+                          <td className="py-1 text-center font-semibold w-[25%] align-top text-[12px] leading-tight break-words">{res.referenceRange}</td>
                         </>
                       )}
                     </tr>
@@ -378,6 +307,49 @@ const PublicPrint = () => {
             })}
           </tbody>
         </table>
+        
+        {isMantoux && (
+          <div className="mt-4">
+            {/* Interpretation Section */}
+            <div className="mb-4 text-[13.5px] leading-relaxed text-black">
+              <p className="font-bold mb-1">Interpretation:</p>
+              <p className="text-justify text-gray-900">
+                Induration measuring 10 mm more is considered positive which shows hypersensitivity to <span className="italic underline">tuberculoprotein</span>. It indicates past or present infection with <span className="italic underline">Mycobacterium</span> tuberculosis.
+              </p>
+            </div>
+
+            {/* Induration Size Reference Table */}
+            <div className="border border-black text-[11px] mb-2">
+              <table className="w-full border-collapse text-left">
+                <thead>
+                  <tr className="bg-gray-100 border-b border-black font-bold">
+                    <th className="p-2 border-r border-black w-1/3">Induration Size</th>
+                    <th className="p-2 w-2/3">Interpretation</th>
+                  </tr>
+                </thead>
+                <tbody className="divide-y divide-black">
+                  <tr>
+                    <td className="p-2 border-r border-black font-semibold">&lt; 5 mm</td>
+                    <td className="p-2">A negative result, indicating no exposure to TB</td>
+                  </tr>
+                  <tr>
+                    <td className="p-2 border-r border-black font-semibold">5–9 mm</td>
+                    <td className="p-2">Usually considered positive for people who are immunocompromised or have other risk factors for TB</td>
+                  </tr>
+                  <tr>
+                    <td className="p-2 border-r border-black font-semibold">10–14 mm</td>
+                    <td className="p-2">Usually considered positive for people with medical risk factors for TB, recent immigrants from areas with high TB prevalence, or close contacts with people with TB</td>
+                  </tr>
+                  <tr>
+                    <td className="p-2 border-r border-black font-semibold">&gt; 15 mm</td>
+                    <td className="p-2">Usually considered positive for people with no known risk factors for TB</td>
+                  </tr>
+                </tbody>
+              </table>
+            </div>
+          </div>
+        )}
+
         {overallResult && (
           <div className="mt-3 flex items-center justify-between text-[14px] font-bold uppercase text-black border-t border-black pt-2">
             <span>Result:</span>
