@@ -190,6 +190,7 @@ const PublicPrint = () => {
 
   const TestTable = ({ testName, rows, summary = '' }) => {
     const isMantoux = testName.toUpperCase().includes('MANTOUX') || (rows[0] && rows[0].test?.testCode === 'MANTOUX-01');
+    const isMalaria = testName.toUpperCase().includes('MALARIA PARASITE IDENTIFICATION') || (rows[0] && rows[0].test?.testCode === 'MALARIA-01');
 
     if (isMantoux) {
       const doseRow = rows.find(r => r.parameterName.includes('Dose')) || rows[0];
@@ -259,6 +260,31 @@ const PublicPrint = () => {
                 </tr>
               </tbody>
             </table>
+          </div>
+        </div>
+      );
+    }
+
+    if (isMalaria) {
+      const resultValue = rows[0]?.resultValue || 'NOT-SEEN';
+      return (
+        <div className="relative z-10 w-full mb-6" style={{ fontFamily: 'Georgia, serif', color: '#000' }}>
+          <h3 className="text-[17px] font-black underline uppercase text-center mb-8">IMMUNOLOGY & SEROLOGY TEST</h3>
+          
+          <div className="flex justify-between items-start mb-8">
+            <div className="flex flex-col items-center">
+              <div className="font-bold text-[15px] uppercase tracking-wide">MALARIA PARASITE IDENTIFICATION</div>
+              <div className="text-[12px] font-bold mt-0.5">(MICROSCOPY)</div>
+            </div>
+            <div className="font-black text-[16px] uppercase tracking-wide">{resultValue}</div>
+          </div>
+
+          <div className="mt-6 text-[13px] leading-relaxed">
+            <p className="font-bold mb-2">NOTE:</p>
+            <div className="space-y-1">
+              <p className="flex items-start"><span className="mr-2">➤</span> A Single negative smear does not rule out malaria</p>
+              <p className="flex items-start"><span className="mr-2">➤</span> Test conducted on whole blood.</p>
+            </div>
           </div>
         </div>
       );

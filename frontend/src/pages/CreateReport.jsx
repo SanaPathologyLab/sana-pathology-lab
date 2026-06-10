@@ -249,6 +249,7 @@ const CreateReport = () => {
       const isTiterMatrix = titerValueSet.length === 1 && titerValueSet[0];
       const titerList = isTiterMatrix ? titerValueSet[0].split(',') : [];
       const isMantoux = params[0]?.test?.testCode === 'MANTOUX-01' || testName.toUpperCase().includes('MANTOUX');
+      const isMalaria = params[0]?.test?.testCode === 'MALARIA-01' || testName.toUpperCase().includes('MALARIA PARASITE IDENTIFICATION');
 
       return (
         <div key={testName} className="mb-8">
@@ -363,6 +364,43 @@ const CreateReport = () => {
                     </tr>
                   </tbody>
                 </table>
+              </div>
+            </div>
+          ) : isMalaria ? (
+            <div className="p-6 border border-gray-300 rounded-b-lg bg-gray-50 max-w-2xl mx-auto mt-4 shadow-sm" style={{ fontFamily: 'Georgia, serif' }}>
+              <div className="mb-6 text-center">
+                <h3 className="text-lg font-black underline uppercase text-black">IMMUNOLOGY & SEROLOGY TEST</h3>
+              </div>
+              
+              <div className="border border-black bg-white mb-6 p-6">
+                <div className="flex justify-between items-start">
+                  <div className="flex flex-col">
+                    <span className="font-bold text-[15px] text-black">MALARIA PARASITE IDENTIFICATION</span>
+                    <span className="text-[12px] font-bold text-center mt-1 text-gray-800">(MICROSCOPY)</span>
+                  </div>
+                  <select 
+                    value={(() => {
+                      const p = params[0];
+                      if (p && !p.resultValue) p.resultValue = 'NOT-SEEN';
+                      return p?.resultValue || 'NOT-SEEN';
+                    })()}
+                    onChange={e => {
+                      if (params[0]) handleResultChange(params[0].key, 'resultValue', e.target.value);
+                    }} 
+                    className="border border-gray-300 rounded px-3 py-2 text-[15px] font-bold text-black focus:outline-none focus:ring-1 focus:ring-black cursor-pointer shadow-sm min-w-[120px]"
+                  >
+                    <option value="NOT-SEEN">NOT-SEEN</option>
+                    <option value="SEEN">SEEN</option>
+                  </select>
+                </div>
+              </div>
+
+              <div className="text-black text-[13px] leading-relaxed">
+                <p className="font-bold mb-2">NOTE:</p>
+                <div className="space-y-1.5">
+                  <p className="flex items-start"><span className="mr-2">➤</span> A Single negative smear does not rule out malaria</p>
+                  <p className="flex items-start"><span className="mr-2">➤</span> Test conducted on whole blood.</p>
+                </div>
               </div>
             </div>
           ) : isTiterMatrix ? (
