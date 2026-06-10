@@ -121,9 +121,18 @@ const setStaffCredentials = async (req, res) => {
     };
     const userRole = roleMapping[staff.role] || 'RECEPTIONIST';
 
-    // Upsert User record using staffId as the 'email' (login ID)
+    // Use staff's email as login email, fall back to staffId if no email
+    const loginEmail = staff.email || staff.staffId;
+
+    // If staff has an email and an old User record exists with staffId as email,
+    // delete the old record first to avoid unique constraint conflict
+    if (staff.email && staff.staffId !== staff.email) {
+      await prisma.user.deleteMany({ where: { email: staff.staffId } });
+    }
+
+    // Upsert User record using staff's email (or staffId as fallback)
     const user = await prisma.user.upsert({
-      where: { email: staff.staffId },
+      where: { email: loginEmail },
       update: {
         password: hashedPassword,
         name: staff.name,
@@ -131,7 +140,7 @@ const setStaffCredentials = async (req, res) => {
         phone: staff.mobile
       },
       create: {
-        email: staff.staffId,
+        email: loginEmail,
         password: hashedPassword,
         name: staff.name,
         role: userRole,
@@ -139,7 +148,7 @@ const setStaffCredentials = async (req, res) => {
       }
     });
 
-    res.json({ message: 'Credentials updated successfully', loginId: staff.staffId });
+    res.json({ message: 'Credentials updated successfully', loginId: loginEmail, staffId: staff.staffId });
   } catch (err) {
     res.status(500).json({ error: err.message });
   }

@@ -34,9 +34,34 @@ exports.register = async (req, res) => {
 exports.login = async (req, res) => {
   try {
     const { email, password } = req.body;
-    const user = await prisma.user.findFirst({ 
+
+    // Try to find user by email first
+    let user = await prisma.user.findFirst({ 
       where: { email: { equals: email, mode: 'insensitive' } } 
     });
+
+    // If not found by email, try looking up by staffId (user enters staffId)
+    if (!user) {
+      const staff = await prisma.staff.findUnique({ where: { staffId: email } });
+      if (staff && staff.email) {
+        user = await prisma.user.findFirst({
+          where: { email: { equals: staff.email, mode: 'insensitive' } }
+        });
+      }
+    }
+
+    // If still not found, the User record might have staffId as email (existing data).
+    // Find staff by their email, then look up user by staffId.
+    if (!user) {
+      const staff = await prisma.staff.findFirst({
+        where: { email: { equals: email, mode: 'insensitive' } }
+      });
+      if (staff) {
+        user = await prisma.user.findFirst({
+          where: { email: { equals: staff.staffId, mode: 'insensitive' } }
+        });
+      }
+    }
 
     if (!user) return res.status(404).json({ message: 'User not found' });
 

@@ -95,7 +95,9 @@ const Staff = () => {
         body: JSON.stringify({ password: credPassword })
       });
       if (res.ok) {
-        alert(`Successfully set password for ${credStaff.name}!\n\nThey can log in using Email: ${credStaff.staffId}`);
+        const data = await res.json();
+        const loginId = data.loginId || credStaff.staffId;
+        alert(`Password set for ${credStaff.name}!\n\nThey can log in using:\n• Email: ${credStaff.email || 'N/A'}\n• Staff ID: ${credStaff.staffId}\n\nLogin field accepts both.`);
         setShowCredModal(false);
         setCredPassword('');
       } else {
@@ -320,8 +322,9 @@ const Staff = () => {
             <form onSubmit={handleSetCredentials} className="p-6 space-y-4">
               <div className="bg-blue-50 text-blue-800 p-3 rounded text-sm mb-4">
                 <p><strong>Staff Member:</strong> {credStaff?.name}</p>
-                <p><strong>Login ID (Email):</strong> {credStaff?.staffId}</p>
-                <p className="text-xs text-blue-600 mt-2">They will type this ID into the Email field when logging in.</p>
+                <p><strong>Staff ID:</strong> {credStaff?.staffId}</p>
+                {credStaff?.email && <p><strong>Email:</strong> {credStaff?.email}</p>}
+                <p className="text-xs text-blue-600 mt-2">They can log in using their <strong>Email</strong> or <strong>Staff ID</strong>.</p>
               </div>
               <div>
                 <label className="block text-xs font-bold text-gray-500 uppercase mb-1">New Password *</label>
