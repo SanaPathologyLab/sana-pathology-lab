@@ -356,8 +356,7 @@ const ReportLookup = () => {
                             
                             <button
                                onClick={() => {
-                                 const basePath = window.location.pathname.substring(0, window.location.pathname.lastIndexOf('/') + 1);
-                                 const printUrl = `${window.location.origin}${basePath}#/public-print/${report.reportNumber}`;
+                                 const printUrl = `${window.location.origin}${import.meta.env.BASE_URL}#/public-print/${report.reportNumber}`;
                                  window.open(printUrl, '_blank');
                                }}
                                className="flex items-center justify-center gap-2 bg-primary hover:bg-primary-light text-white text-xs font-bold px-6 py-3 rounded-xl transition-all shadow-md shadow-primary/20 active:scale-[0.98] w-full sm:w-auto hover:-translate-y-0.5"

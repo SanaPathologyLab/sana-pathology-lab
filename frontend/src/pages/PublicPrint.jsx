@@ -81,11 +81,10 @@ const PublicPrint = () => {
   });
   const testNames = Object.keys(groupedTests);
 
-  const basePath = window.location.pathname.substring(0, window.location.pathname.lastIndexOf('/') + 1);
-  const qrValue = `${window.location.origin}${basePath}#/public-print/${report.reportNumber}`;
+  const qrValue = `${window.location.origin}${import.meta.env.BASE_URL}#/public-print/${report.reportNumber}`;
 
   const handleWhatsApp = () => {
-    const publicUrl = `${window.location.origin}${basePath}#/public-print/${report.reportNumber}`;
+    const publicUrl = `${window.location.origin}${import.meta.env.BASE_URL}#/public-print/${report.reportNumber}`;
     const msg = encodeURIComponent(
       `*${settings.labName}*\n\nHello ${patient.fullName},\nYour test report is ready!\n\n*Report No:* ${report.reportNumber}\n*Date:* ${new Date(report.reportDate).toLocaleDateString('en-IN')}\n\n*Click the link below to instantly view and download your PDF report:*\n${publicUrl}\n\n📞 ${settings.labPhone}`
     );
