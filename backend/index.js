@@ -134,18 +134,19 @@ app.post('/api/public/book-appointment', async (req, res) => {
       const telegramBotToken = process.env.TELEGRAM_BOT_TOKEN;
       const telegramChatId = process.env.TELEGRAM_CHAT_ID;
       if (telegramBotToken && telegramChatId) {
+        const esc = (s, def = '') => (s ?? def).replace(/&/g, '&amp;').replace(/</g, '&lt;').replace(/>/g, '&gt;');
         const refId = `SPL-APT-${appointment.id.toString().padStart(6, '0')}`;
         const telegramText = `<b>🔔 New Appointment Request!</b>\n\n` +
           `<b>Ref ID:</b> ${refId}\n` +
-          `<b>Name:</b> ${name.trim()}\n` +
-          `<b>Mobile:</b> ${mobile.trim()}\n` +
-          `<b>Gender:</b> ${gender}\n` +
-          `<b>Date:</b> ${preferredDate} ${preferredTime}\n` +
+          `<b>Name:</b> ${esc(name)}\n` +
+          `<b>Mobile:</b> ${esc(mobile)}\n` +
+          `<b>Gender:</b> ${esc(gender)}\n` +
+          `<b>Date:</b> ${esc(preferredDate)} ${esc(preferredTime)}\n` +
           `<b>Mode:</b> ${address && address !== 'Lab Visit' ? 'Home Collection' : 'Lab Visit'}\n` +
-          `<b>Address:</b> ${address ? address.trim() : 'N/A'}\n` +
-          `<b>Notes:</b> ${notes ? notes.trim() : 'None'}`;
+          `<b>Address:</b> ${esc(address, 'N/A')}\n` +
+          `<b>Notes:</b> ${esc(notes, 'None')}`;
 
-        fetch(`https://api.telegram.org/bot${telegramBotToken}/sendMessage`, {
+        const resp = await fetch(`https://api.telegram.org/bot${telegramBotToken}/sendMessage`, {
           method: 'POST',
           headers: { 'Content-Type': 'application/json' },
           body: JSON.stringify({
@@ -153,49 +154,18 @@ app.post('/api/public/book-appointment', async (req, res) => {
             text: telegramText,
             parse_mode: 'HTML'
           })
-        })
-        .then(r => r.json())
-        .then(data => {
-          if (!data.ok) {
-            console.error('Telegram API Error:', data.description);
-          } else {
-            console.log('Telegram Alert Sent successfully!');
-          }
-        })
-        .catch(err => console.error('Telegram Fetch Error:', err));
+        });
+        const data = await resp.json();
+        if (!data.ok) {
+          console.error('Telegram API Error:', data.description);
+        } else {
+          console.log('Telegram Alert Sent successfully!');
+        }
       } else {
         console.log('Telegram Credentials not configured in .env. Skipping Telegram notification.');
       }
     } catch (telegramErr) {
       console.error('Failed to send Telegram alert:', telegramErr);
-    }
-
-    // Send Fast2SMS Alert to Admin
-    try {
-      const adminPhone = process.env.ADMIN_PHONE || '6396786939';
-      const smsText = `New Appointment!\nName: ${name}\nMob: ${mobile}\nDate: ${preferredDate} ${preferredTime}`;
-      
-      const fast2smsApiKey = process.env.FAST2SMS_API_KEY || 'MtqzwpXCPos2S9fHrAQi3lIEng8xKBUWdevVhb76YDT5c0yR1uibF4qC3UO5jtM0SHuw86KdzJDQN9Wo';
-      
-      fetch('https://www.fast2sms.com/dev/bulkV2', {
-        method: 'POST',
-        headers: {
-          'authorization': fast2smsApiKey,
-          'Content-Type': 'application/json'
-        },
-        body: JSON.stringify({
-          route: 'q',
-          message: smsText,
-          language: 'english',
-          flash: 0,
-          numbers: adminPhone
-        })
-      })
-      .then(r => r.json())
-      .then(data => console.log('Fast2SMS Response:', data))
-      .catch(err => console.error('Fast2SMS Fetch Error:', err));
-    } catch (smsErr) {
-      console.error('Failed to send SMS alert:', smsErr);
     }
 
     res.status(201).json({ message: 'Appointment booked successfully', appointment });

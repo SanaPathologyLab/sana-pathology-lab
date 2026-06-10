@@ -4,7 +4,7 @@ import { useNavigate, Link } from 'react-router-dom';
 import { User, Stethoscope, HeartPulse, Loader2 } from 'lucide-react';
 import Loader from '../components/Loader';
 
-const API_BASE = 'https://sana-pathology-backend.onrender.com';
+const API_BASE = import.meta.env.VITE_API_URL || '';
 
 const Login = () => {
   const [activeTab, setActiveTab] = useState('PATIENT'); // STAFF, DOCTOR, PATIENT
