@@ -53,7 +53,8 @@ const PrintReport = () => {
   });
   const testNames = Object.keys(groupedTests);
 
-  const qrValue = `${window.location.origin}/public-print/${report.reportNumber}`;
+  const basePath = window.location.pathname.substring(0, window.location.pathname.lastIndexOf('/') + 1);
+  const qrValue = `${window.location.origin}${basePath}#/public-print/${report.reportNumber}`;
 
   const handleWhatsApp = async () => {
     try {

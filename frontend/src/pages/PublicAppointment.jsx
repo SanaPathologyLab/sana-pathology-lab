@@ -20,7 +20,10 @@ const PublicAppointment = () => {
   const [error, setError] = useState('');
 
   useEffect(() => {
-    const params = new URLSearchParams(window.location.search);
+    const hash = window.location.hash;
+    const searchIdx = hash.indexOf('?');
+    const searchPart = searchIdx !== -1 ? hash.substring(searchIdx) : window.location.search;
+    const params = new URLSearchParams(searchPart);
     const testName = params.get('test');
     const packageName = params.get('package');
     if (testName) {
