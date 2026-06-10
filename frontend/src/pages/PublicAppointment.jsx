@@ -1,6 +1,7 @@
 import React, { useState } from 'react';
 import { useNavigate } from 'react-router-dom';
 import { ArrowLeft, CheckCircle, Calendar, User, Phone, MapPin, Clock } from 'lucide-react';
+import Loader from '../components/Loader';
 
 const PublicAppointment = () => {
   const navigate = useNavigate();
@@ -238,7 +239,7 @@ const PublicAppointment = () => {
                   className="w-full bg-[#00488d] hover:bg-blue-800 text-white py-4 rounded-xl font-bold text-lg shadow-lg shadow-blue-200 transition-all active:scale-[0.98] disabled:opacity-70 disabled:cursor-not-allowed flex items-center justify-center gap-2"
                 >
                   {loading ? (
-                    <div className="w-6 h-6 border-2 border-white border-t-transparent rounded-full animate-spin"></div>
+                    <Loader type="button" className="text-white" />
                   ) : (
                     'Submit Request'
                   )}

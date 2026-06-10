@@ -1,7 +1,8 @@
 import React, { useState, useContext } from 'react';
 import { AuthContext } from '../context/AuthContext';
 import { useNavigate, Link } from 'react-router-dom';
-import { User, Stethoscope, HeartPulse } from 'lucide-react';
+import { User, Stethoscope, HeartPulse, Loader2 } from 'lucide-react';
+import Loader from '../components/Loader';
 
 const API_BASE = 'https://sana-pathology-backend.onrender.com';
 
@@ -340,7 +341,7 @@ const Login = () => {
             disabled={loading || (isRecoveringId && activeTab === 'STAFF')}
             className="w-full flex justify-center py-3 px-4 rounded-lg text-sm font-bold text-white bg-[#00488d] hover:bg-blue-800 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-[#00488d] transition-colors mt-6 disabled:opacity-50"
           >
-            {loading ? 'Processing...' : (isRecoveringId ? 'Find My ID' : (isRegisteringDoctor || isRegisteringStaff ? 'Register' : 'Sign In'))}
+            {loading ? <Loader type="button" /> : (isRecoveringId ? 'Find My ID' : (isRegisteringDoctor || isRegisteringStaff ? 'Register' : 'Sign In'))}
           </button>
         </form>
 

@@ -1,6 +1,7 @@
 import React, { useState, useEffect } from 'react';
 import { Search, FileText, User, Calendar, Phone, Stethoscope, ChevronDown, ChevronUp, CheckCircle, AlertCircle, ArrowLeft, Printer } from 'lucide-react';
 import { useNavigate } from 'react-router-dom';
+import Loader from '../components/Loader';
 
 const API = '/api';
 
@@ -144,7 +145,7 @@ const ReportLookup = () => {
               className="bg-[#00488d] hover:bg-blue-800 text-white px-6 py-3.5 rounded-xl font-bold text-sm transition-colors disabled:opacity-60 flex items-center gap-2 whitespace-nowrap shadow-md shadow-blue-200"
             >
               {loading ? (
-                <div className="w-4 h-4 border-2 border-white/40 border-t-white rounded-full animate-spin" />
+                <Loader type="button" className="text-white" />
               ) : (
                 <Search className="w-4 h-4" />
               )}

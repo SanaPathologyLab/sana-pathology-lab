@@ -1,6 +1,7 @@
 import React, { useState, useEffect, useContext } from 'react';
 import { AuthContext } from '../context/AuthContext';
 import * as XLSX from 'xlsx';
+import Loader from '../components/Loader';
 
 const DoctorAnalytics = () => {
   const { user } = useContext(AuthContext);
@@ -215,8 +216,8 @@ const DoctorAnalytics = () => {
               {loading ? (
                 <tr>
                   <td colSpan="3" className="px-6 py-12 text-center text-gray-500">
-                    <div className="flex justify-center items-center gap-3">
-                      <div className="w-5 h-5 border-2 border-[#1e2a8a] border-t-transparent rounded-full animate-spin"></div>
+                    <div className="flex flex-col justify-center items-center gap-3">
+                      <Loader size="sm" />
                       Loading analytics data...
                     </div>
                   </td>
