@@ -190,7 +190,7 @@ const Doctors = () => {
         {filteredDoctors.length > 0 ? (
           filteredDoctors.map(d => (
             <div key={d.id} className="bg-white rounded border border-gray-200 p-6 shadow-sm hover:border-[#00488d] transition-colors relative">
-              <div className="absolute top-0 right-0 w-16 h-16 bg-[#ffb800] opacity-10 rounded-bl-full"></div>
+              <div className="absolute top-0 right-0 w-16 h-16 bg-[#ffb800] opacity-10 rounded-bl-full pointer-events-none"></div>
               <div className="flex justify-between items-start mb-4">
                 <div className="flex items-center">
                   <div className="h-12 w-12 rounded bg-[#00488d] text-[#ffb800] flex items-center justify-center text-xl font-bold">
@@ -201,7 +201,7 @@ const Doctors = () => {
                     <p className="text-xs font-bold text-gray-500 uppercase tracking-wider">{d.specialization || 'General'}</p>
                   </div>
                 </div>
-                <div className="flex space-x-2">
+                <div className="flex space-x-2 relative z-10">
                   <button onClick={() => openEditModal(d)} className="text-gray-400 hover:text-[#00488d]" title="Edit">
                     <Edit2 className="w-4 h-4" />
                   </button>
