@@ -256,8 +256,6 @@ const CreateReport = () => {
             <span>{testName}</span>
           </h3>
 
-          {isMantoux ? (
-            <div className="p-6 border border-gray-300 rounded-b-lg bg-gray-50 max-w-2xl mx-auto mt-4 shadow-sm" style={{ fontFamily: 'Georgia, serif' }}>
           {isTiterMatrix ? (
             <React.Fragment>
               <div className="border border-black">

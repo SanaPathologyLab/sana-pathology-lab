@@ -256,7 +256,9 @@ const PrintReport = () => {
   const TestTable = ({ testName, rows, showHeader = true, summary = '' }) => {
     const isMantoux = testName.toUpperCase().includes('MANTOUX') || (rows[0] && rows[0].test?.testCode === 'MANTOUX-01');
 
-
+    const overallIdx = rows.findIndex(r => r.groupName === `__OVERALL__${testName}`);
+    const overallResult = overallIdx !== -1 ? rows[overallIdx] : null;
+    const filteredRows = overallResult ? rows.filter((_, i) => i !== overallIdx) : rows;
 
     return (
     <div className="relative z-10">
