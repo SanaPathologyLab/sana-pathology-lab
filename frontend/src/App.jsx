@@ -23,9 +23,11 @@ const PublicPrint = lazy(() => import('./pages/PublicPrint'));
 const PublicWelcome = lazy(() => import('./pages/PublicWelcome'));
 const PublicAppointment = lazy(() => import('./pages/PublicAppointment'));
 
+import Loader from './components/Loader';
+
 const Spinner = () => (
   <div className="flex items-center justify-center min-h-screen">
-    <div className="w-8 h-8 border-4 border-[#00488d] border-t-transparent rounded-full animate-spin"></div>
+    <Loader type="page" size="md" />
   </div>
 );
 

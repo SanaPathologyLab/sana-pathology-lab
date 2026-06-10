@@ -7,6 +7,7 @@ import {
   Users, Search, ChevronRight, Phone, MapPin
 } from 'lucide-react';
 import * as XLSX from 'xlsx';
+import Loader from '../components/Loader';
 
 const API = '/api';
 
@@ -236,9 +237,7 @@ const Appointments = () => {
 
       {/* Cards */}
       {loading ? (
-        <div className="flex justify-center py-16">
-          <div className="w-8 h-8 border-4 border-[#00488d] border-t-transparent rounded-full animate-spin" />
-        </div>
+        <Loader className="py-16" />
       ) : (
         <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4">
           {filtered.length === 0 ? (

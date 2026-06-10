@@ -3,6 +3,7 @@ import Layout from '../components/Layout';
 import { AuthContext } from '../context/AuthContext';
 import { Plus, Pencil, Trash2, X, Package, AlertTriangle, Calendar, Download } from 'lucide-react';
 import * as XLSX from 'xlsx';
+import Loader from '../components/Loader';
 
 const API = '/api';
 
@@ -161,7 +162,7 @@ const Inventory = () => {
       </div>
 
       {loading ? (
-        <div className="flex justify-center py-16"><div className="w-8 h-8 border-4 border-[#00488d] border-t-transparent rounded-full animate-spin"></div></div>
+        <Loader className="py-16" />
       ) : (
         <div className="bg-white rounded-lg border border-gray-200 shadow-sm overflow-hidden">
           <table className="w-full text-sm">

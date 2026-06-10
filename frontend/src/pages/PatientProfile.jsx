@@ -3,6 +3,7 @@ import { useParams, useNavigate } from 'react-router-dom';
 import Layout from '../components/Layout';
 import { AuthContext } from '../context/AuthContext';
 import { User, Phone, FileText, IndianRupee, Calendar, ArrowLeft, Printer, Activity } from 'lucide-react';
+import Loader from '../components/Loader';
 
 const API = '/api';
 
@@ -38,7 +39,7 @@ const PatientProfile = () => {
     fetchData();
   }, [id]);
 
-  if (loading) return <Layout><div className="flex justify-center py-16"><div className="w-8 h-8 border-4 border-[#00488d] border-t-transparent rounded-full animate-spin"></div></div></Layout>;
+  if (loading) return <Layout><Loader className="py-16" /></Layout>;
   if (!patient) return <Layout><div className="text-center py-16 text-gray-400">Patient not found.</div></Layout>;
 
   const totalPaid = invoices.filter(i => i.paymentStatus === 'PAID').reduce((a, i) => a + i.finalAmount, 0);
