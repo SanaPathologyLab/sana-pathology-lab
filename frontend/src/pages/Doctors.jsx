@@ -115,11 +115,20 @@ const Doctors = () => {
       if (res.ok) {
         fetchDoctors();
       } else {
-        const error = await res.json();
-        alert(`Failed to delete: ${error.message || 'Access Denied'}`);
+        // Try to parse JSON, if it fails, it will jump to catch
+        const text = await res.text();
+        let errorMsg = 'Access Denied';
+        try {
+          const parsed = JSON.parse(text);
+          errorMsg = parsed.message || errorMsg;
+        } catch (e) {
+          errorMsg = text || res.statusText;
+        }
+        alert(`Failed to delete: ${errorMsg}`);
       }
     } catch (err) {
       console.error(err);
+      alert(`Network or server error occurred: ${err.message}`);
     }
   };
 
