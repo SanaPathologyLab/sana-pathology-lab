@@ -51,6 +51,10 @@ const PublicAppointment = () => {
       
       if (response.ok) {
         setSuccess(true);
+        // Automatically trigger WhatsApp redirect
+        const msg = `*New Appointment Request*\n\n*Name:* ${formData.name}\n*Mobile:* ${formData.mobile}\n*Gender:* ${formData.gender}\n*Date:* ${formData.preferredDate}\n*Time:* ${formData.preferredTime}\n*Address:* ${formData.address}\n*Notes:* ${formData.notes || 'None'}`;
+        const labPhone = "916396786939";
+        window.open(`https://wa.me/${labPhone}?text=${encodeURIComponent(msg)}`, '_blank');
       } else {
         const data = await response.json();
         setError(data.message || 'Failed to book appointment. Please try again.');

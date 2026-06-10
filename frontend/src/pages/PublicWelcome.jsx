@@ -259,6 +259,12 @@ const PublicWelcome = () => {
         const data = await response.json();
         setCreatedAppointment(data.appointment);
         setBookingSuccess(true);
+
+        // Automatically trigger WhatsApp redirect
+        const testListStr = selectedTests.map(t => `- ${t.name} (₹${t.price})`).join('\n');
+        const msg = `*New Appointment Request (Home Page)*\n\n*Name:* ${bookingForm.name}\n*Mobile:* ${bookingForm.mobile}\n*Gender:* ${bookingForm.gender}\n*Date:* ${bookingForm.preferredDate} ${bookingForm.preferredTime}\n*Mode:* ${bookingForm.isHomeCollection ? 'Home Collection' : 'Clinic Visit'}\n*Address:* ${bookingForm.isHomeCollection ? bookingForm.address : 'N/A'}\n\n*Selected Tests/Packages:*\n${testListStr}\n\n*Total Amount:* ₹${selectedTests.reduce((acc, t) => acc + t.price, 0)}`;
+        const labPhone = "916396786939"; 
+        window.open(`https://wa.me/${labPhone}?text=${encodeURIComponent(msg)}`, '_blank');
       } else {
         const data = await response.json();
         setBookingError(data.message || 'Failed to submit appointment. Please try again.');
