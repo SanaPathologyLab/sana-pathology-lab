@@ -35,31 +35,35 @@ exports.login = async (req, res) => {
   try {
     const { email, password } = req.body;
 
-    // Try to find user by email first
+    // Try to find user by email first (case-insensitive)
     let user = await prisma.user.findFirst({ 
       where: { email: { equals: email, mode: 'insensitive' } } 
     });
 
-    // If not found by email, try looking up by staffId (user enters staffId)
-    if (!user) {
-      const staff = await prisma.staff.findUnique({ where: { staffId: email } });
-      if (staff && staff.email) {
-        user = await prisma.user.findFirst({
-          where: { email: { equals: staff.email, mode: 'insensitive' } }
-        });
-      }
-    }
-
-    // If still not found, the User record might have staffId as email (existing data).
-    // Find staff by their email, then look up user by staffId.
+    // If not found by email, look up the Staff member by staffId or email (case-insensitively)
     if (!user) {
       const staff = await prisma.staff.findFirst({
-        where: { email: { equals: email, mode: 'insensitive' } }
+        where: {
+          OR: [
+            { staffId: { equals: email, mode: 'insensitive' } },
+            { email: { equals: email, mode: 'insensitive' } }
+          ]
+        }
       });
+
       if (staff) {
-        user = await prisma.user.findFirst({
-          where: { email: { equals: staff.staffId, mode: 'insensitive' } }
-        });
+        // Find User by staff's email first
+        if (staff.email) {
+          user = await prisma.user.findFirst({
+            where: { email: { equals: staff.email, mode: 'insensitive' } }
+          });
+        }
+        // If still not found, look up User by staff's staffId (e.g. fallback login ID)
+        if (!user && staff.staffId) {
+          user = await prisma.user.findFirst({
+            where: { email: { equals: staff.staffId, mode: 'insensitive' } }
+          });
+        }
       }
     }
 
