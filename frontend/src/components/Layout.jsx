@@ -7,8 +7,80 @@ import Logo from './Logo';
 const Layout = ({ children }) => {
   const { user, logout } = useContext(AuthContext);
   const [mobileMenuOpen, setMobileMenuOpen] = useState(false);
+  const [newBookingAlert, setNewBookingAlert] = useState(null);
   const navigate = useNavigate();
   const location = useLocation();
+  const knownAppointmentIds = React.useRef(new Set());
+
+  const playChime = () => {
+    try {
+      const audioCtx = new (window.AudioContext || window.webkitAudioContext)();
+      const playNote = (frequency, startTime, duration) => {
+        const osc = audioCtx.createOscillator();
+        const gain = audioCtx.createGain();
+        osc.type = 'sine';
+        osc.frequency.setValueAtTime(frequency, startTime);
+        gain.gain.setValueAtTime(0.2, startTime);
+        gain.gain.exponentialRampToValueAtTime(0.0001, startTime + duration);
+        osc.connect(gain);
+        gain.connect(audioCtx.destination);
+        osc.start(startTime);
+        osc.stop(startTime + duration);
+      };
+      playNote(523.25, audioCtx.currentTime, 0.4); // C5
+      playNote(659.25, audioCtx.currentTime + 0.15, 0.5); // E5
+    } catch (e) {
+      console.error('Failed to play chime:', e);
+    }
+  };
+
+  React.useEffect(() => {
+    if (!user || user.userType === 'PATIENT') return;
+
+    const headers = { 'Authorization': `Bearer ${user.accessToken}` };
+    
+    // Initial fetch to load existing appointments
+    fetch('/api/appointments', { headers })
+      .then(r => r.json())
+      .then(data => {
+        if (Array.isArray(data)) {
+          knownAppointmentIds.current = new Set(data.map(a => a.id));
+        }
+      })
+      .catch(console.error);
+
+    // Setup short polling interval
+    const interval = setInterval(() => {
+      fetch('/api/appointments', { headers })
+        .then(r => r.json())
+        .then(data => {
+          if (Array.isArray(data)) {
+            let foundNew = false;
+            data.forEach(apt => {
+              if (!knownAppointmentIds.current.has(apt.id)) {
+                knownAppointmentIds.current.add(apt.id);
+                // Trigger alert if status is SCHEDULED
+                if (apt.status === 'SCHEDULED') {
+                  foundNew = true;
+                  setNewBookingAlert({
+                    id: apt.id,
+                    name: apt.patient?.fullName || 'New Patient',
+                    date: apt.date,
+                    time: apt.time
+                  });
+                }
+              }
+            });
+            if (foundNew) {
+              playChime();
+            }
+          }
+        })
+        .catch(console.error);
+    }, 15000); // Check every 15 seconds
+
+    return () => clearInterval(interval);
+  }, [user]);
 
   // Don't render layout elements on the print route
   if (location.pathname.includes('/print/')) {
@@ -188,6 +260,39 @@ const Layout = ({ children }) => {
           <p>© {new Date().getFullYear()} Sana Pathology Lab. All Rights Reserved.</p>
         </div>
       </footer>
+
+      {/* Floating live booking alert */}
+      {newBookingAlert && (
+        <div className="fixed bottom-6 right-6 z-50 bg-[#00488d] text-white p-5 rounded-2xl shadow-2xl border border-white/10 max-w-sm w-full animate-fade-in flex flex-col gap-3">
+          <div className="flex justify-between items-start">
+            <div className="flex items-center gap-2">
+              <span className="w-2.5 h-2.5 bg-[#ffb800] rounded-full animate-ping"></span>
+              <h4 className="font-extrabold text-sm uppercase tracking-wider text-[#ffb800]">New Booking Alert!</h4>
+            </div>
+            <button 
+              onClick={() => setNewBookingAlert(null)}
+              className="text-white/70 hover:text-white font-bold text-xs"
+            >
+              Close
+            </button>
+          </div>
+          <div>
+            <p className="font-black text-base">{newBookingAlert.name}</p>
+            <p className="text-xs text-white/80 mt-1">
+              Scheduled for {new Date(newBookingAlert.date).toLocaleDateString()} at {newBookingAlert.time}
+            </p>
+          </div>
+          <button 
+            onClick={() => {
+              setNewBookingAlert(null);
+              navigate('/appointments');
+            }}
+            className="w-full bg-[#ffb800] hover:bg-yellow-500 text-gray-900 font-bold text-xs py-2.5 rounded-lg transition-colors text-center"
+          >
+            View Appointments List
+          </button>
+        </div>
+      )}
     </div>
   );
 };

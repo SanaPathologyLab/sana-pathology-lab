@@ -129,6 +129,47 @@ app.post('/api/public/book-appointment', async (req, res) => {
       }
     });
 
+    // Send Telegram Bot Notification to Admin
+    try {
+      const telegramBotToken = process.env.TELEGRAM_BOT_TOKEN;
+      const telegramChatId = process.env.TELEGRAM_CHAT_ID;
+      if (telegramBotToken && telegramChatId) {
+        const refId = `SPL-APT-${appointment.id.toString().padStart(6, '0')}`;
+        const telegramText = `<b>🔔 New Appointment Request!</b>\n\n` +
+          `<b>Ref ID:</b> ${refId}\n` +
+          `<b>Name:</b> ${name.trim()}\n` +
+          `<b>Mobile:</b> ${mobile.trim()}\n` +
+          `<b>Gender:</b> ${gender}\n` +
+          `<b>Date:</b> ${preferredDate} ${preferredTime}\n` +
+          `<b>Mode:</b> ${address && address !== 'Lab Visit' ? 'Home Collection' : 'Lab Visit'}\n` +
+          `<b>Address:</b> ${address ? address.trim() : 'N/A'}\n` +
+          `<b>Notes:</b> ${notes ? notes.trim() : 'None'}`;
+
+        fetch(`https://api.telegram.org/bot${telegramBotToken}/sendMessage`, {
+          method: 'POST',
+          headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify({
+            chat_id: telegramChatId,
+            text: telegramText,
+            parse_mode: 'HTML'
+          })
+        })
+        .then(r => r.json())
+        .then(data => {
+          if (!data.ok) {
+            console.error('Telegram API Error:', data.description);
+          } else {
+            console.log('Telegram Alert Sent successfully!');
+          }
+        })
+        .catch(err => console.error('Telegram Fetch Error:', err));
+      } else {
+        console.log('Telegram Credentials not configured in .env. Skipping Telegram notification.');
+      }
+    } catch (telegramErr) {
+      console.error('Failed to send Telegram alert:', telegramErr);
+    }
+
     // Send Fast2SMS Alert to Admin
     try {
       const adminPhone = process.env.ADMIN_PHONE || '6396786939';
