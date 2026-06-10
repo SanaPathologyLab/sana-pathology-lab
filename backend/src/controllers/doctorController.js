@@ -130,7 +130,7 @@ exports.updateDoctor = async (req, res) => {
 
 exports.deleteDoctor = async (req, res) => {
   try {
-    if (req.userRole !== 'ADMIN') return res.status(403).json({ message: 'Admin access required' });
+    if (req.userRole?.toUpperCase() !== 'ADMIN') return res.status(403).json({ message: 'Admin access required' });
     
     const doctorId = parseInt(req.params.id);
 
@@ -149,7 +149,7 @@ exports.deleteDoctor = async (req, res) => {
     await prisma.doctor.delete({ where: { id: doctorId } });
     res.status(200).json({ message: 'Doctor deleted successfully' });
   } catch (err) {
-    console.error(err);
-    res.status(500).json({ message: err.message });
+    console.error('Delete Doctor Error:', err);
+    res.status(500).json({ message: err.message || 'An unknown error occurred while deleting the doctor.' });
   }
 };
