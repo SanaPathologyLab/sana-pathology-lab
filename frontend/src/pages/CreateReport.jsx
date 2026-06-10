@@ -249,7 +249,7 @@ const CreateReport = () => {
       const isTiterMatrix = titerValueSet.length === 1 && titerValueSet[0];
       const titerList = isTiterMatrix ? titerValueSet[0].split(',') : [];
       const isMantoux = params[0]?.test?.testCode === 'MANTOUX-01' || testName.toUpperCase().includes('MANTOUX');
-      const isMalaria = params[0]?.test?.testCode === 'MALARIA-01' || testName.toUpperCase().includes('MALARIA MICRO');
+      const isMalaria = params[0]?.test?.testCode === 'MP-MICRO' || testName.toUpperCase().includes('MALARIA MICRO');
 
       return (
         <div key={testName} className="mb-8">
