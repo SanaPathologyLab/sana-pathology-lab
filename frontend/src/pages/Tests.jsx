@@ -268,6 +268,58 @@ const Tests = () => {
     }
   };
 
+  const createMalariaTestAuto = async () => {
+    const existing = tests.find(t => t.testCode === 'MALARIA-01');
+    if (existing) {
+      if (!window.confirm('Malaria test already exists. Do you want to overwrite it with standard Malaria parameters?')) return;
+      try {
+        await fetch(`/api/tests/${existing.id}`, {
+          method: 'DELETE',
+          headers: { 'Authorization': `Bearer ${user.accessToken}` }
+        });
+      } catch (err) {
+        console.error(err);
+      }
+    }
+    try {
+      let catId = categories.find(c => c.name === 'Immunology & Serology' || c.name === 'Immunology')?.id;
+      if (!catId) {
+        const catRes = await fetch('/api/tests/categories', {
+          method: 'POST',
+          headers: { 'Content-Type': 'application/json', 'Authorization': `Bearer ${user.accessToken}` },
+          body: JSON.stringify({ name: 'Immunology & Serology' })
+        });
+        const catData = await catRes.json();
+        catId = catData.id;
+        fetchCategories();
+      }
+      const res = await fetch('/api/tests', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json', 'Authorization': `Bearer ${user.accessToken}` },
+        body: JSON.stringify({
+          testName: 'MALARIA PARASITE IDENTIFICATION',
+          testCode: 'MALARIA-01',
+          sampleType: 'Whole Blood',
+          price: 150,
+          categoryId: catId,
+          summary: 'A Single negative smear does not rule out malaria. Test conducted on whole blood.',
+          parameters: [
+            { parameterName: 'Malaria Parasite', referenceRange: 'NOT-SEEN', unit: '', groupName: 'MALARIA PARASITE IDENTIFICATION (MICROSCOPY)', isQualitative: true },
+          ]
+        })
+      });
+      if (res.ok) {
+        alert('Malaria test created successfully!');
+        fetchTests();
+      } else {
+        alert('Failed to create Malaria test');
+      }
+    } catch (err) {
+      console.error(err);
+      alert('Error creating Malaria test');
+    }
+  };
+
   const filteredTests = tests.filter(t => 
     t.testName.toLowerCase().includes(searchTerm.toLowerCase()) || 
     t.testCode.toLowerCase().includes(searchTerm.toLowerCase())
@@ -289,6 +341,12 @@ const Tests = () => {
             className="bg-purple-700 hover:bg-purple-800 text-white px-4 py-2 rounded text-sm font-bold tracking-wide transition-colors flex items-center"
           >
             <Plus className="w-4 h-4 mr-2" /> CREATE MANTOUX
+          </button>
+          <button 
+            onClick={createMalariaTestAuto}
+            className="bg-indigo-700 hover:bg-indigo-800 text-white px-4 py-2 rounded text-sm font-bold tracking-wide transition-colors flex items-center"
+          >
+            <Plus className="w-4 h-4 mr-2" /> CREATE MALARIA
           </button>
           <button 
             onClick={openAddModal}

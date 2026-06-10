@@ -190,7 +190,7 @@ const PublicPrint = () => {
 
   const TestTable = ({ testName, rows, summary = '' }) => {
     const isMantoux = testName.toUpperCase().includes('MANTOUX') || (rows[0] && rows[0].test?.testCode === 'MANTOUX-01');
-    const isMalaria = testName.toUpperCase().includes('MALARIA PARASITE IDENTIFICATION') || (rows[0] && rows[0].test?.testCode === 'MALARIA-01');
+    const isMalaria = testName.toUpperCase().includes('MALARIA PARASITE') || (rows[0] && rows[0].test?.testCode === 'MALARIA-01');
 
     if (isMantoux) {
       const doseRow = rows.find(r => r.parameterName.includes('Dose')) || rows[0];
