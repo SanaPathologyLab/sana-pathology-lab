@@ -15,7 +15,14 @@ const BloodTube3D = () => {
     const scene = new THREE.Scene();
     
     const camera = new THREE.PerspectiveCamera(45, width / height, 0.1, 100);
-    camera.position.set(0, 0, 7);
+    // Dynamically set initial camera distance to prevent clipping and maximize height
+    const initialAspect = width / height;
+    let initialDistance = 7.8;
+    if (initialAspect < 1) {
+      initialDistance = 7.8 / initialAspect;
+      if (initialDistance > 11) initialDistance = 11;
+    }
+    camera.position.set(0, 0, initialDistance);
 
     const renderer = new THREE.WebGLRenderer({ antialias: true, alpha: true });
     renderer.setSize(width, height);
@@ -191,19 +198,24 @@ const BloodTube3D = () => {
     label.rotation.y = -Math.PI / 1.35; // Position label towards viewer
     tubeGroup.add(label);
 
-    // Purple Rubber Stopper (Cap)
-    const capHeight = 0.8;
+    // Purple Rubber Stopper (Cap) - Flat top vacutainer design
+    const capHeight = 1.0;
     const capRadius = 0.85;
     const capBodyGeom = new THREE.CylinderGeometry(capRadius, capRadius, capHeight, 32);
     const capBody = new THREE.Mesh(capBodyGeom, capMaterial);
     capBody.position.y = 2.6 + (capHeight / 2);
     tubeGroup.add(capBody);
 
-    // Cap Dome Top
-    const capTopGeom = new THREE.SphereGeometry(capRadius, 32, 16, 0, Math.PI * 2, 0, Math.PI / 2);
-    const capTop = new THREE.Mesh(capTopGeom, capMaterial);
-    capTop.position.y = 2.6 + capHeight;
-    tubeGroup.add(capTop);
+    // Recessed center circle for needle insertion (standard flat stopper design)
+    const recessGeom = new THREE.CylinderGeometry(0.5, 0.5, 0.02, 32);
+    const recessMaterial = new THREE.MeshStandardMaterial({
+      color: 0x78428c, // Darker purple for depth
+      roughness: 0.6,
+      metalness: 0.1
+    });
+    const recess = new THREE.Mesh(recessGeom, recessMaterial);
+    recess.position.y = 2.6 + capHeight + 0.005; // Placed exactly on top
+    tubeGroup.add(recess);
 
     // Cap vertical ridges (grip)
     const numRidges = 24;
@@ -284,8 +296,9 @@ const BloodTube3D = () => {
       const elapsedTime = clock.getElapsedTime();
 
       // Slow floating motion
-      const floatOffset = Math.sin(elapsedTime * 1.5) * 0.15;
-      tubeGroup.position.y = floatOffset;
+      const floatOffset = Math.sin(elapsedTime * 1.5) * 0.12;
+      const baseGroupY = -0.6; // Center offset adjusted for flat cap height
+      tubeGroup.position.y = baseGroupY + floatOffset;
 
       // Rotate bubbles
       bubbles.forEach(b => {
@@ -316,9 +329,18 @@ const BloodTube3D = () => {
       if (!container) return;
       const w = container.clientWidth;
       const h = container.clientHeight;
-      camera.aspect = w / h;
+      const aspect = w / h;
+      camera.aspect = aspect;
       camera.updateProjectionMatrix();
       renderer.setSize(w, h);
+
+      // Adjust camera distance to make tube full size top-to-bottom without clipping
+      let distance = 7.8;
+      if (aspect < 1) {
+        distance = 7.8 / aspect;
+        if (distance > 11) distance = 11;
+      }
+      camera.position.set(0, 0, distance);
     };
 
     window.addEventListener('resize', handleResize);
@@ -338,7 +360,8 @@ const BloodTube3D = () => {
       bloodBottomGeom.dispose();
       labelGeom.dispose();
       capBodyGeom.dispose();
-      capTopGeom.dispose();
+      recessGeom.dispose();
+      recessMaterial.dispose();
       ridgeGeom.dispose();
       bubbleGeom.dispose();
 
