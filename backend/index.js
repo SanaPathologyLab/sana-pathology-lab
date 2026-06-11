@@ -256,16 +256,41 @@ app.get('/api/dashboard/stats', verifyToken, async (req, res) => {
     }
 
     if (req.userType === 'DOCTOR') {
+      const doctor = await prisma.doctor.findUnique({ where: { id: req.userId } });
+      const commRate = doctor?.commissionRate || 0;
+
       const pending = await prisma.report.count({ where: { doctorId: req.userId, status: 'PENDING' } });
       const completed = await prisma.report.count({ where: { doctorId: req.userId, status: 'COMPLETED' } });
-      const reports = await prisma.report.findMany({ where: { doctorId: req.userId }, select: { patientId: true } });
+      
+      const reports = await prisma.report.findMany({ 
+        where: { doctorId: req.userId }, 
+        include: { invoice: true } 
+      });
+
       const uniquePatients = new Set(reports.map(r => r.patientId)).size;
+
+      // Calculate total commission
+      let totalCommission = 0;
+      reports.forEach(r => {
+        if (r.invoice) {
+          const totalAmt = r.invoice.totalAmount || 0;
+          const discountAmt = r.invoice.discount || 0;
+          const discountBy = r.invoice.discountBy || '';
+          
+          const grossComm = (totalAmt * commRate) / 100;
+          const drBorneDisc = discountBy === 'DOCTOR' ? discountAmt : 0;
+          const netComm = Math.max(0, grossComm - drBorneDisc);
+          totalCommission += netComm;
+        }
+      });
 
       return res.json({
         totalPatients: uniquePatients, todayPatients: 0,
         pendingReports: pending, completedReports: completed,
         totalRevenue: 0, todayRevenue: 0, monthRevenue: 0,
         topDoctors: [], lowStockCount: 0,
+        totalCommission: Math.round(totalCommission),
+        commissionRate: commRate
       });
     }
 

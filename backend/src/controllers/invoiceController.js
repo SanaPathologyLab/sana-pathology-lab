@@ -42,7 +42,17 @@ exports.createInvoice = async (req, res) => {
 
 exports.getInvoices = async (req, res) => {
   try {
+    let where = {};
+    if (req.userType === 'PATIENT') {
+      where.patientId = req.userId;
+    } else if (req.userType === 'DOCTOR') {
+      where.report = {
+        doctorId: req.userId
+      };
+    }
+
     const invoices = await prisma.invoice.findMany({
+      where,
       include: { patient: true, report: true },
       orderBy: { createdAt: 'desc' }
     });

@@ -2,7 +2,15 @@ const prisma = require('../prisma');
 
 const getAppointments = async (req, res) => {
   try {
+    let where = {};
+    if (req.userType === 'PATIENT') {
+      where.patientId = req.userId;
+    } else if (req.userType === 'DOCTOR') {
+      where.doctorId = req.userId;
+    }
+
     const appointments = await prisma.appointment.findMany({
+      where,
       include: { patient: true, doctor: true },
       orderBy: { date: 'desc' },
     });

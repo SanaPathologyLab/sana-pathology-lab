@@ -2,6 +2,7 @@ import React, { useState, useEffect, useContext } from 'react';
 import { AuthContext } from '../context/AuthContext';
 import * as XLSX from 'xlsx';
 import Loader from '../components/Loader';
+import Layout from '../components/Layout';
 
 const DoctorAnalytics = () => {
   const { user } = useContext(AuthContext);
@@ -153,7 +154,8 @@ const DoctorAnalytics = () => {
   };
 
   return (
-    <div className="p-6">
+    <Layout>
+      <div className="p-6">
       <div className="flex justify-between items-center mb-6">
         <div>
           <h1 className="text-2xl font-bold text-gray-800">Doctor Referrals Analytics</h1>
@@ -261,6 +263,7 @@ const DoctorAnalytics = () => {
         </div>
       </div>
     </div>
+  </Layout>
   );
 };
 
