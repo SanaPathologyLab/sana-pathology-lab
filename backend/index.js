@@ -342,10 +342,10 @@ async function seedWidalTest() {
         summary: 'Widal test is a serological test for detecting antibodies against Salmonella typhi and paratyphi. A titre of 1:80 or more for O antigen and 1:160 or more for H antigen is considered clinically significant.',
         parameters: {
           create: [
-            { parameterName: 'S. TYPHI O', referenceRange: '', unit: '', groupName: '', isQualitative: true, titerValues: '1/20,1/40,1/80,1/160,1/320' },
-            { parameterName: 'S. TYPHI H', referenceRange: '', unit: '', groupName: '', isQualitative: true, titerValues: '1/20,1/40,1/80,1/160,1/320' },
-            { parameterName: 'S. PARA TYPHI A (H)', referenceRange: '', unit: '', groupName: '', isQualitative: true, titerValues: '1/20,1/40,1/80,1/160,1/320' },
-            { parameterName: 'S. PARA TYPHI B (H)', referenceRange: '', unit: '', groupName: '', isQualitative: true, titerValues: '1/20,1/40,1/80,1/160,1/320' },
+            { parameterName: 'S. TYPHI O', referenceRange: '< 1:80', unit: 'Titre', groupName: 'WIDAL TEST' },
+            { parameterName: 'S. TYPHI H', referenceRange: '< 1:80', unit: 'Titre', groupName: 'WIDAL TEST' },
+            { parameterName: 'S. PARA TYPHI A (H)', referenceRange: '< 1:80', unit: 'Titre', groupName: 'WIDAL TEST' },
+            { parameterName: 'S. PARA TYPHI B (H)', referenceRange: '< 1:80', unit: 'Titre', groupName: 'WIDAL TEST' },
           ]
         }
       }

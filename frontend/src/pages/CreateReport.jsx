@@ -496,7 +496,22 @@ const CreateReport = () => {
                       <tr className="hover:bg-gray-50">
                         <td className="px-4 py-4 text-sm font-bold text-gray-800 pl-6">{tr.parameterName}</td>
                         <td className="px-4 py-4">
-                          {tr.isQualitative ? (
+                          {(tr.parameterName?.toUpperCase().includes('TYPHI') || tr.parameterName?.toUpperCase().includes('WIDAL')) ? (
+                            <select
+                              value={tr.resultValue || ''}
+                              onChange={(e) => handleResultChange(tr.key, 'resultValue', e.target.value)}
+                              className="w-full border border-gray-300 rounded px-3 py-2 text-sm font-bold focus:outline-none focus:border-[#00488d]"
+                            >
+                              <option value="">-- Select --</option>
+                              <option value="NEGATIVE">NEGATIVE</option>
+                              <option value="POSITIVE">POSITIVE</option>
+                              <option value="1:20">1:20</option>
+                              <option value="1:40">1:40</option>
+                              <option value="1:80">1:80</option>
+                              <option value="1:160">1:160</option>
+                              <option value="1:320">1:320</option>
+                            </select>
+                          ) : tr.isQualitative ? (
                             <select
                               value={tr.resultValue === '+' ? 'POSITIVE' : tr.resultValue === '-' ? 'NEGATIVE' : ''}
                               onChange={(e) => handleResultChange(tr.key, 'resultValue', e.target.value === 'POSITIVE' ? '+' : e.target.value === 'NEGATIVE' ? '-' : '')}
@@ -507,7 +522,7 @@ const CreateReport = () => {
                               <option value="NEGATIVE">NEGATIVE</option>
                             </select>
                           ) : (
-                            <input type="text" value={tr.resultValue} onChange={(e) => handleResultChange(tr.key, 'resultValue', e.target.value)} className="w-full border border-gray-300 rounded px-2 py-2 text-sm font-bold focus:outline-none focus:border-[#00488d]" />
+                            <input type="text" value={tr.resultValue || ''} onChange={(e) => handleResultChange(tr.key, 'resultValue', e.target.value)} className="w-full border border-gray-300 rounded px-2 py-2 text-sm font-bold focus:outline-none focus:border-[#00488d]" />
                           )}
                         </td>
                         <td className="px-4 py-4 w-32">

@@ -9,6 +9,10 @@ import {
 import Logo from '../components/Logo';
 import Loader from '../components/Loader';
 
+import BloodTube3D from '../components/BloodTube3D';
+
+const API = import.meta.env.VITE_API_URL || 'http://localhost:5000/api';
+
 const DEFAULT_TESTS = [
   { testName: 'Complete Blood Count (CBC)', testCode: 'CBC', price: 300, sampleType: 'Blood', category: { name: 'Hematology' } },
   { testName: 'Fasting Blood Sugar (FBS)', testCode: 'FBS', price: 150, sampleType: 'Blood', category: { name: 'Biochemistry' } },
@@ -394,11 +398,11 @@ const PublicWelcome = () => {
               </div>
             </div>
 
-            {/* Right Content - 3D Spline Model */}
-            <div className="w-full lg:w-1/2 h-[350px] sm:h-[450px] lg:h-[600px] relative mt-8 lg:mt-0">
+            {/* Right Content - 3D CSS Model */}
+            <div className="w-full lg:w-1/2 h-[350px] sm:h-[450px] lg:h-[600px] relative mt-8 lg:mt-0 flex justify-center items-center">
               <div className="absolute inset-0 bg-white/5 rounded-full blur-3xl -z-10 animate-blob"></div>
-              {/* Laboratory DNA 3D Model */}
-              <spline-viewer url="https://prod.spline.design/c1XepuiX8cYvQIfO/scene.splinecode"></spline-viewer>
+              {/* Laboratory Blood Tube 3D Model */}
+              <BloodTube3D />
             </div>
 
           </div>
