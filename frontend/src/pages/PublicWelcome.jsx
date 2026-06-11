@@ -345,54 +345,62 @@ const PublicWelcome = () => {
         {slides.map((slide, index) => (
           <div 
             key={index}
-            className={`absolute inset-0 transition-opacity duration-1000 ease-in-out ${index === currentSlide ? 'opacity-15' : 'opacity-0'}`}
+            className={`absolute inset-0 transition-opacity duration-1000 ease-in-out ${index === currentSlide ? 'opacity-40 scale-105' : 'opacity-0 scale-100'}`}
           >
-            <img src={slide} alt="Lab background" className="w-full h-full object-cover" />
+            <img src={slide} alt="Lab background" className="w-full h-full object-cover mix-blend-overlay" />
           </div>
         ))}
-        {/* Dark Teal Gradient Overlay */}
-        <div className="absolute inset-0 bg-gradient-to-br from-[#085041]/95 via-[#0A5D4C]/90 to-[#128362]/80"></div>
-        <div className="absolute top-0 left-0 right-0 h-40 bg-gradient-to-b from-black/20 to-transparent pointer-events-none"></div>
+        {/* Dark Teal Gradient Overlay - reduced opacity so slider is visible */}
+        <div className="absolute inset-0 bg-gradient-to-br from-[#085041]/80 via-[#0A5D4C]/70 to-[#128362]/60 mix-blend-multiply"></div>
+        <div className="absolute top-0 left-0 right-0 h-40 bg-gradient-to-b from-black/40 to-transparent pointer-events-none"></div>
 
         {/* Decorative Blobs */}
         <div className="absolute top-1/4 left-10 w-72 h-72 bg-primary-light/10 rounded-full blur-3xl animate-blob"></div>
         <div className="absolute bottom-1/4 right-10 w-96 h-96 bg-accent/5 rounded-full blur-3xl animate-blob" style={{ animationDelay: '3s' }}></div>
 
-        <div className="relative z-10 max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 text-center">
-          <div className="inline-flex items-center gap-2 px-4 py-1.5 rounded-full bg-white/10 text-primary-pale text-xs font-semibold tracking-wider uppercase mb-6 backdrop-blur-md border border-white/20">
-            <Sparkles size={14} className="text-accent" />
-            <span>NABL Standards • 100% Quality Assured</span>
-          </div>
+        <div className="relative z-10 max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
+          <div className="flex flex-col lg:flex-row items-center justify-between gap-12 lg:gap-8">
+            
+            {/* Left Content */}
+            <div className="w-full lg:w-1/2 text-center lg:text-left">
+              <div className="inline-flex items-center gap-2 px-4 py-1.5 rounded-full bg-white/10 text-primary-pale text-xs font-semibold tracking-wider uppercase mb-6 backdrop-blur-md border border-white/20">
+                <Sparkles size={14} className="text-[#F1C40F]" />
+                <span>NABL Standards • 100% Quality Assured</span>
+              </div>
 
-          <h2 className="text-5xl md:text-6xl lg:text-7xl font-heading text-white mb-6 leading-tight max-w-4xl mx-auto drop-shadow-sm">
-            Trusted Pathology Lab <span className="text-[#F1C40F]">in Your City</span>
-          </h2>
-          
-          <p className="text-lg md:text-xl text-primary-pale mb-10 max-w-2xl mx-auto font-light">
-            Providing high-precision diagnostics, blood tests, and health packages with free home collection at your convenience.
-          </p>
+              <h2 className="text-5xl md:text-6xl lg:text-7xl font-heading text-white mb-6 leading-tight drop-shadow-sm">
+                Trusted Pathology Lab <span className="text-[#F1C40F]">in Your City</span>
+              </h2>
+              
+              <p className="text-lg md:text-xl text-primary-pale mb-10 font-light max-w-2xl mx-auto lg:mx-0">
+                Providing high-precision diagnostics, blood tests, and health packages with free home collection at your convenience.
+              </p>
 
-          <div className="flex flex-col sm:flex-row items-center justify-center gap-4 mb-16">
-            <a 
-              href="#packages"
-              onClick={(e) => { e.preventDefault(); scrollToSection('packages'); }}
-              className="w-full sm:w-auto min-h-[44px] bg-accent hover:bg-amber-600 text-white px-8 py-4 rounded-full font-bold text-lg transition-all shadow-lg shadow-accent/30 hover:-translate-y-1 text-center cursor-pointer"
-            >
-              Explore Packages
-            </a>
-            <a 
-              href="#services"
-              onClick={(e) => { e.preventDefault(); scrollToSection('services'); }}
-              className="w-full sm:w-auto min-h-[44px] bg-white/10 hover:bg-white/20 text-white border border-white/30 px-8 py-4 rounded-full font-bold text-lg transition-all text-center cursor-pointer"
-            >
-              Find a Test
-            </a>
-            <a 
-              href="tel:+916396786939"
-              className="w-full sm:w-auto min-h-[44px] border-2 border-[#F1C40F] text-[#F1C40F] hover:bg-[#F1C40F] hover:text-primary px-8 py-4 rounded-full font-bold text-lg transition-all text-center"
-            >
-              Call: +91 6396786939
-            </a>
+              <div className="flex flex-col sm:flex-row items-center justify-center lg:justify-start gap-4 mb-12">
+                <a 
+                  href="#packages"
+                  onClick={(e) => { e.preventDefault(); scrollToSection('packages'); }}
+                  className="w-full sm:w-auto min-h-[44px] bg-[#F1C40F] hover:bg-yellow-400 text-[#085041] px-8 py-4 rounded-full font-bold text-lg transition-all shadow-lg shadow-[#F1C40F]/30 hover:-translate-y-1 text-center cursor-pointer"
+                >
+                  Explore Packages
+                </a>
+                <a 
+                  href="#services"
+                  onClick={(e) => { e.preventDefault(); scrollToSection('services'); }}
+                  className="w-full sm:w-auto min-h-[44px] bg-white/10 hover:bg-white/20 text-white border border-white/30 px-8 py-4 rounded-full font-bold text-lg transition-all text-center cursor-pointer"
+                >
+                  Find a Test
+                </a>
+              </div>
+            </div>
+
+            {/* Right Content - 3D Spline Model */}
+            <div className="w-full lg:w-1/2 h-[350px] sm:h-[450px] lg:h-[600px] relative mt-8 lg:mt-0">
+              <div className="absolute inset-0 bg-white/5 rounded-full blur-3xl -z-10 animate-blob"></div>
+              {/* Replace the URL with any 3D Spline scene you prefer! */}
+              <spline-viewer url="https://prod.spline.design/6Wq1Q7YGyM-iab9i/scene.splinecode"></spline-viewer>
+            </div>
+
           </div>
 
           <div className="flex flex-wrap justify-center gap-4 sm:gap-8 lg:gap-12 text-white">
