@@ -57,6 +57,7 @@ const Reports = () => {
       const paramDef = testDef?.parameters?.find(p => p.parameterName === r.parameterName);
       return {
         ...r,
+        parentTestName: testDef?.testName || 'Test Results',
         isQualitative: paramDef?.isQualitative || false,
         titerValues: paramDef?.titerValues || '',
       };
@@ -321,134 +322,187 @@ const Reports = () => {
               )}
 
               {/* Results Table */}
-              <h3 className="text-sm font-bold text-gray-600 uppercase tracking-wide mb-3">Test Results</h3>
-              <div className="border border-gray-200 rounded-lg overflow-hidden">
-                <table className="w-full text-sm">
-                  <thead className="bg-gray-50 border-b border-gray-200">
-                    <tr>
-                      <th className="px-4 py-3 text-left text-xs font-bold text-gray-500 uppercase">Parameter</th>
-                      <th className="px-4 py-3 text-left text-xs font-bold text-gray-500 uppercase">Result</th>
-                      <th className="px-4 py-3 text-left text-xs font-bold text-gray-500 uppercase">Flag</th>
-                      <th className="px-4 py-3 text-left text-xs font-bold text-gray-500 uppercase">Ref. Range</th>
-                      <th className="px-4 py-3 text-left text-xs font-bold text-gray-500 uppercase">Unit</th>
-                      {user?.userType === 'STAFF' && <th className="px-4 py-3 text-center text-xs font-bold text-gray-500 uppercase">Action</th>}
-                    </tr>
-                  </thead>
-                  <tbody className="divide-y divide-gray-100">
-                    {editResults.map((res, idx) => {
-                      const isOverall = res.groupName?.startsWith('__OVERALL__');
-                      return (
-                      <tr key={res.id || idx} className={idx % 2 === 0 ? 'bg-white' : 'bg-gray-50/50'}>
-                        <td className="px-4 py-2 font-semibold text-gray-700 text-xs">
-                          {isOverall ? 'Overall Result' : res.parameterName}
-                        </td>
-                        <td className="px-4 py-2">
-                          {isOverall ? (
-                            <select
-                              value={res.resultValue || ''}
-                              onChange={e => updateResult(idx, 'resultValue', e.target.value)}
-                              disabled={user?.userType !== 'STAFF'}
-                              className="w-full border border-gray-300 rounded px-2 py-1 text-sm focus:outline-none focus:border-[#00488d] font-bold disabled:bg-transparent disabled:border-transparent disabled:appearance-none"
-                            >
-                              <option value="NEGATIVE">NEGATIVE</option>
-                              <option value="POSITIVE">POSITIVE</option>
-                            </select>
-                          ) : res.titerValues ? (
-                            <div className="flex flex-wrap gap-2">
-                              {res.titerValues.split(',').map(titer => {
-                                const tName = titer.trim();
-                                const currentResults = res.resultValue ? res.resultValue.split('||').map(entry => {
+              {/* Results Rendering */}
+              {(() => {
+                const groupedByTest = {};
+                editResults.forEach((tr, idx) => {
+                  const tName = tr.parentTestName || 'Test Results';
+                  if (!groupedByTest[tName]) groupedByTest[tName] = [];
+                  groupedByTest[tName].push({ ...tr, originalIndex: idx });
+                });
+
+                return Object.keys(groupedByTest).map(testName => {
+                  const params = groupedByTest[testName];
+                  const titerValueSet = [...new Set(params.filter(p => p.isQualitative && p.titerValues).map(p => p.titerValues))];
+                  const isTiterMatrix = titerValueSet.length === 1 && titerValueSet[0];
+                  const titerList = isTiterMatrix ? titerValueSet[0].split(',') : [];
+
+                  return (
+                    <div key={testName} className="mb-6 border border-gray-200 rounded-lg overflow-hidden">
+                      <h3 className="bg-[#00488d] text-white px-4 py-2 font-bold uppercase flex justify-between items-center">
+                        {testName}
+                      </h3>
+                      {isTiterMatrix ? (
+                        <div className="bg-white">
+                          <table className="w-full text-left border-collapse text-black text-sm">
+                            <thead>
+                              <tr className="border-b border-gray-200 bg-gray-50">
+                                <th className="px-4 py-3 font-bold uppercase">&nbsp;</th>
+                                {titerList.map((t, i) => (
+                                  <th key={i} className="px-2 py-3 font-bold text-center">{t.trim()}</th>
+                                ))}
+                              </tr>
+                            </thead>
+                            <tbody>
+                              {params.filter(p => !p.groupName?.startsWith('__OVERALL__')).map(tr => {
+                                const currentResults = tr.resultValue ? tr.resultValue.split('||').map(entry => {
                                   const [t, v] = entry.split('|');
                                   return { titer: t, value: v || '--' };
-                                }) : res.titerValues.split(',').map(t => ({ titer: t.trim(), value: '--' }));
+                                }) : titerList.map(t => ({ titer: t.trim(), value: '--' }));
                                 
-                                const val = currentResults.find(r => r.titer === tName)?.value || '--';
-                                const isPos = val === '+';
-                                
-                                const updateCell = (newVal) => {
+                                const updateCell = (titer, val) => {
                                   const updated = currentResults.map(r => {
-                                    if (r.titer === tName) return { ...r, value: newVal };
+                                    if (r.titer.trim() === titer.trim()) {
+                                      return { ...r, value: val };
+                                    }
                                     return r;
                                   }).map(r => `${r.titer}|${r.value}`).join('||');
-                                  updateResult(idx, 'resultValue', updated);
+                                  updateResult(tr.originalIndex, 'resultValue', updated);
                                 };
 
                                 return (
-                                  <div key={tName} className="flex flex-col items-center bg-gray-100 rounded px-2 py-1 border border-gray-200">
-                                    <span className="text-[10px] font-bold text-gray-500 mb-1">{tName}</span>
-                                    <button
-                                      type="button"
-                                      disabled={user?.userType !== 'STAFF'}
-                                      onClick={() => updateCell(isPos ? '--' : '+')}
-                                      className={`font-mono text-sm font-bold w-8 h-6 flex items-center justify-center rounded cursor-pointer ${isPos ? 'bg-green-100 text-green-700 border-green-300' : 'bg-white text-gray-500 border-gray-300'} border disabled:opacity-50`}
-                                    >
-                                      {val}
-                                    </button>
-                                  </div>
+                                  <tr key={tr.parameterName} className="border-b border-gray-200 last:border-0">
+                                    <td className="px-4 py-3 font-bold text-gray-700">{tr.parameterName}</td>
+                                    {titerList.map(titer => {
+                                      const val = currentResults.find(r => r.titer.trim() === titer.trim())?.value || '--';
+                                      const isPos = val === '+';
+                                      return (
+                                        <td key={titer} className="px-2 py-3 text-center">
+                                          <button
+                                            type="button"
+                                            disabled={user?.userType !== 'STAFF'}
+                                            onClick={() => updateCell(titer, isPos ? '--' : '+')}
+                                            className={`font-mono text-sm font-bold w-full max-w-[60px] h-8 rounded border transition-colors cursor-pointer disabled:opacity-50 disabled:cursor-not-allowed ${isPos ? 'bg-green-100 text-green-700 border-green-300' : 'bg-transparent text-gray-500 border-gray-300 hover:border-gray-400'}`}
+                                          >
+                                            {val}
+                                          </button>
+                                        </td>
+                                      );
+                                    })}
+                                  </tr>
                                 );
                               })}
-                            </div>
-                          ) : (res.referenceRange?.toUpperCase().includes('NEGATIVE') || 
-                            res.referenceRange?.toUpperCase().includes('POSITIVE') || 
-                            res.referenceRange?.toUpperCase().includes('REACTIVE')) ? (
-                            <select
-                              value={res.resultValue || ''}
-                              onChange={e => updateResult(idx, 'resultValue', e.target.value)}
-                              disabled={user?.userType !== 'STAFF'}
-                              className="w-full border border-gray-300 rounded px-2 py-1 text-sm focus:outline-none focus:border-[#00488d] font-bold disabled:bg-transparent disabled:border-transparent disabled:appearance-none"
-                            >
-                              <option value="">- Select Result -</option>
-                              {res.referenceRange?.toUpperCase().includes('REACTIVE') && !res.referenceRange?.toUpperCase().includes('NEGATIVE') ? (
-                                <>
-                                  <option value="NON-REACTIVE">NON-REACTIVE</option>
-                                  <option value="REACTIVE">REACTIVE</option>
-                                </>
-                              ) : (
-                                <>
-                                  <option value="NEGATIVE">NEGATIVE</option>
-                                  <option value="POSITIVE">POSITIVE</option>
-                                </>
-                              )}
-                            </select>
-                          ) : (
-                            <input
-                              type="text"
-                              value={res.resultValue || ''}
-                              onChange={e => updateResult(idx, 'resultValue', e.target.value)}
-                              disabled={user?.userType !== 'STAFF'}
-                              className="w-full border border-gray-300 rounded px-2 py-1 text-sm focus:outline-none focus:border-[#00488d] font-bold disabled:bg-transparent disabled:border-transparent"
-                            />
-                          )}
-                        </td>
-                        <td className="px-4 py-2">
-                          <select value={res.flag || 'NORMAL'}
-                            onChange={e => updateResult(idx, 'flag', e.target.value === 'NORMAL' ? null : e.target.value)}
-                            disabled={user?.userType !== 'STAFF'}
-                            className={`border rounded px-2 py-1 text-xs font-bold focus:outline-none disabled:appearance-none ${res.flag === 'HIGH' ? 'bg-red-50 border-red-300 text-red-700' : res.flag === 'LOW' ? 'bg-blue-50 border-blue-300 text-blue-700' : 'bg-gray-50 border-gray-300 text-gray-600'}`}>
-                            <option value="NORMAL">Normal</option>
-                            <option value="HIGH">High ↑</option>
-                            <option value="LOW">Low ↓</option>
-                          </select>
-                        </td>
-                        <td className="px-4 py-2 text-xs text-gray-500">{res.referenceRange}</td>
-                        <td className="px-4 py-2 text-xs text-gray-500">{res.unit}</td>
-                        {user?.userType === 'STAFF' && (
-                          <td className="px-4 py-2 text-center">
-                            <button 
-                              onClick={() => handleRemoveResult(idx)} 
-                              className="p-1.5 text-red-400 hover:text-red-600 hover:bg-red-50 rounded transition-colors"
-                              title="Remove Parameter"
-                            >
-                              <Trash2 className="w-4 h-4" />
-                            </button>
-                          </td>
-                        )}
-                      </tr>
-                      );
-                    })}
-                  </tbody>
-                </table>
-              </div>
+                            </tbody>
+                          </table>
+                          {/* Overall result for Titer Matrix */}
+                          {(() => {
+                            const overall = params.find(p => p.groupName?.startsWith('__OVERALL__'));
+                            if (!overall) return null;
+                            return (
+                              <div className="flex items-center justify-center gap-4 py-4 bg-gray-50 border-t border-gray-200">
+                                <span className="text-sm font-bold text-gray-600 uppercase tracking-wide">Overall Result:</span>
+                                {['POSITIVE', 'NEGATIVE'].map(opt => (
+                                  <button
+                                    key={opt}
+                                    type="button"
+                                    disabled={user?.userType !== 'STAFF'}
+                                    onClick={() => updateResult(overall.originalIndex, 'resultValue', opt)}
+                                    className={`px-6 py-2 text-sm font-bold uppercase tracking-wide border-2 rounded transition-colors disabled:opacity-50 disabled:cursor-not-allowed ${
+                                      overall.resultValue === opt
+                                        ? 'border-black bg-black text-white'
+                                        : 'border-gray-300 text-gray-400 hover:border-gray-500 hover:text-gray-600 bg-white'
+                                    }`}
+                                  >
+                                    {opt}
+                                  </button>
+                                ))}
+                              </div>
+                            );
+                          })()}
+                        </div>
+                      ) : (
+                        <div className="overflow-hidden">
+                          <table className="w-full text-sm">
+                            <thead className="bg-gray-50 border-b border-gray-200">
+                              <tr>
+                                <th className="px-4 py-3 text-left text-xs font-bold text-gray-500 uppercase">Parameter</th>
+                                <th className="px-4 py-3 text-left text-xs font-bold text-gray-500 uppercase">Result</th>
+                                <th className="px-4 py-3 text-left text-xs font-bold text-gray-500 uppercase">Flag</th>
+                                <th className="px-4 py-3 text-left text-xs font-bold text-gray-500 uppercase">Ref. Range</th>
+                                <th className="px-4 py-3 text-left text-xs font-bold text-gray-500 uppercase">Unit</th>
+                                {user?.userType === 'STAFF' && <th className="px-4 py-3 text-center text-xs font-bold text-gray-500 uppercase">Action</th>}
+                              </tr>
+                            </thead>
+                            <tbody className="divide-y divide-gray-100">
+                              {params.map((res, idx) => (
+                                <tr key={res.id || res.originalIndex} className={idx % 2 === 0 ? 'bg-white' : 'bg-gray-50/50'}>
+                                  <td className="px-4 py-2 font-semibold text-gray-700 text-xs">{res.parameterName}</td>
+                                  <td className="px-4 py-2">
+                                    {(res.referenceRange?.toUpperCase().includes('NEGATIVE') || 
+                                      res.referenceRange?.toUpperCase().includes('POSITIVE') || 
+                                      res.referenceRange?.toUpperCase().includes('REACTIVE')) ? (
+                                      <select
+                                        value={res.resultValue || ''}
+                                        onChange={e => updateResult(res.originalIndex, 'resultValue', e.target.value)}
+                                        disabled={user?.userType !== 'STAFF'}
+                                        className="w-full border border-gray-300 rounded px-2 py-1 text-sm focus:outline-none focus:border-[#00488d] font-bold disabled:bg-transparent disabled:border-transparent disabled:appearance-none"
+                                      >
+                                        <option value="">- Select Result -</option>
+                                        {res.referenceRange?.toUpperCase().includes('REACTIVE') && !res.referenceRange?.toUpperCase().includes('NEGATIVE') ? (
+                                          <>
+                                            <option value="NON-REACTIVE">NON-REACTIVE</option>
+                                            <option value="REACTIVE">REACTIVE</option>
+                                          </>
+                                        ) : (
+                                          <>
+                                            <option value="NEGATIVE">NEGATIVE</option>
+                                            <option value="POSITIVE">POSITIVE</option>
+                                          </>
+                                        )}
+                                      </select>
+                                    ) : (
+                                      <input
+                                        type="text"
+                                        value={res.resultValue || ''}
+                                        onChange={e => updateResult(res.originalIndex, 'resultValue', e.target.value)}
+                                        disabled={user?.userType !== 'STAFF'}
+                                        className="w-full border border-gray-300 rounded px-2 py-1 text-sm focus:outline-none focus:border-[#00488d] font-bold disabled:bg-transparent disabled:border-transparent"
+                                      />
+                                    )}
+                                  </td>
+                                  <td className="px-4 py-2">
+                                    <select value={res.flag || 'NORMAL'}
+                                      onChange={e => updateResult(res.originalIndex, 'flag', e.target.value === 'NORMAL' ? null : e.target.value)}
+                                      disabled={user?.userType !== 'STAFF'}
+                                      className={`border rounded px-2 py-1 text-xs font-bold focus:outline-none disabled:appearance-none ${res.flag === 'HIGH' ? 'bg-red-50 border-red-300 text-red-700' : res.flag === 'LOW' ? 'bg-blue-50 border-blue-300 text-blue-700' : 'bg-gray-50 border-gray-300 text-gray-600'}`}>
+                                      <option value="NORMAL">Normal</option>
+                                      <option value="HIGH">High ↑</option>
+                                      <option value="LOW">Low ↓</option>
+                                    </select>
+                                  </td>
+                                  <td className="px-4 py-2 text-xs text-gray-500">{res.referenceRange}</td>
+                                  <td className="px-4 py-2 text-xs text-gray-500">{res.unit}</td>
+                                  {user?.userType === 'STAFF' && (
+                                    <td className="px-4 py-2 text-center">
+                                      <button 
+                                        onClick={() => handleRemoveResult(res.originalIndex)} 
+                                        className="p-1.5 text-red-400 hover:text-red-600 hover:bg-red-50 rounded transition-colors"
+                                        title="Remove Parameter"
+                                      >
+                                        <Trash2 className="w-4 h-4" />
+                                      </button>
+                                    </td>
+                                  )}
+                                </tr>
+                              ))}
+                            </tbody>
+                          </table>
+                        </div>
+                      )}
+                    </div>
+                  );
+                });
+              })()}
             </div>
 
             <div className="flex justify-end gap-3 px-6 py-4 border-t border-gray-200 flex-shrink-0">
