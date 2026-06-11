@@ -48,7 +48,21 @@ const Reports = () => {
     const res = await fetch(`${API}/reports/${r.id}`, { headers });
     const full = await res.json();
     setEditReport(full);
-    setEditResults(full.results || []);
+    
+    // Enrich results with parameter metadata for rendering (e.g. Widal titerValues)
+    const enrichedResults = (full.results || []).map(r => {
+      // Find the test definition from our already-fetched `tests` state
+      // tests is accessed via state, wait, handle cases where tests isn't loaded
+      const testDef = tests.find(t => t.id === r.testId);
+      const paramDef = testDef?.parameters?.find(p => p.parameterName === r.parameterName);
+      return {
+        ...r,
+        isQualitative: paramDef?.isQualitative || false,
+        titerValues: paramDef?.titerValues || '',
+      };
+    });
+    
+    setEditResults(enrichedResults);
     setEditStatus(full.status);
     setShowEditModal(true);
   };
@@ -321,11 +335,60 @@ const Reports = () => {
                     </tr>
                   </thead>
                   <tbody className="divide-y divide-gray-100">
-                    {editResults.map((res, idx) => (
-                      <tr key={res.id} className={idx % 2 === 0 ? 'bg-white' : 'bg-gray-50/50'}>
-                        <td className="px-4 py-2 font-semibold text-gray-700 text-xs">{res.parameterName}</td>
+                    {editResults.map((res, idx) => {
+                      const isOverall = res.groupName?.startsWith('__OVERALL__');
+                      return (
+                      <tr key={res.id || idx} className={idx % 2 === 0 ? 'bg-white' : 'bg-gray-50/50'}>
+                        <td className="px-4 py-2 font-semibold text-gray-700 text-xs">
+                          {isOverall ? 'Overall Result' : res.parameterName}
+                        </td>
                         <td className="px-4 py-2">
-                          {(res.referenceRange?.toUpperCase().includes('NEGATIVE') || 
+                          {isOverall ? (
+                            <select
+                              value={res.resultValue || ''}
+                              onChange={e => updateResult(idx, 'resultValue', e.target.value)}
+                              disabled={user?.userType !== 'STAFF'}
+                              className="w-full border border-gray-300 rounded px-2 py-1 text-sm focus:outline-none focus:border-[#00488d] font-bold disabled:bg-transparent disabled:border-transparent disabled:appearance-none"
+                            >
+                              <option value="NEGATIVE">NEGATIVE</option>
+                              <option value="POSITIVE">POSITIVE</option>
+                            </select>
+                          ) : res.titerValues ? (
+                            <div className="flex flex-wrap gap-2">
+                              {res.titerValues.split(',').map(titer => {
+                                const tName = titer.trim();
+                                const currentResults = res.resultValue ? res.resultValue.split('||').map(entry => {
+                                  const [t, v] = entry.split('|');
+                                  return { titer: t, value: v || '--' };
+                                }) : res.titerValues.split(',').map(t => ({ titer: t.trim(), value: '--' }));
+                                
+                                const val = currentResults.find(r => r.titer === tName)?.value || '--';
+                                const isPos = val === '+';
+                                
+                                const updateCell = (newVal) => {
+                                  const updated = currentResults.map(r => {
+                                    if (r.titer === tName) return { ...r, value: newVal };
+                                    return r;
+                                  }).map(r => `${r.titer}|${r.value}`).join('||');
+                                  updateResult(idx, 'resultValue', updated);
+                                };
+
+                                return (
+                                  <div key={tName} className="flex flex-col items-center bg-gray-100 rounded px-2 py-1 border border-gray-200">
+                                    <span className="text-[10px] font-bold text-gray-500 mb-1">{tName}</span>
+                                    <button
+                                      type="button"
+                                      disabled={user?.userType !== 'STAFF'}
+                                      onClick={() => updateCell(isPos ? '--' : '+')}
+                                      className={`font-mono text-sm font-bold w-8 h-6 flex items-center justify-center rounded cursor-pointer ${isPos ? 'bg-green-100 text-green-700 border-green-300' : 'bg-white text-gray-500 border-gray-300'} border disabled:opacity-50`}
+                                    >
+                                      {val}
+                                    </button>
+                                  </div>
+                                );
+                              })}
+                            </div>
+                          ) : (res.referenceRange?.toUpperCase().includes('NEGATIVE') || 
                             res.referenceRange?.toUpperCase().includes('POSITIVE') || 
                             res.referenceRange?.toUpperCase().includes('REACTIVE')) ? (
                             <select
@@ -381,7 +444,8 @@ const Reports = () => {
                           </td>
                         )}
                       </tr>
-                    ))}
+                      );
+                    })}
                   </tbody>
                 </table>
               </div>
