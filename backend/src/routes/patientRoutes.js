@@ -7,6 +7,7 @@ router.use(verifyToken); // All patient routes require auth
 
 router.post('/', controller.createPatient);
 router.get('/', controller.getPatients);
+router.post('/bulk-delete', controller.bulkDeletePatients);
 router.get('/:id', controller.getPatientById);
 router.put('/:id', controller.updatePatient);
 router.delete('/:id', controller.deletePatient);

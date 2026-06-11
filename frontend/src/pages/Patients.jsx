@@ -22,6 +22,8 @@ const Patients = () => {
   // Prevent duplicate / multiple submissions
   const [submitting, setSubmitting] = useState(false);
   const [deletingId, setDeletingId] = useState(null);
+  const [selectedIds, setSelectedIds] = useState([]);
+  const [bulkDeleting, setBulkDeleting] = useState(false);
 
   useEffect(() => {
     fetchPatients();
@@ -111,6 +113,47 @@ const Patients = () => {
     }
   };
 
+  const toggleSelect = (id) => {
+    setSelectedIds(prev =>
+      prev.includes(id) ? prev.filter(i => i !== id) : [...prev, id]
+    );
+  };
+
+  const toggleSelectAll = () => {
+    if (selectedIds.length === filteredPatients.length) {
+      setSelectedIds([]);
+    } else {
+      setSelectedIds(filteredPatients.map(p => p.id));
+    }
+  };
+
+  const handleBulkDelete = async () => {
+    if (bulkDeleting) return;
+    if (selectedIds.length === 0) return;
+    if (!window.confirm(`Are you sure you want to delete ${selectedIds.length} selected patients? This action cannot be undone.`)) return;
+    setBulkDeleting(true);
+    try {
+      const res = await fetch('/api/patients/bulk-delete', {
+        method: 'POST',
+        headers: {
+          'Content-Type': 'application/json',
+          'Authorization': `Bearer ${user?.token || user?.accessToken}`
+        },
+        body: JSON.stringify({ ids: selectedIds })
+      });
+      if (!res.ok) {
+        const err = await res.json().catch(() => ({}));
+        alert(`Failed to delete patients: ${err.message || res.statusText}`);
+      }
+      setSelectedIds([]);
+      fetchPatients();
+    } catch (err) {
+      console.error(err);
+    } finally {
+      setBulkDeleting(false);
+    }
+  };
+
   const openAddModal = () => {
     setEditingId(null);
     setFormData({ fullName: '', age: '', ageType: 'Years', gender: 'Male', mobileNumber: '', city: '', bloodGroup: '' });
@@ -192,10 +235,31 @@ const Patients = () => {
           </div>
         </div>
         
+        {selectedIds.length > 0 && (
+          <div className="flex items-center justify-between px-4 py-3 bg-[#00488d] bg-opacity-5 border-b border-[#00488d] border-opacity-20">
+            <span className="text-sm font-bold text-[#00488d]">{selectedIds.length} patient{selectedIds.length > 1 ? 's' : ''} selected</span>
+            <button
+              onClick={handleBulkDelete}
+              disabled={bulkDeleting}
+              className="flex items-center gap-2 bg-red-600 hover:bg-red-700 text-white px-4 py-1.5 rounded text-sm font-bold transition-colors disabled:opacity-50 disabled:cursor-not-allowed"
+            >
+              <Trash2 className="w-4 h-4" />
+              {bulkDeleting ? 'Deleting...' : `Delete Selected (${selectedIds.length})`}
+            </button>
+          </div>
+        )}
         <div className="overflow-x-auto">
           <table className="w-full text-left border-collapse">
             <thead>
               <tr className="bg-gray-100 border-b border-gray-200">
+                <th className="px-4 py-3 w-10">
+                  <input
+                    type="checkbox"
+                    checked={filteredPatients.length > 0 && selectedIds.length === filteredPatients.length}
+                    onChange={toggleSelectAll}
+                    className="w-4 h-4 rounded border-gray-300 text-[#00488d] focus:ring-[#00488d] cursor-pointer"
+                  />
+                </th>
                 <th className="px-6 py-3 text-xs font-bold text-gray-700 uppercase">Patient ID</th>
                 <th className="px-6 py-3 text-xs font-bold text-gray-700 uppercase">Name</th>
                 <th className="px-6 py-3 text-xs font-bold text-gray-700 uppercase">Demographics</th>
@@ -206,7 +270,15 @@ const Patients = () => {
             <tbody className="divide-y divide-gray-200">
               {filteredPatients.length > 0 ? (
                 filteredPatients.map(p => (
-                  <tr key={p.id} className="hover:bg-[#f2f7fc] transition-colors">
+                  <tr key={p.id} className={`hover:bg-[#f2f7fc] transition-colors ${selectedIds.includes(p.id) ? 'bg-[#e8f0fe]' : ''}`}>
+                    <td className="px-4 py-4">
+                      <input
+                        type="checkbox"
+                        checked={selectedIds.includes(p.id)}
+                        onChange={() => toggleSelect(p.id)}
+                        className="w-4 h-4 rounded border-gray-300 text-[#00488d] focus:ring-[#00488d] cursor-pointer"
+                      />
+                    </td>
                     <td className="px-6 py-4 text-sm font-bold text-[#00488d]">
                       {p.patientId}
                     </td>
@@ -236,7 +308,7 @@ const Patients = () => {
                 ))
               ) : (
                 <tr>
-                  <td colSpan="5" className="px-6 py-12 text-center text-gray-500 text-sm">
+                  <td colSpan="6" className="px-6 py-12 text-center text-gray-500 text-sm">
                     No patients found matching your search.
                   </td>
                 </tr>

@@ -63,6 +63,25 @@ exports.updatePatient = async (req, res) => {
   }
 };
 
+exports.bulkDeletePatients = async (req, res) => {
+  try {
+    const { ids } = req.body;
+    if (!Array.isArray(ids) || ids.length === 0) {
+      return res.status(400).json({ message: 'IDs array is required' });
+    }
+
+    await prisma.invoice.deleteMany({ where: { patientId: { in: ids } } });
+    await prisma.report.deleteMany({ where: { patientId: { in: ids } } });
+    await prisma.appointment.deleteMany({ where: { patientId: { in: ids } } });
+
+    const result = await prisma.patient.deleteMany({ where: { id: { in: ids } } });
+    res.status(200).json({ message: `${result.count} patients deleted successfully`, count: result.count });
+  } catch (err) {
+    console.error('Bulk Delete Patients Error:', err);
+    res.status(500).json({ message: err.message || 'Unknown error occurred while bulk deleting patients' });
+  }
+};
+
 exports.deletePatient = async (req, res) => {
   try {
     const patientId = parseInt(req.params.id);
