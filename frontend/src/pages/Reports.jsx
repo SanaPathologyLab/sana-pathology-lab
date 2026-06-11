@@ -22,8 +22,8 @@ const Reports = () => {
   const [editStatus, setEditStatus] = useState('');
   const [saving, setSaving] = useState(false);
 
-  useEffect(() => { 
-    fetchReports(); 
+  useEffect(() => {
+    fetchReports();
     fetchTests();
   }, []);
 
@@ -48,7 +48,7 @@ const Reports = () => {
     const res = await fetch(`${API}/reports/${r.id}`, { headers });
     const full = await res.json();
     setEditReport(full);
-    
+
     // Enrich results with parameter metadata for rendering (e.g. Widal titerValues)
     const enrichedResults = (full.results || []).map(r => {
       // Find the test definition from our already-fetched `tests` state
@@ -61,7 +61,7 @@ const Reports = () => {
         titerValues: paramDef?.titerValues || '',
       };
     });
-    
+
     // Inject missing overall results for Titer Matrix tests
     const finalResults = [...enrichedResults];
     const testsInReport = [...new Set(finalResults.map(r => r.testId))];
@@ -69,7 +69,7 @@ const Reports = () => {
       const testResults = finalResults.filter(r => r.testId === tid);
       const hasTiter = testResults.some(r => r.titerValues);
       const hasOverall = testResults.some(r => r.groupName?.startsWith('__OVERALL__'));
-      
+
       if (hasTiter && !hasOverall) {
         const testDef = tests.find(t => t.id === tid);
         if (testDef) {
@@ -202,7 +202,7 @@ const Reports = () => {
   return (
     <Layout>
       <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-4 mb-6">
-        <div>
+        <div>add
           <h2 className="text-2xl font-bold text-[#00488d] uppercase tracking-wide">Reports</h2>
           <p className="text-sm text-gray-500 mt-1">{reports.length} total · {reports.filter(r => r.status === 'PENDING').length} pending</p>
         </div>
@@ -321,12 +321,12 @@ const Reports = () => {
               {/* Status */}
               <div className="flex items-center gap-4 mb-6 p-4 bg-gray-50 rounded-lg">
                 <span className="text-sm font-bold text-gray-600">Report Status:</span>
-                <button 
+                <button
                   onClick={() => user?.userType === 'STAFF' && setEditStatus('PENDING')}
                   className={`flex items-center gap-1.5 px-4 py-2 rounded text-sm font-bold transition-colors ${editStatus === 'PENDING' ? 'bg-yellow-400 text-gray-900' : 'bg-gray-200 text-gray-600 hover:bg-gray-300'} ${user?.userType !== 'STAFF' ? 'cursor-default opacity-80' : ''}`}>
                   <Clock className="w-3.5 h-3.5" /> PENDING
                 </button>
-                <button 
+                <button
                   onClick={() => user?.userType === 'STAFF' && setEditStatus('COMPLETED')}
                   className={`flex items-center gap-1.5 px-4 py-2 rounded text-sm font-bold transition-colors ${editStatus === 'COMPLETED' ? 'bg-green-500 text-white' : 'bg-gray-200 text-gray-600 hover:bg-gray-300'} ${user?.userType !== 'STAFF' ? 'cursor-default opacity-80' : ''}`}>
                   <CheckCircle className="w-3.5 h-3.5" /> COMPLETED
@@ -337,9 +337,9 @@ const Reports = () => {
               {user?.userType === 'STAFF' && (
                 <div className="mb-6 p-4 border border-blue-100 bg-blue-50/30 rounded-lg">
                   <label className="block text-sm font-bold text-[#00488d] mb-2">Add Additional Tests to this Report:</label>
-                  <Select 
-                    options={testOptions} 
-                    onChange={handleAddTest} 
+                  <Select
+                    options={testOptions}
+                    onChange={handleAddTest}
                     placeholder="Search and select a test to add..."
                     isClearable
                     value={null} // Always reset after selection
@@ -385,7 +385,7 @@ const Reports = () => {
                                   const [t, v] = entry.split('|');
                                   return { titer: t, value: v || '--' };
                                 }) : titerList.map(t => ({ titer: t.trim(), value: '--' }));
-                                
+
                                 const updateCell = (titer, val) => {
                                   const updated = currentResults.map(r => {
                                     if (r.titer.trim() === titer.trim()) {
@@ -433,11 +433,10 @@ const Reports = () => {
                                     type="button"
                                     disabled={user?.userType !== 'STAFF'}
                                     onClick={() => updateResult(overall.originalIndex, 'resultValue', opt)}
-                                    className={`px-6 py-2 text-sm font-bold uppercase tracking-wide border-2 rounded transition-colors disabled:opacity-50 disabled:cursor-not-allowed ${
-                                      overall.resultValue === opt
+                                    className={`px-6 py-2 text-sm font-bold uppercase tracking-wide border-2 rounded transition-colors disabled:opacity-50 disabled:cursor-not-allowed ${overall.resultValue === opt
                                         ? 'border-black bg-black text-white'
                                         : 'border-gray-300 text-gray-400 hover:border-gray-500 hover:text-gray-600 bg-white'
-                                    }`}
+                                      }`}
                                   >
                                     {opt}
                                   </button>
@@ -464,8 +463,8 @@ const Reports = () => {
                                 <tr key={res.id || res.originalIndex} className={idx % 2 === 0 ? 'bg-white' : 'bg-gray-50/50'}>
                                   <td className="px-4 py-2 font-semibold text-gray-700 text-xs">{res.parameterName}</td>
                                   <td className="px-4 py-2">
-                                    {(res.referenceRange?.toUpperCase().includes('NEGATIVE') || 
-                                      res.referenceRange?.toUpperCase().includes('POSITIVE') || 
+                                    {(res.referenceRange?.toUpperCase().includes('NEGATIVE') ||
+                                      res.referenceRange?.toUpperCase().includes('POSITIVE') ||
                                       res.referenceRange?.toUpperCase().includes('REACTIVE')) ? (
                                       <select
                                         value={res.resultValue || ''}
@@ -510,8 +509,8 @@ const Reports = () => {
                                   <td className="px-4 py-2 text-xs text-gray-500">{res.unit}</td>
                                   {user?.userType === 'STAFF' && (
                                     <td className="px-4 py-2 text-center">
-                                      <button 
-                                        onClick={() => handleRemoveResult(res.originalIndex)} 
+                                      <button
+                                        onClick={() => handleRemoveResult(res.originalIndex)}
                                         className="p-1.5 text-red-400 hover:text-red-600 hover:bg-red-50 rounded transition-colors"
                                         title="Remove Parameter"
                                       >

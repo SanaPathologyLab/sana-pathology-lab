@@ -397,8 +397,8 @@ const PublicWelcome = () => {
             {/* Right Content - 3D Spline Model */}
             <div className="w-full lg:w-1/2 h-[350px] sm:h-[450px] lg:h-[600px] relative mt-8 lg:mt-0">
               <div className="absolute inset-0 bg-white/5 rounded-full blur-3xl -z-10 animate-blob"></div>
-              {/* Replace the URL with any 3D Spline scene you prefer! */}
-              <spline-viewer url="https://prod.spline.design/6Wq1Q7YGyM-iab9i/scene.splinecode"></spline-viewer>
+              {/* Laboratory DNA 3D Model */}
+              <spline-viewer url="https://prod.spline.design/c1XepuiX8cYvQIfO/scene.splinecode"></spline-viewer>
             </div>
 
           </div>
