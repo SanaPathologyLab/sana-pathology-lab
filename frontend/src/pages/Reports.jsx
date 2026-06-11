@@ -52,7 +52,6 @@ const Reports = () => {
     // Enrich results with parameter metadata for rendering (e.g. Widal titerValues)
     const enrichedResults = (full.results || []).map(r => {
       // Find the test definition from our already-fetched `tests` state
-      // tests is accessed via state, wait, handle cases where tests isn't loaded
       const testDef = tests.find(t => t.id === r.testId);
       const paramDef = testDef?.parameters?.find(p => p.parameterName === r.parameterName);
       return {
@@ -63,7 +62,34 @@ const Reports = () => {
       };
     });
     
-    setEditResults(enrichedResults);
+    // Inject missing overall results for Titer Matrix tests
+    const finalResults = [...enrichedResults];
+    const testsInReport = [...new Set(finalResults.map(r => r.testId))];
+    testsInReport.forEach(tid => {
+      const testResults = finalResults.filter(r => r.testId === tid);
+      const hasTiter = testResults.some(r => r.titerValues);
+      const hasOverall = testResults.some(r => r.groupName?.startsWith('__OVERALL__'));
+      
+      if (hasTiter && !hasOverall) {
+        const testDef = tests.find(t => t.id === tid);
+        if (testDef) {
+          finalResults.push({
+            testId: tid,
+            parameterName: '',
+            resultValue: 'NEGATIVE', // default
+            flag: '',
+            referenceRange: '',
+            unit: '',
+            groupName: `__OVERALL__${testDef.testName}`,
+            parentTestName: testDef.testName,
+            isQualitative: false,
+            titerValues: ''
+          });
+        }
+      }
+    });
+
+    setEditResults(finalResults);
     setEditStatus(full.status);
     setShowEditModal(true);
   };
