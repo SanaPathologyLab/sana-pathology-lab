@@ -32,12 +32,6 @@
         "projectId": "ae8f65b0-e716-4985-86f7-f263f2eae2f5"
       }
     },
-    "runtimeVersion": {
-      "policy": "appVersion"
-    },
-    "updates": {
-      "url": "https://u.expo.dev/ae8f65b0-e716-4985-86f7-f263f2eae2f5"
-    },
     "plugins": [
       [
         "expo-build-properties",
