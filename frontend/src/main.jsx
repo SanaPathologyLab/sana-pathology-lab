@@ -4,7 +4,17 @@ import App from './App.jsx'
 import './index.css'
 import { HashRouter } from 'react-router-dom'
 
-const API_BASE = import.meta.env.VITE_API_URL || '';
+const getApiBase = () => {
+  if (import.meta.env.VITE_API_URL) {
+    return import.meta.env.VITE_API_URL;
+  }
+  if (window.location.hostname === 'localhost' || window.location.hostname === '127.0.0.1') {
+    return '';
+  }
+  return 'https://sana-pathology-backend.onrender.com';
+};
+
+const API_BASE = getApiBase();
 if (API_BASE) {
   const originalFetch = window.fetch;
   window.fetch = function (url, options) {

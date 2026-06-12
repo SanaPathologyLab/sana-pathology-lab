@@ -105,7 +105,7 @@ const PublicWelcome = () => {
   const [searchLoading, setSearchLoading] = useState(false);
   const [searchError, setSearchError] = useState('');
 
-  const slides = ['/slide1.png', '/slide2.png', '/slide3.png'];
+  const slides = ['slide1.png', 'slide2.png', 'slide3.png'];
 
   const handleSearch = async (e) => {
     e.preventDefault();
@@ -349,13 +349,13 @@ const PublicWelcome = () => {
         {slides.map((slide, index) => (
           <div 
             key={index}
-            className={`absolute inset-0 transition-opacity duration-1000 ease-in-out ${index === currentSlide ? 'opacity-40 scale-105' : 'opacity-0 scale-100'}`}
+            className={`absolute inset-0 transition-opacity duration-1000 ease-in-out ${index === currentSlide ? 'opacity-25 scale-105' : 'opacity-0 scale-100'}`}
           >
-            <img src={slide} alt="Lab background" className="w-full h-full object-cover mix-blend-overlay" />
+            <img src={slide} alt="Lab background" className="w-full h-full object-cover" />
           </div>
         ))}
-        {/* Dark Teal Gradient Overlay - reduced opacity so slider is visible */}
-        <div className="absolute inset-0 bg-gradient-to-br from-[#085041]/80 via-[#0A5D4C]/70 to-[#128362]/60 mix-blend-multiply"></div>
+        {/* Dark Teal Gradient Overlay - adjusted opacity for visibility and contrast */}
+        <div className="absolute inset-0 bg-gradient-to-br from-[#085041]/90 via-[#0A5D4C]/75 to-[#128362]/40"></div>
         <div className="absolute top-0 left-0 right-0 h-40 bg-gradient-to-b from-black/40 to-transparent pointer-events-none"></div>
 
         {/* Decorative Blobs */}
