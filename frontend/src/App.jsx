@@ -39,14 +39,18 @@ const ProtectedRoute = ({ children }) => {
 };
 
 const AppContent = () => {
+  const { user, loading } = useContext(AuthContext);
+
+  if (loading) return <Spinner />;
+
   return (
     <Suspense fallback={<Spinner />}>
       <Routes>
-        <Route path="/" element={<PublicWelcome />} />
-        <Route path="/report-lookup" element={<ReportLookup />} />
-        <Route path="/book-appointment" element={<PublicAppointment />} />
-        <Route path="/login" element={<Login />} />
-        <Route path="/public-print/:reportNumber" element={<PublicPrint />} />
+        {/* If user is logged in, root redirects to dashboard; if not, to login */}
+        <Route path="/" element={user ? <Navigate to="/dashboard" /> : <Navigate to="/login" />} />
+        <Route path="/login" element={user ? <Navigate to="/dashboard" /> : <Login />} />
+        
+        {/* Protected dashboard and portal routes */}
         <Route path="/dashboard" element={<ProtectedRoute><Dashboard /></ProtectedRoute>} />
         <Route path="/patients" element={<ProtectedRoute><Patients /></ProtectedRoute>} />
         <Route path="/patients/:id" element={<ProtectedRoute><PatientProfile /></ProtectedRoute>} />
@@ -62,6 +66,9 @@ const AppContent = () => {
         <Route path="/staff" element={<ProtectedRoute><Staff /></ProtectedRoute>} />
         <Route path="/settings" element={<ProtectedRoute><Settings /></ProtectedRoute>} />
         <Route path="/widal" element={<ProtectedRoute><WidalTest /></ProtectedRoute>} />
+
+        {/* Catch-all redirect to root */}
+        <Route path="*" element={<Navigate to="/" />} />
       </Routes>
     </Suspense>
   );

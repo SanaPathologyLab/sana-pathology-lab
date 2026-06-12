@@ -1033,16 +1033,7 @@ const Login = () => {
           )}
           
           {/* NAVIGATION FOOTER */}
-          <div className="mt-8 text-center border-t border-slate-100 pt-6 flex flex-col sm:flex-row justify-between items-center gap-4">
-            <Link 
-              to="/" 
-              className={`text-xs font-bold flex items-center gap-1.5 hover:underline ${
-                darkMode ? 'text-slate-400 hover:text-white' : 'text-slate-500 hover:text-[#085041]'
-              }`}
-            >
-              <ArrowLeft size={14} /> Back to Public Lab Site
-            </Link>
-
+          <div className="mt-8 text-center border-t border-slate-100 pt-6 flex justify-center items-center">
             {/* Helpline Contact link */}
             <a 
               href="https://wa.me/916396786939?text=Hi%20Sana%20Pathology,%20I%20am%20having%20trouble%20logging%20into%20my%20portal%20account" 

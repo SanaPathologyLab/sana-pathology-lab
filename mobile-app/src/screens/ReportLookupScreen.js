@@ -63,7 +63,7 @@ const ReportLookupScreen = ({ navigation }) => {
           </View>
           <Text style={styles.reportDate}>{new Date(report.createdAt).toLocaleDateString('en-IN')}</Text>
           {report.testName && <Text style={styles.testName}>{report.testName}</Text>}
-          <TouchableOpacity style={styles.viewBtn} onPress={() => navigation.navigate('Public Print', { reportId: report.id || report.reportId })}>
+          <TouchableOpacity style={styles.viewBtn} onPress={() => navigation.navigate('PublicPrint', { reportId: report.id || report.reportId })}>
             <Text style={styles.viewBtnText}>View Report</Text>
           </TouchableOpacity>
         </View>

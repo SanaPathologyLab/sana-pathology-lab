@@ -110,7 +110,25 @@ const AppNavigator = () => {
 
   return (
     <NavigationContainer>
-      {user ? <AdminTabs /> : <PublicStack />}
+      {user ? (
+        <Stack.Navigator screenOptions={{ headerStyle: { backgroundColor: '#00488d' }, headerTintColor: '#fff', headerTitleStyle: { fontWeight: '800' } }}>
+          <Stack.Screen name="AdminTabs" component={AdminTabs} options={{ headerShown: false }} />
+          <Stack.Screen name="PatientProfile" component={PatientProfileScreen} options={{ title: 'Patient Profile' }} />
+          <Stack.Screen name="CreateReport" component={CreateReportScreen} options={{ title: 'New Report' }} />
+          <Stack.Screen name="PrintReport" component={PrintReportScreen} options={{ title: 'Print Report' }} />
+          <Stack.Screen name="DoctorAnalytics" component={DoctorAnalyticsScreen} options={{ title: 'Dr. Analytics' }} />
+          <Stack.Screen name="WidalTest" component={WidalTestScreen} options={{ title: 'Widal Test' }} />
+          <Stack.Screen name="Doctors" component={DoctorsScreen} options={{ title: 'Doctors' }} />
+          <Stack.Screen name="Tests" component={TestsScreen} options={{ title: 'Tests' }} />
+          <Stack.Screen name="Billing" component={BillingScreen} options={{ title: 'Billing' }} />
+          <Stack.Screen name="Appointments" component={AppointmentsScreen} options={{ title: 'Appointments' }} />
+          <Stack.Screen name="Inventory" component={InventoryScreen} options={{ title: 'Inventory' }} />
+          <Stack.Screen name="Staff" component={StaffScreen} options={{ title: 'Staff' }} />
+          <Stack.Screen name="Settings" component={SettingsScreen} options={{ title: 'Settings' }} />
+        </Stack.Navigator>
+      ) : (
+        <PublicStack />
+      )}
     </NavigationContainer>
   );
 };

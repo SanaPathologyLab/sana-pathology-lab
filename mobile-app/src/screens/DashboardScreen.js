@@ -34,6 +34,35 @@ const DashboardScreen = ({ navigation }) => {
     { name: 'Widal Test', screen: 'WidalTest' },
   ];
 
+  const handleMenuPress = (screenName) => {
+    const state = navigation.getState();
+    const routeNames = state?.routeNames || [];
+
+    if (routeNames.includes(screenName)) {
+      navigation.navigate(screenName);
+      return;
+    }
+
+    const tabMapping = {
+      'Patients': 'PatientsTab',
+      'Reports': 'ReportsTab',
+      'Billing': 'BillingTab',
+      'Dashboard': 'DashboardTab'
+    };
+    const tabName = tabMapping[screenName];
+    if (tabName && routeNames.includes(tabName)) {
+      navigation.navigate(tabName);
+      return;
+    }
+
+    if (routeNames.includes('MoreTab')) {
+      navigation.navigate('MoreTab', { screen: screenName });
+      return;
+    }
+
+    navigation.navigate(screenName);
+  };
+
   if (loading) return <Loader />;
 
   return (
@@ -69,7 +98,7 @@ const DashboardScreen = ({ navigation }) => {
       <Text style={styles.sectionTitle}>Quick Access</Text>
       <View style={styles.menuGrid}>
         {menuItems.map(item => (
-          <TouchableOpacity key={item.name} style={styles.menuItem} onPress={() => navigation.navigate(item.screen)}>
+          <TouchableOpacity key={item.name} style={styles.menuItem} onPress={() => handleMenuPress(item.screen)}>
             <Text style={styles.menuItemText}>{item.name}</Text>
           </TouchableOpacity>
         ))}
