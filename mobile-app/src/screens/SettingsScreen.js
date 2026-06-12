@@ -1,5 +1,5 @@
 import React, { useEffect, useState, useContext } from 'react';
-import { View, Text, TextInput, TouchableOpacity, ScrollView, StyleSheet } from 'react-native';
+import { View, Text, TextInput, TouchableOpacity, ScrollView, StyleSheet, SafeAreaView, KeyboardAvoidingView, Platform, Alert } from 'react-native';
 import { AuthContext } from '../context/AuthContext';
 import { api } from '../services/api';
 
@@ -8,6 +8,7 @@ const SettingsScreen = () => {
   const [saving, setSaving] = useState(false);
   const [form, setForm] = useState({
     labName: 'Sana Pathology Lab',
+    labRegNo: '',
     labAddress: 'Datawali Road, Near Aara Machine, Hayat Nagar',
     labCity: 'Hayat Nagar',
     labPhone: '6396786939',
@@ -30,11 +31,12 @@ const SettingsScreen = () => {
     setSaving(true);
     try {
       await api.put('/settings', form);
-    } catch (err) { console.error(err); }
+      Alert.alert('Success', 'Settings saved successfully!');
+    } catch (err) { Alert.alert('Error', err.message); }
     setSaving(false);
   };
 
-  const Field = ({ label, field, multiline = false }) => (
+  const Field = ({ label, field, multiline = false, keyboardType = 'default' }) => (
     <View style={styles.field}>
       <Text style={styles.label}>{label}</Text>
       <TextInput
@@ -42,56 +44,96 @@ const SettingsScreen = () => {
         value={form[field] || ''}
         onChangeText={v => setForm(prev => ({ ...prev, [field]: v }))}
         multiline={multiline}
+        keyboardType={keyboardType}
       />
     </View>
   );
 
   return (
-    <ScrollView style={styles.container}>
+    <SafeAreaView style={styles.safeArea}>
       <View style={styles.header}>
-        <Text style={styles.title}>Settings</Text>
+        <Text style={styles.headerTitle}>Settings</Text>
+        <Text style={styles.headerSubtitle}>Configure your laboratory information</Text>
         <TouchableOpacity style={styles.saveBtn} onPress={handleSave} disabled={saving}>
-          <Text style={styles.saveBtnText}>{saving ? 'Saving...' : 'Save'}</Text>
+          <Text style={styles.saveBtnText}>{saving ? 'SAVING...' : 'SAVE SETTINGS'}</Text>
         </TouchableOpacity>
       </View>
 
-      <View style={styles.section}>
-        <Text style={styles.sectionTitle}>Lab Information</Text>
-        <Field label="Lab Name" field="labName" />
-        <Field label="Address" field="labAddress" multiline />
-        <Field label="City" field="labCity" />
-        <Field label="Phone 1" field="labPhone" />
-        <Field label="Phone 2" field="labPhone2" />
-        <Field label="Email" field="labEmail" />
-        <Field label="GST" field="labGST" />
-      </View>
+      <KeyboardAvoidingView behavior={Platform.OS === 'ios' ? 'padding' : 'height'} style={{ flex: 1 }}>
+        <ScrollView style={styles.container} keyboardShouldPersistTaps="handled">
+          
+          <View style={styles.section}>
+            <View style={styles.sectionHeader}>
+              <Text style={styles.sectionIcon}>🏢</Text>
+              <Text style={styles.sectionTitle}>Lab Information</Text>
+            </View>
+            <View style={styles.sectionBody}>
+              <Field label="Lab Name" field="labName" />
+              <Field label="Registration No." field="labRegNo" />
+              <Field label="Address" field="labAddress" multiline />
+              <Field label="City" field="labCity" />
+              <Field label="GST Number" field="labGST" />
+              <View style={styles.row}>
+                <View style={{flex: 1}}><Field label="Phone 1" field="labPhone" keyboardType="phone-pad" /></View>
+                <View style={{width: 12}} />
+                <View style={{flex: 1}}><Field label="Phone 2" field="labPhone2" keyboardType="phone-pad" /></View>
+              </View>
+              <Field label="Email" field="labEmail" keyboardType="email-address" />
+            </View>
+          </View>
 
-      <View style={styles.section}>
-        <Text style={styles.sectionTitle}>Report Signatories</Text>
-        <Field label="Pathologist Name" field="pathologistName" />
-        <Field label="Pathologist Qualification" field="pathologistQual" />
-        <Field label="Technician Name" field="technicianName" />
-      </View>
+          <View style={styles.section}>
+            <View style={styles.sectionHeader}>
+              <Text style={styles.sectionIcon}>👨‍⚕️</Text>
+              <Text style={styles.sectionTitle}>Report Signatories</Text>
+            </View>
+            <View style={styles.sectionBody}>
+              <Field label="Pathologist Name" field="pathologistName" />
+              <Field label="Pathologist Qualification" field="pathologistQual" />
+              <Field label="Technician Name" field="technicianName" />
+            </View>
+          </View>
 
-      <View style={styles.section}>
-        <Text style={styles.sectionTitle}>Report Configuration</Text>
-        <Field label="Footer Text" field="reportFooter" multiline />
-      </View>
-    </ScrollView>
+          <View style={styles.section}>
+            <View style={styles.sectionHeader}>
+              <Text style={styles.sectionIcon}>📄</Text>
+              <Text style={styles.sectionTitle}>Report Configuration</Text>
+            </View>
+            <View style={styles.sectionBody}>
+              <Field label="Report Footer Text" field="reportFooter" multiline />
+            </View>
+          </View>
+
+          <Text style={styles.footerText}>© 2026 Sana Pathology Lab. All Rights Reserved.</Text>
+          <View style={{height: 40}} />
+        </ScrollView>
+      </KeyboardAvoidingView>
+    </SafeAreaView>
   );
 };
 
 const styles = StyleSheet.create({
-  container: { flex: 1, backgroundColor: '#f8fafc' },
-  header: { flexDirection: 'row', justifyContent: 'space-between', alignItems: 'center', padding: 16, paddingTop: 50, backgroundColor: '#fff', borderBottomWidth: 1, borderBottomColor: '#e5e7eb' },
-  title: { fontSize: 22, fontWeight: '800', color: '#00488d' },
-  saveBtn: { backgroundColor: '#00488d', paddingHorizontal: 20, paddingVertical: 10, borderRadius: 8 },
-  saveBtnText: { color: '#fff', fontWeight: '800', fontSize: 14 },
-  section: { backgroundColor: '#fff', margin: 12, padding: 16, borderRadius: 12, borderWidth: 1, borderColor: '#e5e7eb' },
-  sectionTitle: { fontSize: 14, fontWeight: '800', color: '#00488d', marginBottom: 16, textTransform: 'uppercase' },
-  field: { marginBottom: 12 },
-  label: { fontSize: 11, fontWeight: '700', color: '#6b7280', textTransform: 'uppercase', marginBottom: 4 },
-  input: { borderWidth: 1, borderColor: '#e5e7eb', borderRadius: 8, padding: 12, fontSize: 14, backgroundColor: '#f9fafb' },
+  safeArea: { flex: 1, backgroundColor: '#0f172a' },
+  header: { backgroundColor: '#0f172a', padding: 20, paddingTop: 10, borderBottomLeftRadius: 24, borderBottomRightRadius: 24, elevation: 4, zIndex: 10 },
+  headerTitle: { fontSize: 24, fontWeight: '900', color: '#fff' },
+  headerSubtitle: { fontSize: 13, color: '#94a3b8', marginTop: 4, marginBottom: 16 },
+  saveBtn: { backgroundColor: '#0ea5e9', paddingVertical: 14, borderRadius: 12, alignItems: 'center', shadowColor: '#0ea5e9', shadowOffset: { width: 0, height: 4 }, shadowOpacity: 0.3, shadowRadius: 8 },
+  saveBtnText: { color: '#fff', fontSize: 14, fontWeight: '900', letterSpacing: 1 },
+
+  container: { flex: 1, backgroundColor: '#f8fafc', padding: 16 },
+  
+  section: { backgroundColor: '#fff', borderRadius: 16, marginBottom: 16, borderWidth: 1, borderColor: '#e2e8f0', elevation: 2, shadowColor: '#000', shadowOffset: { width: 0, height: 2 }, shadowOpacity: 0.05, shadowRadius: 4 },
+  sectionHeader: { flexDirection: 'row', alignItems: 'center', padding: 16, backgroundColor: '#f8fafc', borderTopLeftRadius: 16, borderTopRightRadius: 16, borderBottomWidth: 1, borderBottomColor: '#e2e8f0' },
+  sectionIcon: { fontSize: 18, marginRight: 8 },
+  sectionTitle: { fontSize: 14, fontWeight: '900', color: '#0f172a', textTransform: 'uppercase', letterSpacing: 0.5 },
+  sectionBody: { padding: 16 },
+
+  field: { marginBottom: 16 },
+  label: { fontSize: 11, fontWeight: '800', color: '#64748b', textTransform: 'uppercase', marginBottom: 6 },
+  input: { borderWidth: 1, borderColor: '#e2e8f0', borderRadius: 10, padding: 14, fontSize: 15, color: '#0f172a', backgroundColor: '#f8fafc' },
+  row: { flexDirection: 'row' },
+
+  footerText: { textAlign: 'center', color: '#94a3b8', fontSize: 11, marginTop: 10, marginBottom: 20 },
 });
 
 export default SettingsScreen;
