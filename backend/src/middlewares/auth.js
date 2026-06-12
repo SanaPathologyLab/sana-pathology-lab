@@ -5,11 +5,10 @@ const verifyToken = (req, res, next) => {
   const token = authHeader?.split(' ')[1];
   
   if (!token) {
-    console.log('Auth: No token provided, header:', authHeader);
     return res.status(403).json({ message: 'No token provided' });
   }
 
-  jwt.verify(token, process.env.JWT_SECRET || 'supersecretjwtkey', (err, decoded) => {
+  jwt.verify(token, process.env.JWT_SECRET, (err, decoded) => {
     if (err) {
       console.log('Auth: Token invalid:', err.message);
       return res.status(401).json({ message: 'Unauthorized' });

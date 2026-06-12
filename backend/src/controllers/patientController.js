@@ -1,22 +1,39 @@
 const prisma = require('../prisma');
 
+const PATIENT_CREATE_FIELDS = [
+  'fullName', 'fatherHusband', 'gender', 'dateOfBirth', 'age', 'ageType',
+  'mobileNumber', 'alternateNumber', 'email', 'address', 'city', 'state',
+  'bloodGroup', 'aadhaarNumber', 'diabetes', 'hypertension', 'allergies',
+  'notes', 'emergencyName', 'emergencyRelation', 'emergencyPhone'
+];
+
 exports.createPatient = async (req, res) => {
   try {
-    const data = req.body;
-    // Generate patientId e.g. SPL-0001
+    const { fullName, mobileNumber } = req.body;
+    if (!fullName || !mobileNumber) {
+      return res.status(400).json({ message: 'Full name and mobile number are required' });
+    }
+
     const lastPatient = await prisma.patient.findFirst({
       orderBy: { id: 'desc' }
     });
     const nextIdNum = lastPatient ? lastPatient.id + 1 : 1;
-    data.patientId = `SPL-${nextIdNum.toString().padStart(4, '0')}`;
-    
-    // Parse date if present
-    if (data.dateOfBirth) data.dateOfBirth = new Date(data.dateOfBirth);
+    const patientId = `SPL-${nextIdNum.toString().padStart(4, '0')}`;
 
-    const patient = await prisma.patient.create({ data });
+    const whitelisted = {};
+    for (const field of PATIENT_CREATE_FIELDS) {
+      if (req.body[field] !== undefined) {
+        whitelisted[field] = req.body[field];
+      }
+    }
+    whitelisted.patientId = patientId;
+    if (whitelisted.dateOfBirth) whitelisted.dateOfBirth = new Date(whitelisted.dateOfBirth);
+
+    const patient = await prisma.patient.create({ data: whitelisted });
     res.status(201).json(patient);
   } catch (err) {
-    res.status(500).json({ message: err.message });
+    console.error('Create patient error:', err.message);
+    res.status(500).json({ message: 'An error occurred while creating the patient.' });
   }
 };
 
@@ -30,14 +47,18 @@ exports.getPatients = async (req, res) => {
     });
     res.status(200).json(patients);
   } catch (err) {
-    res.status(500).json({ message: err.message });
+    console.error('Get patients error:', err.message);
+    res.status(500).json({ message: 'An error occurred.' });
   }
 };
 
 exports.getPatientById = async (req, res) => {
   try {
+    const id = parseInt(req.params.id);
+    if (isNaN(id)) return res.status(400).json({ message: 'Invalid patient ID' });
+
     const patient = await prisma.patient.findUnique({
-      where: { id: parseInt(req.params.id) },
+      where: { id },
       include: {
         reports: true,
         appointments: true,
@@ -47,22 +68,32 @@ exports.getPatientById = async (req, res) => {
     if (!patient) return res.status(404).json({ message: 'Patient not found' });
     res.status(200).json(patient);
   } catch (err) {
-    res.status(500).json({ message: err.message });
+    console.error('Get patient error:', err.message);
+    res.status(500).json({ message: 'An error occurred.' });
   }
 };
 
 exports.updatePatient = async (req, res) => {
   try {
-    const data = req.body;
-    if (data.dateOfBirth) data.dateOfBirth = new Date(data.dateOfBirth);
+    const id = parseInt(req.params.id);
+    if (isNaN(id)) return res.status(400).json({ message: 'Invalid patient ID' });
+
+    const whitelisted = {};
+    for (const field of PATIENT_CREATE_FIELDS) {
+      if (req.body[field] !== undefined) {
+        whitelisted[field] = req.body[field];
+      }
+    }
+    if (whitelisted.dateOfBirth) whitelisted.dateOfBirth = new Date(whitelisted.dateOfBirth);
 
     const patient = await prisma.patient.update({
-      where: { id: parseInt(req.params.id) },
-      data
+      where: { id },
+      data: whitelisted
     });
     res.status(200).json(patient);
   } catch (err) {
-    res.status(500).json({ message: err.message });
+    console.error('Update patient error:', err.message);
+    res.status(500).json({ message: 'An error occurred while updating the patient.' });
   }
 };
 
@@ -81,7 +112,7 @@ exports.bulkDeletePatients = async (req, res) => {
     res.status(200).json({ message: `${result.count} patients deleted successfully`, count: result.count });
   } catch (err) {
     console.error('Bulk Delete Patients Error:', err);
-    res.status(500).json({ message: err.message || 'Unknown error occurred while bulk deleting patients' });
+    res.status(500).json({ message: 'An error occurred while deleting patients.' });
   }
 };
 
@@ -99,7 +130,7 @@ exports.deletePatient = async (req, res) => {
     res.status(200).json({ message: 'Patient deleted successfully' });
   } catch (err) {
     console.error('Delete Patient Error:', err);
-    res.status(500).json({ message: err.message || 'Unknown error occurred while deleting the patient' });
+    res.status(500).json({ message: 'An error occurred while deleting the patient.' });
   }
 };
 
@@ -162,6 +193,6 @@ exports.getPatientTrends = async (req, res) => {
     res.status(200).json(Object.values(trends));
   } catch (err) {
     console.error('getPatientTrends error:', err);
-    res.status(500).json({ message: err.message });
+    res.status(500).json({ message: 'An error occurred fetching trends.' });
   }
 };

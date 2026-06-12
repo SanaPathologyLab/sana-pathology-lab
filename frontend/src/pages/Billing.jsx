@@ -249,7 +249,7 @@ const Billing = () => {
                         <button key={val} onClick={() => setDiscountBy(val)}
                           className={`py-2.5 rounded-xl text-xs font-bold border-2 transition-all ${
                             discountBy === val
-                              ? `border-${color}-500 bg-${color}-50 text-${color}-700`
+                              ? 'border-slate-200'
                               : 'border-slate-200 text-slate-500 hover:border-slate-300'
                           }`}
                           style={discountBy === val ? { borderColor: color === 'purple' ? '#a855f7' : '#f97316', background: color === 'purple' ? '#faf5ff' : '#fff7ed', color: color === 'purple' ? '#7e22ce' : '#c2410c' } : {}}

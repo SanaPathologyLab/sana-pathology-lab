@@ -1,30 +1,35 @@
 const prisma = require('../prisma');
 
+const generateInvoiceNumber = async () => {
+  const last = await prisma.invoice.findFirst({ orderBy: { id: 'desc' } });
+  const nextId = last ? last.id + 1 : 1;
+  return `INV-${nextId.toString().padStart(6, '0')}`;
+};
+
 exports.createInvoice = async (req, res) => {
   try {
     const { patientId, reportId, tests, discount, gst, paymentMethod } = req.body;
-    
-    // Calculate totals
-    let totalAmount = 0;
-    for (const t of tests) {
-      const testInfo = await prisma.test.findUnique({ where: { id: t.id } });
-      if (testInfo) totalAmount += testInfo.price;
+
+    if (!patientId || !tests || !Array.isArray(tests) || tests.length === 0) {
+      return res.status(400).json({ message: 'Patient ID and tests are required' });
     }
-    
+
+    // Calculate totals with single query (fix N+1)
+    const testIds = tests.map(t => t.id);
+    const testRecords = await prisma.test.findMany({
+      where: { id: { in: testIds } }
+    });
+    const totalAmount = testRecords.reduce((sum, t) => sum + t.price, 0);
+
     const finalAmount = totalAmount - (discount || 0) + (gst || 0);
 
-    // Generate Invoice Number
-    const lastInvoice = await prisma.invoice.findFirst({
-      orderBy: { id: 'desc' }
-    });
-    const nextIdNum = lastInvoice ? lastInvoice.id + 1 : 1;
-    const invoiceNumber = `INV-${nextIdNum.toString().padStart(6, '0')}`;
+    const invoiceNumber = await generateInvoiceNumber();
 
     const invoice = await prisma.invoice.create({
       data: {
         invoiceNumber,
-        patientId,
-        reportId,
+        patientId: parseInt(patientId),
+        reportId: reportId ? parseInt(reportId) : null,
         totalAmount,
         discount: discount || 0,
         gst: gst || 0,
@@ -36,7 +41,8 @@ exports.createInvoice = async (req, res) => {
 
     res.status(201).json(invoice);
   } catch (err) {
-    res.status(500).json({ message: err.message });
+    console.error('Create invoice error:', err.message);
+    res.status(500).json({ message: 'An error occurred while creating the invoice.' });
   }
 };
 
@@ -58,7 +64,8 @@ exports.getInvoices = async (req, res) => {
     });
     res.status(200).json(invoices);
   } catch (err) {
-    res.status(500).json({ message: err.message });
+    console.error('Get invoices error:', err.message);
+    res.status(500).json({ message: 'An error occurred.' });
   }
 };
 
@@ -90,7 +97,8 @@ exports.payInvoice = async (req, res) => {
 
     res.status(200).json(updatedInvoice);
   } catch (err) {
-    res.status(500).json({ message: err.message });
+    console.error('Pay invoice error:', err.message);
+    res.status(500).json({ message: 'An error occurred.' });
   }
 };
 
@@ -127,7 +135,8 @@ exports.applyDiscount = async (req, res) => {
 
     res.status(200).json(updated);
   } catch (err) {
-    res.status(500).json({ message: err.message });
+    console.error('Apply discount error:', err.message);
+    res.status(500).json({ message: 'An error occurred.' });
   }
 };
 

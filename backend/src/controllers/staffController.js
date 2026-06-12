@@ -1,7 +1,7 @@
 const prisma = require('../prisma');
 
-const generateStaffId = async () => {
-  const count = await prisma.staff.count();
+const generateStaffId = async (tx) => {
+  const count = await tx.staff.count();
   return `STF-${String(count + 1).padStart(4, '0')}`;
 };
 
@@ -13,29 +13,35 @@ const getStaff = async (req, res) => {
     });
     res.json(staff);
   } catch (err) {
-    res.status(500).json({ error: err.message });
+    console.error('Get staff error:', err.message);
+    res.status(500).json({ error: 'An error occurred.' });
   }
 };
 
 const createStaff = async (req, res) => {
   try {
     const { name, role, mobile, email, address, joiningDate, salary } = req.body;
-    const staffId = await generateStaffId();
-    const staff = await prisma.staff.create({
-      data: {
-        staffId,
-        name,
-        role,
-        mobile,
-        email,
-        address,
-        joiningDate: joiningDate ? new Date(joiningDate) : null,
-        salary: salary ? parseFloat(salary) : null,
-      },
+    if (!name) return res.status(400).json({ error: 'Staff name is required' });
+
+    const staff = await prisma.$transaction(async (tx) => {
+      const staffId = await generateStaffId(tx);
+      return tx.staff.create({
+        data: {
+          staffId,
+          name,
+          role,
+          mobile,
+          email,
+          address,
+          joiningDate: joiningDate ? new Date(joiningDate) : null,
+          salary: salary ? parseFloat(salary) : null,
+        },
+      });
     });
     res.json(staff);
   } catch (err) {
-    res.status(500).json({ error: err.message });
+    console.error('Create staff error:', err.message);
+    res.status(500).json({ error: 'An error occurred.' });
   }
 };
 
@@ -58,7 +64,8 @@ const updateStaff = async (req, res) => {
     });
     res.json(staff);
   } catch (err) {
-    res.status(500).json({ error: err.message });
+    console.error('Update staff error:', err.message);
+    res.status(500).json({ error: 'An error occurred.' });
   }
 };
 
@@ -68,7 +75,8 @@ const deleteStaff = async (req, res) => {
     await prisma.staff.delete({ where: { id: parseInt(id) } });
     res.json({ message: 'Staff deleted' });
   } catch (err) {
-    res.status(500).json({ error: err.message });
+    console.error('Delete staff error:', err.message);
+    res.status(500).json({ error: 'An error occurred.' });
   }
 };
 
@@ -93,7 +101,8 @@ const markAttendance = async (req, res) => {
     }
     res.json(record);
   } catch (err) {
-    res.status(500).json({ error: err.message });
+    console.error('Mark attendance error:', err.message);
+    res.status(500).json({ error: 'An error occurred.' });
   }
 };
 
@@ -150,7 +159,8 @@ const setStaffCredentials = async (req, res) => {
 
     res.json({ message: 'Credentials updated successfully', loginId: loginEmail, staffId: staff.staffId });
   } catch (err) {
-    res.status(500).json({ error: err.message });
+    console.error('Set staff credentials error:', err.message);
+    res.status(500).json({ error: 'An error occurred.' });
   }
 };
 

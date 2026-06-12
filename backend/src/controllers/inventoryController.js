@@ -5,7 +5,8 @@ const getInventory = async (req, res) => {
     const items = await prisma.inventory.findMany({ orderBy: { itemName: 'asc' } });
     res.json(items);
   } catch (err) {
-    res.status(500).json({ error: err.message });
+    console.error('Get inventory error:', err.message);
+    res.status(500).json({ message: 'An error occurred.' });
   }
 };
 
@@ -28,7 +29,8 @@ const createInventoryItem = async (req, res) => {
     });
     res.json(item);
   } catch (err) {
-    res.status(500).json({ error: err.message });
+    console.error('Create inventory item error:', err.message);
+    res.status(500).json({ message: 'An error occurred.' });
   }
 };
 
@@ -53,7 +55,8 @@ const updateInventoryItem = async (req, res) => {
     });
     res.json(item);
   } catch (err) {
-    res.status(500).json({ error: err.message });
+    console.error('Update inventory item error:', err.message);
+    res.status(500).json({ message: 'An error occurred.' });
   }
 };
 
@@ -63,7 +66,8 @@ const deleteInventoryItem = async (req, res) => {
     await prisma.inventory.delete({ where: { id: parseInt(id) } });
     res.json({ message: 'Item deleted' });
   } catch (err) {
-    res.status(500).json({ error: err.message });
+    console.error('Delete inventory item error:', err.message);
+    res.status(500).json({ message: 'An error occurred.' });
   }
 };
 

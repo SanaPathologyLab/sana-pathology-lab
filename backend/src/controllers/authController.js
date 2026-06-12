@@ -5,13 +5,15 @@ const jwt = require('jsonwebtoken');
 exports.register = async (req, res) => {
   try {
     const { email, password, name, role, phone } = req.body;
-    
-    // In production, we'd only allow ADMIN to register other users.
-    // We will bypass it here just for setup if no users exist.
+
+    if (!email || !password || !name) {
+      return res.status(400).json({ message: 'Email, password, and name are required' });
+    }
+
     const userCount = await prisma.user.count();
-    
+
     if (userCount > 0 && req.userRole !== 'ADMIN') {
-      // return res.status(403).json({ message: 'Only admin can create users' });
+      return res.status(403).json({ message: 'Only admin can create users' });
     }
 
     const hashedPassword = bcrypt.hashSync(password, 8);
@@ -27,7 +29,8 @@ exports.register = async (req, res) => {
 
     res.status(201).json({ message: 'User registered successfully', userId: user.id });
   } catch (err) {
-    res.status(500).json({ message: err.message });
+    console.error('Register error:', err.message);
+    res.status(500).json({ message: 'An error occurred during registration.' });
   }
 };
 
@@ -72,8 +75,8 @@ exports.login = async (req, res) => {
     const passwordIsValid = bcrypt.compareSync(password, user.password);
     if (!passwordIsValid) return res.status(401).json({ message: 'Invalid password' });
 
-    const token = jwt.sign({ id: user.id, role: user.role, userType: 'STAFF' }, process.env.JWT_SECRET || 'supersecretjwtkey', {
-      expiresIn: '365d' // 1 year (persistent login)
+    const token = jwt.sign({ id: user.id, role: user.role, userType: 'STAFF' }, process.env.JWT_SECRET, {
+      expiresIn: '7d'
     });
 
     res.status(200).json({
@@ -85,7 +88,8 @@ exports.login = async (req, res) => {
       accessToken: token
     });
   } catch (err) {
-    res.status(500).json({ message: err.message });
+    console.error('Login error:', err.message);
+    res.status(500).json({ message: 'An error occurred during login.' });
   }
 };
 
@@ -96,21 +100,39 @@ exports.me = async (req, res) => {
     delete user.password;
     res.status(200).json({ ...user, userType: 'STAFF' });
   } catch (err) {
-    res.status(500).json({ message: err.message });
+    console.error('Me error:', err.message);
+    res.status(500).json({ message: 'An error occurred.' });
   }
 };
 
 exports.loginPatient = async (req, res) => {
   try {
-    const { mobileNumber, patientId } = req.body;
+    const { mobileNumber, patientId, dateOfBirth, pin } = req.body;
+
     const patient = await prisma.patient.findFirst({
       where: { mobileNumber, patientId }
     });
 
     if (!patient) return res.status(404).json({ message: 'Invalid Patient ID or Mobile Number' });
 
-    const token = jwt.sign({ id: patient.id, userType: 'PATIENT' }, process.env.JWT_SECRET || 'supersecretjwtkey', {
-      expiresIn: '365d'
+    // Verify PIN (if set) or date of birth
+    if (patient.pin) {
+      const bcrypt = require('bcryptjs');
+      if (!bcrypt.compareSync(String(pin), patient.pin)) {
+        return res.status(401).json({ message: 'Invalid PIN' });
+      }
+    } else if (patient.dateOfBirth && dateOfBirth) {
+      const dob = new Date(dateOfBirth).toISOString().split('T')[0];
+      const storedDob = new Date(patient.dateOfBirth).toISOString().split('T')[0];
+      if (dob !== storedDob) {
+        return res.status(401).json({ message: 'Verification failed. Provide correct date of birth or set up a PIN.' });
+      }
+    } else {
+      return res.status(401).json({ message: 'Set up a PIN via the patient portal to log in.' });
+    }
+
+    const token = jwt.sign({ id: patient.id, userType: 'PATIENT' }, process.env.JWT_SECRET, {
+      expiresIn: '7d'
     });
 
     res.status(200).json({
@@ -120,13 +142,14 @@ exports.loginPatient = async (req, res) => {
       accessToken: token
     });
   } catch (err) {
-    res.status(500).json({ message: err.message });
+    console.error('Patient login error:', err.message);
+    res.status(500).json({ message: 'An error occurred during login.' });
   }
 };
 
 exports.loginDoctor = async (req, res) => {
   try {
-    const { mobileNumber, doctorId } = req.body;
+    const { mobileNumber, doctorId, pin } = req.body;
     const doctor = await prisma.doctor.findFirst({
       where: { mobileNumber, doctorId }
     });
@@ -134,8 +157,18 @@ exports.loginDoctor = async (req, res) => {
     if (!doctor) return res.status(404).json({ message: 'Invalid Doctor ID or Mobile Number' });
     if (!doctor.isApproved) return res.status(403).json({ message: 'Your account is pending admin approval.' });
 
-    const token = jwt.sign({ id: doctor.id, userType: 'DOCTOR' }, process.env.JWT_SECRET || 'supersecretjwtkey', {
-      expiresIn: '365d'
+    // Verify PIN (if set)
+    if (doctor.pin) {
+      const bcrypt = require('bcryptjs');
+      if (!bcrypt.compareSync(String(pin), doctor.pin)) {
+        return res.status(401).json({ message: 'Invalid PIN' });
+      }
+    } else {
+      return res.status(401).json({ message: 'Set up a PIN via your profile to log in.' });
+    }
+
+    const token = jwt.sign({ id: doctor.id, userType: 'DOCTOR' }, process.env.JWT_SECRET, {
+      expiresIn: '7d'
     });
 
     res.status(200).json({
@@ -145,16 +178,20 @@ exports.loginDoctor = async (req, res) => {
       accessToken: token
     });
   } catch (err) {
-    res.status(500).json({ message: err.message });
+    console.error('Doctor login error:', err.message);
+    res.status(500).json({ message: 'An error occurred during login.' });
   }
 };
 
 exports.registerDoctor = async (req, res) => {
   try {
-    const data = req.body;
-    
-    // Check if mobile number already exists
-    const existing = await prisma.doctor.findFirst({ where: { mobileNumber: data.mobileNumber } });
+    const { name, mobileNumber, qualification, specialization, email, clinicName, address } = req.body;
+
+    if (!name || !mobileNumber) {
+      return res.status(400).json({ message: 'Name and mobile number are required' });
+    }
+
+    const existing = await prisma.doctor.findFirst({ where: { mobileNumber } });
     if (existing) {
       return res.status(400).json({ message: 'A doctor with this mobile number already exists.' });
     }
@@ -163,13 +200,15 @@ exports.registerDoctor = async (req, res) => {
       orderBy: { id: 'desc' }
     });
     const nextIdNum = lastDoctor ? lastDoctor.id + 1 : 1;
-    data.doctorId = `DOC-${nextIdNum.toString().padStart(4, '0')}`;
-    data.isApproved = false;
-    
-    const doctor = await prisma.doctor.create({ data });
+    const doctorId = `DOC-${nextIdNum.toString().padStart(4, '0')}`;
+
+    const doctor = await prisma.doctor.create({
+      data: { name, mobileNumber, qualification, specialization, email, clinicName, address, doctorId, isApproved: false }
+    });
     res.status(201).json({ message: 'Doctor registered successfully. Pending approval.', doctorId: doctor.doctorId });
   } catch (err) {
-    res.status(500).json({ message: err.message });
+    console.error('Doctor register error:', err.message);
+    res.status(500).json({ message: 'An error occurred during registration.' });
   }
 };
 
@@ -192,7 +231,8 @@ exports.recoverPatient = async (req, res) => {
 
     res.status(200).json({ message: 'Match found!', id: patient.patientId });
   } catch (err) {
-    res.status(500).json({ message: err.message });
+    console.error('Patient recovery error:', err.message);
+    res.status(500).json({ message: 'An error occurred.' });
   }
 };
 
@@ -214,6 +254,7 @@ exports.recoverDoctor = async (req, res) => {
 
     res.status(200).json({ message: 'Match found!', id: doctor.doctorId });
   } catch (err) {
-    res.status(500).json({ message: err.message });
+    console.error('Doctor recovery error:', err.message);
+    res.status(500).json({ message: 'An error occurred.' });
   }
 };

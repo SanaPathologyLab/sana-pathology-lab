@@ -1,14 +1,32 @@
 const express = require('express');
 const cors = require('cors');
+const helmet = require('helmet');
+const rateLimit = require('express-rate-limit');
 const dotenv = require('dotenv');
+const { verifyToken } = require('./src/middlewares/auth');
 
 dotenv.config();
 const prisma = require('./src/prisma');
 
 const app = express();
 
-app.use(cors());
+app.use(helmet());
+app.use(cors({
+  origin: process.env.CORS_ORIGIN || 'http://localhost:5173',
+  credentials: true,
+}));
 app.use(express.json());
+
+// Rate limiting
+const authLimiter = rateLimit({
+  windowMs: 15 * 60 * 1000,
+  max: 20,
+  message: { message: 'Too many login attempts, please try again later.' },
+  standardHeaders: true,
+  legacyHeaders: false,
+});
+app.use('/api/auth/login', authLimiter);
+app.use('/api/auth/register', authLimiter);
 
 // Routes
 const authRoutes = require('./src/routes/authRoutes');
@@ -34,6 +52,7 @@ app.use('/api/inventory', inventoryRoutes);
 app.use('/api/staff', staffRoutes);
 
 // ─── PUBLIC: Patient Report Lookup (no auth required) ───
+// Only returns limited non-sensitive data; full report requires auth
 app.get('/api/public/report-lookup', async (req, res) => {
   try {
     const { mobile, reportNumber } = req.query;
@@ -44,33 +63,48 @@ app.get('/api/public/report-lookup', async (req, res) => {
     let reports = [];
 
     if (reportNumber) {
-      // Search by exact report number
       const report = await prisma.report.findUnique({
         where: { reportNumber: reportNumber.trim().toUpperCase() },
-        include: {
-          patient: true,
-          doctor: true,
-          results: { include: { test: { include: { category: true, parameters: true } } } },
-          invoice: true,
+        select: {
+          reportNumber: true,
+          reportDate: true,
+          status: true,
+          patient: { select: { fullName: true, age: true, gender: true } },
+          doctor: { select: { name: true, qualification: true } },
+          results: {
+            select: {
+              parameterName: true, resultValue: true, flag: true,
+              referenceRange: true, unit: true, groupName: true,
+              test: { select: { testName: true, testCode: true } }
+            }
+          }
         },
       });
       if (report) reports = [report];
     } else if (mobile) {
-      // Find patient by mobile, then get their reports
       const patient = await prisma.patient.findFirst({
         where: { mobileNumber: mobile.trim() },
+        select: { id: true, fullName: true },
       });
       if (patient) {
         reports = await prisma.report.findMany({
           where: { patientId: patient.id },
-          include: {
-            patient: true,
-            doctor: true,
-            results: { include: { test: { include: { category: true, parameters: true } } } },
-            invoice: true,
+          select: {
+            reportNumber: true,
+            reportDate: true,
+            status: true,
+            patient: { select: { fullName: true, age: true, gender: true } },
+            doctor: { select: { name: true, qualification: true } },
+            results: {
+              select: {
+                parameterName: true, resultValue: true, flag: true,
+                referenceRange: true, unit: true, groupName: true,
+                test: { select: { testName: true, testCode: true } }
+              }
+            }
           },
           orderBy: { reportDate: 'desc' },
-          take: 10, // last 10 reports
+          take: 10,
         });
       }
     }
@@ -81,8 +115,8 @@ app.get('/api/public/report-lookup', async (req, res) => {
 
     res.json(reports);
   } catch (err) {
-    console.error(err);
-    res.status(500).json({ message: err.message });
+    console.error('Report lookup error:', err.message);
+    res.status(500).json({ message: 'An error occurred.' });
   }
 });
 
@@ -170,8 +204,8 @@ app.post('/api/public/book-appointment', async (req, res) => {
 
     res.status(201).json({ message: 'Appointment booked successfully', appointment });
   } catch (err) {
-    console.error(err);
-    res.status(500).json({ message: err.message });
+    console.error('Book appointment error:', err.message);
+    res.status(500).json({ message: 'An error occurred while booking the appointment.' });
   }
 });
 
@@ -203,8 +237,8 @@ app.get('/api/public/appointment-lookup', async (req, res) => {
 
     res.json(appointments);
   } catch (err) {
-    console.error(err);
-    res.status(500).json({ message: err.message });
+    console.error('Appointment lookup error:', err.message);
+    res.status(500).json({ message: 'An error occurred.' });
   }
 });
 
@@ -226,13 +260,10 @@ app.get('/api/public/tests', async (req, res) => {
     });
     res.json(tests);
   } catch (err) {
-    console.error(err);
-    res.status(500).json({ message: err.message });
+    console.error('Get public tests error:', err.message);
+    res.status(500).json({ message: 'An error occurred.' });
   }
 });
-
-// Dashboard stats
-const { verifyToken } = require('./src/middlewares/auth');
 
 app.get('/api/dashboard/stats', verifyToken, async (req, res) => {
   try {
@@ -339,8 +370,8 @@ app.get('/api/dashboard/stats', verifyToken, async (req, res) => {
       lowStockCount: lowStockItems.length,
     });
   } catch (err) {
-    console.error(err);
-    res.status(500).json({ error: err.message });
+    console.error('Dashboard stats error:', err.message);
+    res.status(500).json({ message: 'An error occurred fetching dashboard data.' });
   }
 });
 
@@ -387,17 +418,18 @@ const frontendDist = path.join(__dirname, '..', 'frontend', 'dist');
 app.use(express.static(frontendDist));
 
 // Debug endpoint to check database
-app.get('/api/debug/tests', async (req, res) => {
+app.get('/api/debug/tests', verifyToken, async (req, res) => {
   try {
     const tests = await prisma.test.findMany({ include: { parameters: true } });
     res.json({ count: tests.length, tests: tests.map(t => ({ id: t.id, testName: t.testName, testCode: t.testCode })) });
   } catch (err) {
-    res.status(500).json({ error: err.message });
+    console.error('Debug tests error:', err.message);
+    res.status(500).json({ message: 'An error occurred.' });
   }
 });
 
 // SPA fallback - serve index.html for any non-API route
-app.get('/{*path}', (req, res) => {
+app.use((req, res) => {
   if (!req.path.startsWith('/api')) {
     res.sendFile(path.join(frontendDist, 'index.html'));
   }

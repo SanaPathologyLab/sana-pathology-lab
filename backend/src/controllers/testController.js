@@ -3,10 +3,13 @@ const prisma = require('../prisma');
 // --- Test Categories ---
 exports.createCategory = async (req, res) => {
   try {
-    const category = await prisma.testCategory.create({ data: req.body });
+    const { name } = req.body;
+    if (!name) return res.status(400).json({ message: 'Category name is required' });
+    const category = await prisma.testCategory.create({ data: { name } });
     res.status(201).json(category);
   } catch (err) {
-    res.status(500).json({ message: err.message });
+    console.error('Create category error:', err.message);
+    res.status(500).json({ message: 'An error occurred.' });
   }
 };
 
@@ -17,49 +20,61 @@ exports.getCategories = async (req, res) => {
     });
     res.status(200).json(categories);
   } catch (err) {
-    res.status(500).json({ message: err.message });
+    console.error('Get categories error:', err.message);
+    res.status(500).json({ message: 'An error occurred.' });
   }
 };
 
 // --- Tests ---
+const TEST_CREATE_FIELDS = ['testName', 'testCode', 'sampleType', 'price', 'categoryId', 'summary'];
+
 exports.createTest = async (req, res) => {
   try {
-    const { parameters, ...testData } = req.body;
-    const test = await prisma.test.create({ 
+    const { parameters } = req.body;
+    const whitelisted = {};
+    for (const field of TEST_CREATE_FIELDS) {
+      if (req.body[field] !== undefined) whitelisted[field] = req.body[field];
+    }
+    if (!whitelisted.testName || !whitelisted.testCode) {
+      return res.status(400).json({ message: 'Test name and code are required' });
+    }
+    const test = await prisma.test.create({
       data: {
-        ...testData,
+        ...whitelisted,
         parameters: { create: parameters || [] }
       },
       include: { parameters: true, category: true }
     });
     res.status(201).json(test);
   } catch (err) {
-    res.status(500).json({ message: err.message });
+    console.error('Create test error:', err.message);
+    res.status(500).json({ message: 'An error occurred.' });
   }
 };
 
 exports.getTests = async (req, res) => {
   try {
-    console.log('getTests called, user:', req.userId);
     const tests = await prisma.test.findMany({
       include: { category: true, parameters: true }
     });
-    console.log('getTests found:', tests.length, 'tests');
     res.status(200).json(tests);
   } catch (err) {
     console.error('getTests error:', err.message);
-    res.status(500).json({ message: err.message });
+    res.status(500).json({ message: 'An error occurred.' });
   }
 };
 
 exports.updateTest = async (req, res) => {
   try {
-    const { parameters, ...testData } = req.body;
-    
-    // First update the main test
+    const { parameters } = req.body;
+    const whitelisted = {};
+    for (const field of TEST_CREATE_FIELDS) {
+      if (req.body[field] !== undefined) whitelisted[field] = req.body[field];
+    }
+
     const test = await prisma.test.update({
       where: { id: parseInt(req.params.id) },
-      data: testData,
+      data: whitelisted,
     });
 
     // Handle parameters (delete old, create new for simplicity)
@@ -87,11 +102,14 @@ exports.updateTest = async (req, res) => {
               data: { referenceRange: p.referenceRange, unit: p.unit }
             });
           }
-        } catch (_) {}
+        } catch (bgErr) {
+          console.error('Background parameter update error:', bgErr.message);
+        }
       });
     }
   } catch (err) {
-    res.status(500).json({ message: err.message });
+    console.error('Update test error:', err.message);
+    res.status(500).json({ message: 'An error occurred.' });
   }
 };
 
@@ -102,6 +120,7 @@ exports.deleteTest = async (req, res) => {
     await prisma.test.delete({ where: { id: parseInt(req.params.id) } });
     res.status(200).json({ message: 'Test deleted successfully' });
   } catch (err) {
-    res.status(500).json({ message: err.message });
+    console.error('Delete test error:', err.message);
+    res.status(500).json({ message: 'An error occurred.' });
   }
 };

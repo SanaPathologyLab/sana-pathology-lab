@@ -16,7 +16,8 @@ const getAppointments = async (req, res) => {
     });
     res.json(appointments);
   } catch (err) {
-    res.status(500).json({ error: err.message });
+    console.error('Get appointments error:', err.message);
+    res.status(500).json({ message: 'An error occurred.' });
   }
 };
 
@@ -36,7 +37,8 @@ const createAppointment = async (req, res) => {
     });
     res.json(appointment);
   } catch (err) {
-    res.status(500).json({ error: err.message });
+    console.error('Create appointment error:', err.message);
+    res.status(500).json({ message: 'An error occurred.' });
   }
 };
 
@@ -58,7 +60,8 @@ const updateAppointment = async (req, res) => {
     });
     res.json(appointment);
   } catch (err) {
-    res.status(500).json({ error: err.message });
+    console.error('Update appointment error:', err.message);
+    res.status(500).json({ message: 'An error occurred.' });
   }
 };
 
@@ -68,7 +71,8 @@ const deleteAppointment = async (req, res) => {
     await prisma.appointment.delete({ where: { id: parseInt(id) } });
     res.json({ message: 'Appointment deleted' });
   } catch (err) {
-    res.status(500).json({ error: err.message });
+    console.error('Delete appointment error:', err.message);
+    res.status(500).json({ message: 'An error occurred.' });
   }
 };
 

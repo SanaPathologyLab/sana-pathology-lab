@@ -1,15 +1,20 @@
 const prisma = require('../prisma');
 
+const generateReportNumber = async () => {
+  const last = await prisma.report.findFirst({ orderBy: { id: 'desc' } });
+  const nextId = last ? last.id + 1 : 1;
+  return `RPT-${nextId.toString().padStart(6, '0')}`;
+};
+
 exports.createReport = async (req, res) => {
   try {
     const { patientId, doctorId, results } = req.body;
-    
-    // Generate Report Number
-    const lastReport = await prisma.report.findFirst({
-      orderBy: { id: 'desc' }
-    });
-    const nextIdNum = lastReport ? lastReport.id + 1 : 1;
-    const reportNumber = `RPT-${nextIdNum.toString().padStart(6, '0')}`;
+
+    if (!patientId || !results || !Array.isArray(results) || results.length === 0) {
+      return res.status(400).json({ message: 'Patient ID and test results are required' });
+    }
+
+    const reportNumber = await generateReportNumber();
 
     // Calculate total price based on unique tests
     const uniqueTestIds = [...new Set(results.map(r => r.testId))];
@@ -21,8 +26,8 @@ exports.createReport = async (req, res) => {
     const report = await prisma.report.create({
       data: {
         reportNumber,
-        patientId,
-        doctorId,
+        patientId: parseInt(patientId),
+        doctorId: doctorId ? parseInt(doctorId) : null,
         technicianId: req.userRole === 'TECHNICIAN' ? req.userId : null,
         results: {
           create: results.map(r => ({
@@ -60,7 +65,8 @@ exports.createReport = async (req, res) => {
     
     res.status(201).json(report);
   } catch (err) {
-    res.status(500).json({ message: err.message });
+    console.error('Create report error:', err.message);
+    res.status(500).json({ message: 'An error occurred while creating the report.' });
   }
 };
 
@@ -80,7 +86,8 @@ exports.getReports = async (req, res) => {
     });
     res.status(200).json(reports);
   } catch (err) {
-    res.status(500).json({ message: err.message });
+    console.error('Get reports error:', err.message);
+    res.status(500).json({ message: 'An error occurred.' });
   }
 };
 
@@ -110,7 +117,8 @@ exports.getReportById = async (req, res) => {
 
     res.status(200).json(report);
   } catch (err) {
-    res.status(500).json({ message: err.message });
+    console.error('Get report error:', err.message);
+    res.status(500).json({ message: 'An error occurred.' });
   }
 };
 
@@ -152,7 +160,8 @@ exports.updateReport = async (req, res) => {
 
     res.status(200).json(report);
   } catch (err) {
-    res.status(500).json({ message: err.message });
+    console.error('Update report error:', err.message);
+    res.status(500).json({ message: 'An error occurred.' });
   }
 };
 
@@ -163,7 +172,8 @@ exports.deleteReport = async (req, res) => {
     await prisma.report.delete({ where: { id: parseInt(req.params.id) } });
     res.status(200).json({ message: 'Report deleted successfully' });
   } catch (err) {
-    res.status(500).json({ message: err.message });
+    console.error('Delete report error:', err.message);
+    res.status(500).json({ message: 'An error occurred.' });
   }
 };
 

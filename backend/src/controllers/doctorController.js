@@ -1,19 +1,32 @@
 const prisma = require('../prisma');
 
+const DOCTOR_CREATE_FIELDS = [
+  'name', 'qualification', 'specialization', 'mobileNumber', 'email',
+  'clinicName', 'address', 'commissionRate'
+];
+
 exports.createDoctor = async (req, res) => {
   try {
-    const data = req.body;
-    // Generate doctorId e.g. DOC-0001
+    const { name, mobileNumber } = req.body;
+    if (!name) return res.status(400).json({ message: 'Doctor name is required' });
+
     const lastDoctor = await prisma.doctor.findFirst({
       orderBy: { id: 'desc' }
     });
     const nextIdNum = lastDoctor ? lastDoctor.id + 1 : 1;
-    data.doctorId = `DOC-${nextIdNum.toString().padStart(4, '0')}`;
-    
-    const doctor = await prisma.doctor.create({ data });
+    const doctorId = `DOC-${nextIdNum.toString().padStart(4, '0')}`;
+
+    const whitelisted = {};
+    for (const field of DOCTOR_CREATE_FIELDS) {
+      if (req.body[field] !== undefined) whitelisted[field] = req.body[field];
+    }
+    whitelisted.doctorId = doctorId;
+
+    const doctor = await prisma.doctor.create({ data: whitelisted });
     res.status(201).json(doctor);
   } catch (err) {
-    res.status(500).json({ message: err.message });
+    console.error('Create doctor error:', err.message);
+    res.status(500).json({ message: 'An error occurred while creating the doctor.' });
   }
 };
 
@@ -24,7 +37,8 @@ exports.getDoctors = async (req, res) => {
     });
     res.status(200).json(doctors);
   } catch (err) {
-    res.status(500).json({ message: err.message });
+    console.error('Get doctors error:', err.message);
+    res.status(500).json({ message: 'An error occurred.' });
   }
 };
 
@@ -94,7 +108,8 @@ exports.getDoctors = async (req, res) => {
 
     res.status(200).json(analytics);
   } catch (err) {
-    res.status(500).json({ message: err.message });
+    console.error('Doctor analytics error:', err.message);
+    res.status(500).json({ message: 'An error occurred fetching analytics.' });
   }
 };
 exports.getDoctorAnalytics = getDoctorAnalytics;
@@ -111,20 +126,29 @@ exports.getDoctorById = async (req, res) => {
     if (!doctor) return res.status(404).json({ message: 'Doctor not found' });
     res.status(200).json(doctor);
   } catch (err) {
-    res.status(500).json({ message: err.message });
+    console.error('Get doctor error:', err.message);
+    res.status(500).json({ message: 'An error occurred.' });
   }
 };
 
 exports.updateDoctor = async (req, res) => {
   try {
-    const data = req.body;
+    const id = parseInt(req.params.id);
+    if (isNaN(id)) return res.status(400).json({ message: 'Invalid doctor ID' });
+
+    const whitelisted = {};
+    for (const field of DOCTOR_CREATE_FIELDS) {
+      if (req.body[field] !== undefined) whitelisted[field] = req.body[field];
+    }
+
     const doctor = await prisma.doctor.update({
-      where: { id: parseInt(req.params.id) },
-      data
+      where: { id },
+      data: whitelisted
     });
     res.status(200).json(doctor);
   } catch (err) {
-    res.status(500).json({ message: err.message });
+    console.error('Update doctor error:', err.message);
+    res.status(500).json({ message: 'An error occurred while updating the doctor.' });
   }
 };
 
@@ -149,6 +173,6 @@ exports.deleteDoctor = async (req, res) => {
     res.status(200).json({ message: 'Doctor deleted successfully' });
   } catch (err) {
     console.error('Delete Doctor Error:', err);
-    res.status(500).json({ message: err.message || 'An unknown error occurred while deleting the doctor.' });
+    res.status(500).json({ message: 'An error occurred while deleting the doctor.' });
   }
 };

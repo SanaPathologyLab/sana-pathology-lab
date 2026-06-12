@@ -24,7 +24,8 @@ const getSettings = async (req, res) => {
     };
     res.json({ ...defaults, ...settings });
   } catch (err) {
-    res.status(500).json({ error: err.message });
+    console.error('Get settings error:', err.message);
+    res.status(500).json({ message: 'An error occurred.' });
   }
 };
 
@@ -42,7 +43,8 @@ const updateSettings = async (req, res) => {
     await prisma.$transaction(ops);
     res.json({ message: 'Settings saved successfully' });
   } catch (err) {
-    res.status(500).json({ error: err.message });
+    console.error('Update settings error:', err.message);
+    res.status(500).json({ message: 'An error occurred.' });
   }
 };
 
