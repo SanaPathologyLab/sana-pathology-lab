@@ -9,5 +9,7 @@ router.post('/', controller.createInvoice);
 router.get('/', controller.getInvoices);
 router.post('/:id/pay', controller.payInvoice);
 router.post('/:id/discount', controller.applyDiscount);
+router.put('/:id', controller.updateInvoice);
+router.delete('/:id', controller.deleteInvoice);
 
 module.exports = router;

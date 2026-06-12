@@ -167,9 +167,20 @@ exports.updateReport = async (req, res) => {
 
 exports.deleteReport = async (req, res) => {
   try {
+    const reportId = parseInt(req.params.id);
+    
+    // Find the associated invoice
+    const invoice = await prisma.invoice.findUnique({ where: { reportId } });
+    if (invoice) {
+      // Delete associated payments first
+      await prisma.payment.deleteMany({ where: { invoiceId: invoice.id } });
+      // Delete the invoice
+      await prisma.invoice.delete({ where: { id: invoice.id } });
+    }
+
     // Delete results first (cascade)
-    await prisma.reportResult.deleteMany({ where: { reportId: parseInt(req.params.id) } });
-    await prisma.report.delete({ where: { id: parseInt(req.params.id) } });
+    await prisma.reportResult.deleteMany({ where: { reportId } });
+    await prisma.report.delete({ where: { id: reportId } });
     res.status(200).json({ message: 'Report deleted successfully' });
   } catch (err) {
     console.error('Delete report error:', err.message);

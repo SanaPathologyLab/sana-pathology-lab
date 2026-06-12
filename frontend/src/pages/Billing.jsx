@@ -1,7 +1,7 @@
 import React, { useState, useEffect, useContext } from 'react';
 import Layout from '../components/Layout';
 import { AuthContext } from '../context/AuthContext';
-import { Search, IndianRupee, CreditCard, Receipt, TrendingUp, Wallet, QrCode, CheckCircle2, X, Tag, Percent } from 'lucide-react';
+import { Search, IndianRupee, CreditCard, Receipt, TrendingUp, Wallet, QrCode, CheckCircle2, X, Tag, Percent, Pencil, Trash2 } from 'lucide-react';
 import { QRCodeSVG } from 'qrcode.react';
 
 const Billing = () => {
@@ -19,6 +19,15 @@ const Billing = () => {
   const [discountValue, setDiscountValue] = useState('');
   const [isApplyingDiscount, setIsApplyingDiscount] = useState(false);
   const [discountApplied, setDiscountApplied] = useState(false);
+
+  // Edit Invoice state
+  const [isEditModalOpen, setIsEditModalOpen] = useState(false);
+  const [editInvoice, setEditInvoice] = useState(null);
+  const [editFinalAmount, setEditFinalAmount] = useState('');
+  const [editDiscount, setEditDiscount] = useState('');
+  const [editPaymentStatus, setEditPaymentStatus] = useState('UNPAID');
+  const [editPaymentMethod, setEditPaymentMethod] = useState('');
+  const [isSavingEdit, setIsSavingEdit] = useState(false);
 
   useEffect(() => { fetchInvoices(); }, []);
 
@@ -93,6 +102,70 @@ const Billing = () => {
       else alert('Payment failed to process');
     } catch (err) { console.error(err); }
     finally { setIsProcessing(false); }
+  };
+
+  const handleEditClick = (inv) => {
+    setEditInvoice(inv);
+    setEditFinalAmount(inv.finalAmount.toString());
+    setEditDiscount(inv.discount.toString());
+    setEditPaymentStatus(inv.paymentStatus || 'UNPAID');
+    setEditPaymentMethod(inv.paymentMethod || '');
+    setIsEditModalOpen(true);
+  };
+
+  const handleSaveEdit = async () => {
+    if (!editInvoice) return;
+    setIsSavingEdit(true);
+    try {
+      const res = await fetch(`/api/invoices/${editInvoice.id}`, {
+        method: 'PUT',
+        headers: {
+          'Content-Type': 'application/json',
+          'Authorization': `Bearer ${user?.token || user?.accessToken}`
+        },
+        body: JSON.stringify({
+          finalAmount: parseFloat(editFinalAmount) || 0,
+          discount: parseFloat(editDiscount) || 0,
+          paymentStatus: editPaymentStatus,
+          paymentMethod: editPaymentMethod || null
+        })
+      });
+      if (res.ok) {
+        setIsEditModalOpen(false);
+        fetchInvoices();
+      } else {
+        const errData = await res.json();
+        alert(errData.message || 'Failed to update invoice');
+      }
+    } catch (err) {
+      console.error(err);
+      alert('Error updating invoice');
+    } finally {
+      setIsSavingEdit(false);
+    }
+  };
+
+  const handleDeleteClick = async (inv) => {
+    if (!window.confirm(`Are you sure you want to delete invoice ${inv.invoiceNumber}? This action cannot be undone.`)) {
+      return;
+    }
+    try {
+      const res = await fetch(`/api/invoices/${inv.id}`, {
+        method: 'DELETE',
+        headers: {
+          'Authorization': `Bearer ${user?.token || user?.accessToken}`
+        }
+      });
+      if (res.ok) {
+        fetchInvoices();
+      } else {
+        const errData = await res.json();
+        alert(errData.message || 'Failed to delete invoice');
+      }
+    } catch (err) {
+      console.error(err);
+      alert('Error deleting invoice');
+    }
   };
 
   const filteredInvoices = invoices.filter(inv =>
@@ -181,6 +254,16 @@ const Billing = () => {
                     <button className="text-sm font-bold text-slate-600 hover:text-slate-900 flex items-center">
                       <Receipt className="w-4 h-4 mr-1.5" /> Receipt
                     </button>
+                    {user?.userType === 'STAFF' && (
+                      <>
+                        <button onClick={() => handleEditClick(inv)} className="p-2 text-blue-600 hover:text-blue-800 hover:bg-blue-50 rounded-lg transition-colors" title="Edit Invoice">
+                          <Pencil className="w-4 h-4" />
+                        </button>
+                        <button onClick={() => handleDeleteClick(inv)} className="p-2 text-rose-600 hover:text-rose-800 hover:bg-rose-50 rounded-lg transition-colors" title="Delete Invoice">
+                          <Trash2 className="w-4 h-4" />
+                        </button>
+                      </>
+                    )}
                   </td>
                 </tr>
               )) : (
@@ -337,6 +420,124 @@ const Billing = () => {
                   : <><CheckCircle2 className="w-5 h-5" /> Mark as Paid ({paymentMethod})</>
                 }
               </button>
+            </div>
+          </div>
+        </div>
+      )}
+
+      {/* Edit Invoice Modal */}
+      {isEditModalOpen && editInvoice && (
+        <div className="fixed inset-0 z-50 flex items-center justify-center p-4 bg-slate-900/40 backdrop-blur-sm">
+          <div className="bg-white rounded-3xl shadow-2xl w-full max-w-md flex flex-col" style={{ maxHeight: '92vh', overflowY: 'auto' }}>
+            
+            {/* Header */}
+            <div className="px-6 py-5 border-b border-slate-100 flex justify-between items-center bg-slate-50 sticky top-0">
+              <h3 className="text-lg font-bold text-slate-800 flex items-center gap-2">
+                <Pencil className="w-5 h-5 text-blue-600" /> Edit Invoice
+              </h3>
+              <button onClick={() => setIsEditModalOpen(false)} className="text-slate-400 hover:text-slate-600">
+                <X className="w-6 h-6" />
+              </button>
+            </div>
+
+            <div className="p-6 flex flex-col gap-5">
+              {/* Summary */}
+              <div className="bg-slate-50 rounded-2xl p-4 text-sm">
+                <div className="flex justify-between text-slate-500 mb-1">
+                  <span>Invoice Number</span>
+                  <span className="font-bold text-slate-700">{editInvoice.invoiceNumber}</span>
+                </div>
+                <div className="flex justify-between text-slate-500 mb-1">
+                  <span>Patient</span>
+                  <span className="font-bold text-slate-700">{editInvoice.patient?.fullName}</span>
+                </div>
+                <div className="flex justify-between text-slate-500">
+                  <span>Original Total</span>
+                  <span className="font-bold text-slate-700">₹{editInvoice.totalAmount}</span>
+                </div>
+              </div>
+
+              {/* Form Fields */}
+              <div className="space-y-4">
+                <div>
+                  <label className="block text-xs font-bold text-slate-500 uppercase tracking-wider mb-2">Discount (₹)</label>
+                  <input
+                    type="number"
+                    min="0"
+                    value={editDiscount}
+                    onChange={(e) => {
+                      const disc = parseFloat(e.target.value) || 0;
+                      setEditDiscount(e.target.value);
+                      setEditFinalAmount(Math.max(0, editInvoice.totalAmount - disc).toString());
+                    }}
+                    className="w-full border-2 border-slate-200 rounded-xl px-4 py-3 text-sm focus:outline-none focus:border-blue-500 font-medium"
+                    placeholder="Discount amount"
+                  />
+                </div>
+
+                <div>
+                  <label className="block text-xs font-bold text-slate-500 uppercase tracking-wider mb-2">Final Amount (₹)</label>
+                  <input
+                    type="number"
+                    min="0"
+                    value={editFinalAmount}
+                    onChange={(e) => setEditFinalAmount(e.target.value)}
+                    className="w-full border-2 border-slate-200 rounded-xl px-4 py-3 text-sm focus:outline-none focus:border-blue-500 font-medium"
+                    placeholder="Final payable amount"
+                  />
+                </div>
+
+                <div>
+                  <label className="block text-xs font-bold text-slate-500 uppercase tracking-wider mb-2">Payment Status</label>
+                  <select
+                    value={editPaymentStatus}
+                    onChange={(e) => setEditPaymentStatus(e.target.value)}
+                    className="w-full border-2 border-slate-200 rounded-xl px-4 py-3 text-sm focus:outline-none focus:border-blue-500 font-medium bg-white"
+                  >
+                    <option value="UNPAID">UNPAID</option>
+                    <option value="PARTIAL">PARTIAL</option>
+                    <option value="PAID">PAID</option>
+                  </select>
+                </div>
+
+                <div>
+                  <label className="block text-xs font-bold text-slate-500 uppercase tracking-wider mb-2">Payment Method</label>
+                  <select
+                    value={editPaymentMethod}
+                    onChange={(e) => setEditPaymentMethod(e.target.value)}
+                    className="w-full border-2 border-slate-200 rounded-xl px-4 py-3 text-sm focus:outline-none focus:border-blue-500 font-medium bg-white"
+                  >
+                    <option value="">None / Select Method</option>
+                    <option value="CASH">CASH</option>
+                    <option value="UPI">UPI</option>
+                    <option value="CC">CREDIT CARD</option>
+                    <option value="DC">DEBIT CARD</option>
+                    <option value="BANK">BANK TRANSFER</option>
+                  </select>
+                </div>
+              </div>
+
+              {/* Action Buttons */}
+              <div className="flex gap-3 mt-2">
+                <button
+                  onClick={() => setIsEditModalOpen(false)}
+                  className="flex-1 py-3.5 rounded-xl border-2 border-slate-200 hover:border-slate-300 text-slate-600 font-bold transition-colors"
+                >
+                  Cancel
+                </button>
+                <button
+                  onClick={handleSaveEdit}
+                  disabled={isSavingEdit}
+                  className="flex-1 py-3.5 rounded-xl bg-slate-900 hover:bg-slate-800 text-white font-bold flex items-center justify-center gap-2 transition-colors disabled:opacity-70 shadow-lg shadow-slate-900/20"
+                >
+                  {isSavingEdit ? (
+                    <div className="w-5 h-5 border-2 border-white/30 border-t-white rounded-full animate-spin" />
+                  ) : (
+                    'Save Changes'
+                  )}
+                </button>
+              </div>
+
             </div>
           </div>
         </div>

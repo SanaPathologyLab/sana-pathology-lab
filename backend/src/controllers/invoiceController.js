@@ -140,3 +140,51 @@ exports.applyDiscount = async (req, res) => {
   }
 };
 
+exports.updateInvoice = async (req, res) => {
+  try {
+    if (req.userType !== 'STAFF') {
+      return res.status(403).json({ message: 'Access denied: Only staff can modify invoices' });
+    }
+
+    const { finalAmount, discount, paymentStatus, paymentMethod } = req.body;
+    const updateData = {};
+    if (finalAmount !== undefined) updateData.finalAmount = parseFloat(finalAmount);
+    if (discount !== undefined) updateData.discount = parseFloat(discount);
+    if (paymentStatus !== undefined) updateData.paymentStatus = paymentStatus;
+    if (paymentMethod !== undefined) updateData.paymentMethod = paymentMethod;
+
+    const updated = await prisma.invoice.update({
+      where: { id: parseInt(req.params.id) },
+      data: updateData,
+      include: { patient: true, report: true }
+    });
+
+    res.status(200).json(updated);
+  } catch (err) {
+    console.error('Update invoice error:', err.message);
+    res.status(500).json({ message: 'An error occurred while updating the invoice.' });
+  }
+};
+
+exports.deleteInvoice = async (req, res) => {
+  try {
+    if (req.userType !== 'STAFF') {
+      return res.status(403).json({ message: 'Access denied: Only staff can delete invoices' });
+    }
+
+    const invoiceId = parseInt(req.params.id);
+
+    // Delete associated payments first
+    await prisma.payment.deleteMany({ where: { invoiceId } });
+
+    // Delete the invoice
+    await prisma.invoice.delete({ where: { id: invoiceId } });
+
+    res.status(200).json({ message: 'Invoice deleted successfully' });
+  } catch (err) {
+    console.error('Delete invoice error:', err.message);
+    res.status(500).json({ message: 'An error occurred while deleting the invoice.' });
+  }
+};
+
+
