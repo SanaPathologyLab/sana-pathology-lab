@@ -29,6 +29,9 @@ const Billing = () => {
   const [editPaymentMethod, setEditPaymentMethod] = useState('');
   const [isSavingEdit, setIsSavingEdit] = useState(false);
 
+  // Bulk Selection State
+  const [selectedInvoiceIds, setSelectedInvoiceIds] = useState([]);
+
   useEffect(() => { fetchInvoices(); }, []);
 
   const fetchInvoices = async () => {
@@ -37,7 +40,10 @@ const Billing = () => {
         headers: { 'Authorization': `Bearer ${user?.token || user?.accessToken}` }
       });
       const data = await res.json();
-      if (Array.isArray(data)) setInvoices(data);
+      if (Array.isArray(data)) {
+        setInvoices(data);
+        setSelectedInvoiceIds([]);
+      }
     } catch (err) { console.error(err); }
   };
 
@@ -168,6 +174,48 @@ const Billing = () => {
     }
   };
 
+  const handleSelectInvoice = (id) => {
+    setSelectedInvoiceIds(prev => 
+      prev.includes(id) ? prev.filter(x => x !== id) : [...prev, id]
+    );
+  };
+
+  const handleSelectAll = (filteredList) => {
+    const filteredIds = filteredList.map(inv => inv.id);
+    const allSelected = filteredIds.length > 0 && filteredIds.every(id => selectedInvoiceIds.includes(id));
+    if (allSelected) {
+      setSelectedInvoiceIds(prev => prev.filter(id => !filteredIds.includes(id)));
+    } else {
+      setSelectedInvoiceIds(prev => Array.from(new Set([...prev, ...filteredIds])));
+    }
+  };
+
+  const handleBulkDelete = async () => {
+    if (selectedInvoiceIds.length === 0) return;
+    if (!window.confirm(`Are you sure you want to delete the ${selectedInvoiceIds.length} selected invoices? This action cannot be undone.`)) {
+      return;
+    }
+    try {
+      const res = await fetch('/api/invoices/bulk-delete', {
+        method: 'POST',
+        headers: {
+          'Content-Type': 'application/json',
+          'Authorization': `Bearer ${user?.token || user?.accessToken}`
+        },
+        body: JSON.stringify({ ids: selectedInvoiceIds })
+      });
+      if (res.ok) {
+        fetchInvoices();
+      } else {
+        const errData = await res.json();
+        alert(errData.message || 'Failed to delete selected invoices');
+      }
+    } catch (err) {
+      console.error(err);
+      alert('Error performing bulk delete');
+    }
+  };
+
   const filteredInvoices = invoices.filter(inv =>
     inv.invoiceNumber?.toLowerCase().includes(searchTerm.toLowerCase()) ||
     inv.patient?.fullName?.toLowerCase().includes(searchTerm.toLowerCase())
@@ -216,11 +264,31 @@ const Billing = () => {
             />
             <Search className="w-5 h-5 text-slate-400 absolute left-4 top-3.5" />
           </div>
+
+          {user?.userType === 'STAFF' && selectedInvoiceIds.length > 0 && (
+            <button
+              onClick={handleBulkDelete}
+              className="flex items-center gap-2 bg-rose-600 hover:bg-rose-700 text-white font-bold px-5 py-3 rounded-xl shadow-lg shadow-rose-200 transition-all text-sm transform hover:-translate-y-0.5"
+            >
+              <Trash2 className="w-4 h-4" />
+              Delete Selected ({selectedInvoiceIds.length})
+            </button>
+          )}
         </div>
         <div className="overflow-x-auto">
           <table className="w-full text-left border-collapse">
             <thead>
               <tr className="bg-slate-50 border-b border-slate-100">
+                {user?.userType === 'STAFF' && (
+                  <th className="px-6 py-4 w-12 text-left">
+                    <input
+                      type="checkbox"
+                      className="rounded border-slate-300 text-blue-600 focus:ring-blue-500 w-4 h-4 cursor-pointer"
+                      checked={filteredInvoices.length > 0 && filteredInvoices.every(inv => selectedInvoiceIds.includes(inv.id))}
+                      onChange={() => handleSelectAll(filteredInvoices)}
+                    />
+                  </th>
+                )}
                 {['Invoice No.', 'Patient', 'Amount', 'Date', 'Status', 'Actions'].map(h => (
                   <th key={h} className={`px-6 py-4 text-xs font-bold text-slate-500 uppercase tracking-wider ${h === 'Actions' ? 'text-right' : ''}`}>{h}</th>
                 ))}
@@ -229,6 +297,16 @@ const Billing = () => {
             <tbody className="divide-y divide-slate-50">
               {filteredInvoices.length > 0 ? filteredInvoices.map(inv => (
                 <tr key={inv.id} className="hover:bg-blue-50/30 transition-colors">
+                  {user?.userType === 'STAFF' && (
+                    <td className="px-6 py-4 w-12 text-left">
+                      <input
+                        type="checkbox"
+                        className="rounded border-slate-300 text-blue-600 focus:ring-blue-500 w-4 h-4 cursor-pointer"
+                        checked={selectedInvoiceIds.includes(inv.id)}
+                        onChange={() => handleSelectInvoice(inv.id)}
+                      />
+                    </td>
+                  )}
                   <td className="px-6 py-4 font-mono text-sm font-semibold text-blue-600">{inv.invoiceNumber}</td>
                   <td className="px-6 py-4">
                     <p className="text-sm font-bold text-slate-800">{inv.patient?.fullName}</p>
@@ -267,7 +345,7 @@ const Billing = () => {
                   </td>
                 </tr>
               )) : (
-                <tr><td colSpan="6" className="px-6 py-16 text-center">
+                <tr><td colSpan={user?.userType === 'STAFF' ? 7 : 6} className="px-6 py-16 text-center">
                   <div className="flex flex-col items-center">
                     <Receipt className="w-12 h-12 text-slate-300 mb-3" />
                     <p className="text-slate-500 font-medium text-lg">No invoices found</p>

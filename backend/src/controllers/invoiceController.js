@@ -187,4 +187,34 @@ exports.deleteInvoice = async (req, res) => {
   }
 };
 
+exports.bulkDeleteInvoices = async (req, res) => {
+  try {
+    if (req.userType !== 'STAFF') {
+      return res.status(403).json({ message: 'Access denied: Only staff can delete invoices' });
+    }
+
+    const { ids } = req.body;
+    if (!ids || !Array.isArray(ids) || ids.length === 0) {
+      return res.status(400).json({ message: 'No invoice IDs provided' });
+    }
+
+    const parsedIds = ids.map(id => parseInt(id)).filter(id => !isNaN(id));
+
+    // Delete payments first
+    await prisma.payment.deleteMany({
+      where: { invoiceId: { in: parsedIds } }
+    });
+
+    // Delete invoices
+    await prisma.invoice.deleteMany({
+      where: { id: { in: parsedIds } }
+    });
+
+    res.status(200).json({ message: `${parsedIds.length} invoices deleted successfully` });
+  } catch (err) {
+    console.error('Bulk delete invoices error:', err.message);
+    res.status(500).json({ message: 'An error occurred while deleting the invoices.' });
+  }
+};
+
 
