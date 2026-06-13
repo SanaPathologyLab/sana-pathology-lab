@@ -51,7 +51,7 @@ export const generatePrintHTML = (report, settings, includeLetterhead = false) =
 
   // --- Linear Parameter-Level Pagination ---
   // Cost units per row-type (empirically tuned for A4 with letterhead header)
-  const PAGE_CAPACITY = 13;
+  const PAGE_CAPACITY = 16;
   const COST = {
     testHeader: 2.0,   // test title + column header row
     groupHeader: 1.2,  // sub-group label row
@@ -466,7 +466,7 @@ export const generatePrintHTML = (report, settings, includeLetterhead = false) =
         ` : ''}
 
         <!-- Report Main Area -->
-        <div style="flex-grow: 1; display: flex; flex-direction: column; position: relative; z-index: 10; padding: 0 8px; padding-bottom: 75mm; box-sizing: border-box;">
+        <div style="flex-grow: 1; display: flex; flex-direction: column; position: relative; z-index: 10; padding: 0 8px; padding-bottom: 55mm; box-sizing: border-box;">
           ${renderPatientHeader(pageIndex + 1)}
           
           <div style="flex-grow: 1; margin-top: 8px;">
