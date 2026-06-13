@@ -51,7 +51,7 @@ export const generatePrintHTML = (report, settings, includeLetterhead = false) =
 
   // --- Linear Parameter-Level Pagination ---
   // Cost units per row-type (empirically tuned for A4 with letterhead header)
-  const PAGE_CAPACITY = 16;
+  const PAGE_CAPACITY = 25;
   const COST = {
     testHeader: 2.0,   // test title + column header row
     groupHeader: 1.2,  // sub-group label row
@@ -343,19 +343,19 @@ export const generatePrintHTML = (report, settings, includeLetterhead = false) =
                     const tr = titerResults.find(r => r.titer.trim() === titer.trim());
                     const val = tr ? tr.value : '--';
                     const color = val === '+' ? '#15803d' : val === '-' ? '#dc2626' : '#d1d5db';
-                    return `<td style="padding: 6px 0; text-align: center; font-weight: bold; font-size: 13px; color: ${color}; width: ${cellWidth}%;">${val || '—'}</td>`;
+                    return `<td style="padding: 5px 0; text-align: center; font-weight: bold; font-size: 13px; color: ${color}; width: ${cellWidth}%;">${val || '—'}</td>`;
                   }).join('');
 
                   valueHTML = `
                     <tr>
-                      <td style="padding: 6px 0; font-weight: 600; text-transform: uppercase; width: 25%; vertical-align: top;">
+                      <td style="padding: 5px 0; font-weight: 600; text-transform: uppercase; width: 25%; vertical-align: top;">
                         ${res.parameterName}
                       </td>
                       ${cells}
-                      <td style="padding: 6px 0; text-align: center; font-weight: 500; color: #000; width: 10%; vertical-align: top; font-size: 12px;">
+                      <td style="padding: 5px 0; text-align: center; font-weight: 500; color: #000; width: 10%; vertical-align: top; font-size: 12px;">
                         ${res.unit || ''}
                       </td>
-                      <td style="padding: 6px 0; text-align: center; font-weight: 500; color: #000; width: 20%; vertical-align: top; font-size: 12px; white-space: nowrap; line-height: 1.2;">
+                      <td style="padding: 5px 0; text-align: center; font-weight: 500; color: #000; width: 20%; vertical-align: top; font-size: 12px; white-space: nowrap; line-height: 1.2;">
                         ${res.referenceRange || ''}
                       </td>
                     </tr>
@@ -366,20 +366,20 @@ export const generatePrintHTML = (report, settings, includeLetterhead = false) =
 
                   valueHTML = `
                     <tr>
-                      <td style="padding: 6px 0; font-weight: 600; text-transform: uppercase; width: 35%; vertical-align: top;">
+                      <td style="padding: 5px 0; font-weight: 600; text-transform: uppercase; width: 35%; vertical-align: top;">
                         ${res.parameterName}
                       </td>
-                      <td colspan="${isQual ? 4 : 1}" style="padding: 6px 0; ${isQual ? 'text-align: left; padding-left: 16px;' : 'text-align: center;'} vertical-align: top; width: ${isQual ? '65%' : '15%'};">
+                      <td colspan="${isQual ? 4 : 1}" style="padding: 5px 0; ${isQual ? 'text-align: left; padding-left: 16px;' : 'text-align: center;'} vertical-align: top; width: ${isQual ? '65%' : '15%'};">
                         <span style="${isQual ? 'font-weight: 900; font-size: 15px;' + isQualValColor : isAbnormal ? 'font-weight: 900; border-bottom: 1.5px solid #000; padding-bottom: 2px;' : 'font-weight: bold;'}">
                           ${displayValue || ''}
                         </span>
                       </td>
                       ${!isQual ? `
-                        <td style="padding: 6px 0; text-align: center; font-weight: 500; font-size: 13.5px; width: 10%; vertical-align: top; color: #000;">
+                        <td style="padding: 5px 0; text-align: center; font-weight: 500; font-size: 13.5px; width: 10%; vertical-align: top; color: #000;">
                           ${isHigh ? 'High' : isLow ? 'Low' : ''}
                         </td>
-                        <td style="padding: 6px 0; text-align: center; font-weight: 500; width: 15%; vertical-align: top; color: #000;">${res.unit || ''}</td>
-                        <td style="padding: 6px 0; text-align: center; font-weight: 500; width: 25%; vertical-align: top; font-size: 12px; line-height: 1.2; word-break: break-all; color: #000;">
+                        <td style="padding: 5px 0; text-align: center; font-weight: 500; width: 15%; vertical-align: top; color: #000;">${res.unit || ''}</td>
+                        <td style="padding: 5px 0; text-align: center; font-weight: 500; width: 25%; vertical-align: top; font-size: 12px; line-height: 1.2; word-break: break-all; color: #000;">
                           ${res.referenceRange || ''}
                         </td>
                       ` : ''}
@@ -466,7 +466,7 @@ export const generatePrintHTML = (report, settings, includeLetterhead = false) =
         ` : ''}
 
         <!-- Report Main Area -->
-        <div style="flex-grow: 1; display: flex; flex-direction: column; position: relative; z-index: 10; padding: 0 8px; padding-bottom: 55mm; box-sizing: border-box;">
+        <div style="flex-grow: 1; display: flex; flex-direction: column; position: relative; z-index: 10; padding: 0 8px; padding-bottom: 72mm; box-sizing: border-box;">
           ${renderPatientHeader(pageIndex + 1)}
           
           <div style="flex-grow: 1; margin-top: 8px;">
