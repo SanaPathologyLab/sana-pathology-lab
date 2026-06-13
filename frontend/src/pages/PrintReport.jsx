@@ -369,7 +369,7 @@ const PrintReport = () => {
         const titerList = isTiterTest ? firstParam.titerValues.split(',') : [];
         return (
           <div className="border border-black rounded-full px-4 py-1 mb-2 flex text-[13px] font-bold text-black items-center">
-            <div className={isTiterTest ? 'w-[25%]' : 'w-[35%]'}>Investigations</div>
+            <div className={isTiterTest ? 'w-[25%]' : 'w-[45%]'}>Investigations</div>
             {isTiterTest && titerList.map((t, i) => (
               <div key={i} className="flex-1 text-center text-[11px]">{t.trim()}</div>
             ))}
@@ -380,10 +380,10 @@ const PrintReport = () => {
               </>
             ) : (
               <>
-                <div className="w-[15%] text-center">Results</div>
-                <div className="w-[10%] text-center">Flag</div>
-                <div className="w-[15%] text-center">Units</div>
-                <div className="w-[25%] text-center">Normal values</div>
+                <div className="w-[12%] text-center">Results</div>
+                <div className="w-[8%] text-center">Flag</div>
+                <div className="w-[12%] text-center">Units</div>
+                <div className="w-[23%] text-center">Normal values</div>
               </>
             )}
           </div>
@@ -473,21 +473,21 @@ const PrintReport = () => {
                     </tr>
                   ) : (
                     <tr>
-                      <td className={`py-1 font-semibold uppercase ${res.groupName ? '' : ''} ${isQual ? 'w-[35%]' : 'w-[35%]'} align-top`}>
+                      <td className={`py-1 font-semibold uppercase ${res.groupName ? '' : ''} ${isQual ? 'w-[45%]' : 'w-[45%]'} align-top`}>
                         {res.parameterName}
                       </td>
-                      <td colSpan={isQual ? 4 : 1} className={`py-1 ${isQual ? 'text-left pl-4' : 'text-center'} align-top ${isQual ? 'w-[65%]' : 'w-[15%]'}`}>
+                      <td colSpan={isQual ? 4 : 1} className={`py-1 ${isQual ? 'text-left pl-4' : 'text-center'} align-top ${isQual ? 'w-[55%]' : 'w-[12%]'}`}>
                         <span className={`${isQual ? 'font-black text-[15px]' + (res.resultValue?.startsWith('POSITIVE') ? ' text-green-700' : res.resultValue?.startsWith('NEGATIVE') ? ' text-red-600' : '') : isAbnormal ? 'font-black border-b-[1.5px] border-black pb-0.5' : 'font-bold'}`}>
                           {res.resultValue === '+' ? 'POSITIVE' : res.resultValue === '-' ? 'NEGATIVE' : res.resultValue}
                         </span>
                       </td>
                       {!isQual && (
                         <>
-                          <td className="py-1 text-center font-bold text-[13px] w-[10%] align-top">
+                          <td className="py-1 text-center font-bold text-[13px] w-[8%] align-top">
                             {isHigh ? 'High' : isLow ? 'Low' : ''}
                           </td>
-                          <td className="py-1 text-center font-semibold w-[15%] align-top">{res.unit}</td>
-                          <td className="py-1 text-center font-semibold w-[25%] align-top text-[12px] leading-tight break-words">
+                          <td className="py-1 text-center font-semibold w-[12%] align-top">{res.unit}</td>
+                          <td className="py-1 text-center font-semibold w-[23%] align-top text-[12px] leading-tight break-words">
                             {res.referenceRange}
                           </td>
                         </>
@@ -518,11 +518,11 @@ const PrintReport = () => {
   };
 
   // --- Linear Parameter-Level Pagination ---
-  const PAGE_CAPACITY = 25;
+  const PAGE_CAPACITY = 20;
   const COST = {
     testHeader: 2.0,
     groupHeader: 1.2,
-    paramRow: 1.0,
+    paramRow: 0.8,
     qualOffset: 0.5,
     summary: 2.0,
     endOfReport: 2.0,
@@ -554,7 +554,12 @@ const PrintReport = () => {
     const isNewGroup = groupName && groupName !== prevGroup;
     const paramDef   = row.test?.parameters?.find(p => p.parameterName === row.parameterName);
     let cost = COST.paramRow + (paramDef?.isQualitative ? COST.qualOffset : 0) + (isNewGroup ? COST.groupHeader : 0) + (isNewTest ? COST.testHeader : 0) + (isLastRow && summary ? COST.summary : 0);
-    if (pageUsed + cost > PAGE_CAPACITY && pageUsed > 0) { flushPage(); cost = COST.testHeader + COST.paramRow + (paramDef?.isQualitative ? COST.qualOffset : 0) + (isLastRow && summary ? COST.summary : 0); }
+    if (row.parameterName && row.parameterName.length > 26) cost += 0.8;
+    if (pageUsed + cost > PAGE_CAPACITY && pageUsed > 0) { 
+      flushPage(); 
+      cost = COST.testHeader + COST.paramRow + (paramDef?.isQualitative ? COST.qualOffset : 0) + (isLastRow && summary ? COST.summary : 0); 
+      if (row.parameterName && row.parameterName.length > 26) cost += 0.8;
+    }
     if (isNewTest || !curSeg || curSeg.testName !== testName) { flushSeg(); curSeg = { testName, summary, rows: [] }; prevGroup = null; }
     curSeg.rows.push(row); pageUsed += cost; prevTest = testName; prevGroup = groupName;
   });

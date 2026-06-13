@@ -51,11 +51,11 @@ export const generatePrintHTML = (report, settings, includeLetterhead = false) =
 
   // --- Linear Parameter-Level Pagination ---
   // Cost units per row-type (empirically tuned for A4 with letterhead header)
-  const PAGE_CAPACITY = 25;
+  const PAGE_CAPACITY = 20;
   const COST = {
     testHeader: 2.0,   // test title + column header row
     groupHeader: 1.2,  // sub-group label row
-    paramRow: 1.0,     // normal parameter row
+    paramRow: 0.8,     // normal parameter row
     qualOffset: 0.5,   // extra space a qualitative result takes
     summary: 2.0,      // note/summary block at end of test
     endOfReport: 2.0,  // "End of Report" footer marker
@@ -124,6 +124,7 @@ export const generatePrintHTML = (report, settings, includeLetterhead = false) =
     if (isNewGroup) cost += COST.groupHeader;
     if (isNewTest)  cost += COST.testHeader;
     if (isLastRow && summary) cost += COST.summary;
+    if (row.parameterName && row.parameterName.length > 26) cost += 0.8;
 
     // If it doesn't fit, flush to a new page
     if (pageUsed + cost > PAGE_CAPACITY && pageUsed > 0) {
@@ -132,6 +133,7 @@ export const generatePrintHTML = (report, settings, includeLetterhead = false) =
       cost = COST.testHeader + COST.paramRow;
       if (paramDef?.isQualitative) cost += COST.qualOffset;
       if (isLastRow && summary) cost += COST.summary;
+      if (row.parameterName && row.parameterName.length > 26) cost += 0.8;
     }
 
     // Start or continue segment for this test on this page
@@ -285,16 +287,16 @@ export const generatePrintHTML = (report, settings, includeLetterhead = false) =
     if (showHeader) {
       tableHeaderHTML = `
         <div style="border: 1px solid #000; border-radius: 20px; padding: 6px 16px; margin-bottom: 8px; display: flex; font-size: 13px; font-weight: bold; color: #000; align-items: center; box-sizing: border-box;">
-          <div style="${isTiterTest ? 'width: 25%;' : 'width: 35%;'}">Investigations</div>
+          <div style="${isTiterTest ? 'width: 25%;' : 'width: 45%;'}">Investigations</div>
           ${isTiterTest ? titerList.map(t => `<div style="flex: 1; text-align: center; font-size: 11px;">${t.trim()}</div>`).join('') : ''}
           ${isTiterTest ? `
             <div style="width: 10%; text-align: center; font-size: 10px;">Unit</div>
             <div style="width: 20%; text-align: center; font-size: 10px;">Range</div>
           ` : `
-            <div style="width: 15%; text-align: center;">Results</div>
-            <div style="width: 10%; text-align: center;">Flag</div>
-            <div style="width: 15%; text-align: center;">Units</div>
-            <div style="width: 25%; text-align: center;">Normal values</div>
+            <div style="width: 12%; text-align: center;">Results</div>
+            <div style="width: 8%; text-align: center;">Flag</div>
+            <div style="width: 12%; text-align: center;">Units</div>
+            <div style="width: 23%; text-align: center;">Normal values</div>
           `}
         </div>
       `;
@@ -366,20 +368,20 @@ export const generatePrintHTML = (report, settings, includeLetterhead = false) =
 
                   valueHTML = `
                     <tr>
-                      <td style="padding: 5px 0; font-weight: 600; text-transform: uppercase; width: 35%; vertical-align: top;">
+                      <td style="padding: 5px 0; font-weight: 600; text-transform: uppercase; width: 45%; vertical-align: top;">
                         ${res.parameterName}
                       </td>
-                      <td colspan="${isQual ? 4 : 1}" style="padding: 5px 0; ${isQual ? 'text-align: left; padding-left: 16px;' : 'text-align: center;'} vertical-align: top; width: ${isQual ? '65%' : '15%'};">
+                      <td colspan="${isQual ? 4 : 1}" style="padding: 5px 0; ${isQual ? 'text-align: left; padding-left: 16px;' : 'text-align: center;'} vertical-align: top; width: ${isQual ? '55%' : '12%'};">
                         <span style="${isQual ? 'font-weight: 900; font-size: 15px;' + isQualValColor : isAbnormal ? 'font-weight: 900; border-bottom: 1.5px solid #000; padding-bottom: 2px;' : 'font-weight: bold;'}">
                           ${displayValue || ''}
                         </span>
                       </td>
                       ${!isQual ? `
-                        <td style="padding: 5px 0; text-align: center; font-weight: 500; font-size: 13.5px; width: 10%; vertical-align: top; color: #000;">
+                        <td style="padding: 5px 0; text-align: center; font-weight: 500; font-size: 13.5px; width: 8%; vertical-align: top; color: #000;">
                           ${isHigh ? 'High' : isLow ? 'Low' : ''}
                         </td>
-                        <td style="padding: 5px 0; text-align: center; font-weight: 500; width: 15%; vertical-align: top; color: #000;">${res.unit || ''}</td>
-                        <td style="padding: 5px 0; text-align: center; font-weight: 500; width: 25%; vertical-align: top; font-size: 12px; line-height: 1.2; word-break: break-all; color: #000;">
+                        <td style="padding: 5px 0; text-align: center; font-weight: 500; width: 12%; vertical-align: top; color: #000;">${res.unit || ''}</td>
+                        <td style="padding: 5px 0; text-align: center; font-weight: 500; width: 23%; vertical-align: top; font-size: 12px; line-height: 1.2; word-break: break-all; color: #000;">
                           ${res.referenceRange || ''}
                         </td>
                       ` : ''}
