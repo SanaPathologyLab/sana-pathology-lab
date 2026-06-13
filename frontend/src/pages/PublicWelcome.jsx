@@ -1,10 +1,11 @@
-import React, { useEffect, useState } from 'react';
+import React, { useEffect, useState, useRef, useCallback } from 'react';
 import { useNavigate } from 'react-router-dom';
 import { 
   Phone, MapPin, Clock, CheckCircle2, Activity, Microscope, 
   UserCircle, Star, ChevronDown, ChevronUp, MessageCircle, ShieldCheck,
   Search, FileText, Heart, Filter, Sparkles, Check, Info, Trash2, Calendar,
-  ArrowRight, Award, ShieldAlert, BadgePercent
+  ArrowRight, Award, ShieldAlert, BadgePercent, TrendingUp, Zap, FlaskConical,
+  ChevronLeft, ChevronRight
 } from 'lucide-react';
 import Logo from '../components/Logo';
 import Loader from '../components/Loader';
@@ -71,12 +72,38 @@ const HEALTH_PACKAGES = [
   }
 ];
 
+// Health Tips Data
+const HEALTH_TIPS = [
+  { emoji: '💧', tip: 'Drink 8 glasses of water daily to keep your kidneys healthy and toxins flushed out.' },
+  { emoji: '🩸', tip: 'Get a CBC test annually to monitor your blood count and catch anemia or infections early.' },
+  { emoji: '🍎', tip: 'Eating a balanced diet with fruits and vegetables can lower your cholesterol naturally.' },
+  { emoji: '🏃', tip: 'Just 30 minutes of walking a day reduces risk of heart disease by up to 35%.' },
+  { emoji: '😴', tip: '7-9 hours of quality sleep boosts immune function and reduces disease risk.' },
+  { emoji: '🩺', tip: 'Regular health checkups catch silent diseases like diabetes and hypertension early.' },
+  { emoji: '🚭', tip: 'Quitting smoking improves lung function within just 2 weeks of stopping.' },
+  { emoji: '🧘', tip: 'Managing stress through meditation or yoga can significantly lower blood pressure.' },
+];
+
+// Test Ticker Items
+const TICKER_TESTS = [
+  { name: 'CBC', price: 300 }, { name: 'Blood Sugar', price: 80 }, { name: 'Lipid Profile', price: 400 },
+  { name: 'Thyroid (T3/T4/TSH)', price: 550 }, { name: 'Liver Function (LFT)', price: 600 },
+  { name: 'Kidney Function (KFT)', price: 600 }, { name: 'Vitamin D', price: 800 },
+  { name: 'HbA1c', price: 350 }, { name: 'Urine Routine', price: 200 }, { name: 'Dengue NS1', price: 600 },
+  { name: 'WIDAL Test', price: 200 }, { name: 'Vitamin B12', price: 700 }, { name: 'ESR', price: 100 },
+  { name: 'Haemoglobin (Hb)', price: 100 }, { name: 'Blood Group', price: 150 }, { name: 'Uric Acid', price: 180 },
+];
+
 const PublicWelcome = () => {
   const navigate = useNavigate();
   const [openFaq, setOpenFaq] = useState(null);
   const [currentSlide, setCurrentSlide] = useState(0);
+  const [currentTip, setCurrentTip] = useState(0);
   const [searchType, setSearchType] = useState('mobile');
   const [searchQuery, setSearchQuery] = useState('');
+  const [countersVisible, setCountersVisible] = useState(false);
+  const [counterValues, setCounterValues] = useState({ patients: 0, tests: 0, years: 0, reports: 0 });
+  const statsRef = useRef(null);
   
   // Dynamic Test Explorer States
   const [tests, setTests] = useState([]);
@@ -147,6 +174,40 @@ const PublicWelcome = () => {
     }, 5000);
     return () => clearInterval(timer);
   }, [slides.length]);
+
+  // Health tips auto-rotate
+  useEffect(() => {
+    const timer = setInterval(() => setCurrentTip(prev => (prev + 1) % HEALTH_TIPS.length), 4000);
+    return () => clearInterval(timer);
+  }, []);
+
+  // Animated counters via IntersectionObserver
+  useEffect(() => {
+    const targets = { patients: 15000, tests: 80, years: 12, reports: 50000 };
+    const observer = new IntersectionObserver((entries) => {
+      if (entries[0].isIntersecting && !countersVisible) {
+        setCountersVisible(true);
+        const duration = 2000;
+        const steps = 60;
+        const interval = duration / steps;
+        let step = 0;
+        const timer = setInterval(() => {
+          step++;
+          const progress = step / steps;
+          const eased = 1 - Math.pow(1 - progress, 3);
+          setCounterValues({
+            patients: Math.round(targets.patients * eased),
+            tests: Math.round(targets.tests * eased),
+            years: Math.round(targets.years * eased),
+            reports: Math.round(targets.reports * eased),
+          });
+          if (step >= steps) clearInterval(timer);
+        }, interval);
+      }
+    }, { threshold: 0.3 });
+    if (statsRef.current) observer.observe(statsRef.current);
+    return () => observer.disconnect();
+  }, [countersVisible]);
 
   // Scroll to top on load
   useEffect(() => {
@@ -416,8 +477,87 @@ const PublicWelcome = () => {
         </div>
       </section>
 
-      {/* Floating Lab Result Search Card */}
-      <section id="search-section" className="relative z-20 -mt-16 px-4 sm:px-6 lg:px-8">
+      {/* Test Price Ticker */}
+      <div className="bg-[#085041] text-white py-2.5 overflow-hidden border-b border-emerald-800">
+        <div className="flex items-center">
+          <div className="shrink-0 bg-[#F1C40F] text-[#085041] text-xs font-black px-4 py-1.5 uppercase tracking-wider z-10 mr-4 rounded-r-full">Live Prices</div>
+          <div className="overflow-hidden flex-1">
+            <div className="animate-marquee">
+              {[...TICKER_TESTS, ...TICKER_TESTS].map((t, i) => (
+                <span key={i} className="inline-flex items-center gap-2 mr-10 text-sm font-semibold whitespace-nowrap">
+                  <FlaskConical className="w-3.5 h-3.5 text-emerald-300" />
+                  {t.name}
+                  <span className="text-[#F1C40F] font-black">₹{t.price}</span>
+                  <span className="text-emerald-600 mx-2">•</span>
+                </span>
+              ))}
+            </div>
+          </div>
+        </div>
+      </div>
+
+      {/* Health Tips Strip */}
+      <div className="bg-gradient-to-r from-blue-50 to-teal-50 border-b border-teal-100 py-3 px-4">
+        <div className="max-w-7xl mx-auto flex items-center gap-4">
+          <div className="shrink-0 bg-[#085041] text-white text-xs font-black px-3 py-1 rounded-full uppercase tracking-wider">Health Tip</div>
+          <div className="flex-1 overflow-hidden">
+            <p className="text-sm font-medium text-slate-700 truncate">
+              {HEALTH_TIPS[currentTip].emoji} {HEALTH_TIPS[currentTip].tip}
+            </p>
+          </div>
+          <div className="shrink-0 flex gap-1">
+            {HEALTH_TIPS.map((_, i) => (
+              <button key={i} onClick={() => setCurrentTip(i)}
+                className={`w-1.5 h-1.5 rounded-full transition-all ${i === currentTip ? 'bg-[#085041] w-4' : 'bg-slate-300'}`}
+              />
+            ))}
+          </div>
+        </div>
+      </div>
+
+      {/* Animated Stats Section */}
+      <section ref={statsRef} id="stats" className="py-16 bg-white">
+        <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
+          <div className="text-center mb-10">
+            <span className="text-xs font-black text-[#085041] uppercase tracking-widest bg-[#085041]/10 px-4 py-1.5 rounded-full">By the Numbers</span>
+            <h2 className="text-3xl md:text-4xl font-black text-slate-800 mt-4 mb-2">Trusted by Thousands</h2>
+            <p className="text-slate-500">Real numbers that reflect our commitment to quality diagnostics</p>
+          </div>
+          <div className="grid grid-cols-2 lg:grid-cols-4 gap-6">
+            {[
+              { label: 'Patients Served', value: counterValues.patients.toLocaleString() + '+', icon: <UserCircle className="w-6 h-6" />, color: 'text-[#085041]', bg: 'bg-[#085041]/5' },
+              { label: 'Tests Available', value: counterValues.tests + '+', icon: <FlaskConical className="w-6 h-6" />, color: 'text-blue-700', bg: 'bg-blue-50' },
+              { label: 'Years of Service', value: counterValues.years + '+', icon: <Award className="w-6 h-6" />, color: 'text-amber-600', bg: 'bg-amber-50' },
+              { label: 'Reports Delivered', value: counterValues.reports.toLocaleString() + '+', icon: <FileText className="w-6 h-6" />, color: 'text-purple-700', bg: 'bg-purple-50' },
+            ].map((s, i) => (
+              <div key={i} className={`rounded-2xl border border-gray-100 p-6 text-center shadow-sm hover:shadow-md transition-shadow animate-fade-in-up stagger-${i+1}`}>
+                <div className={`${s.bg} ${s.color} w-12 h-12 rounded-full flex items-center justify-center mx-auto mb-3`}>{s.icon}</div>
+                <p className={`text-3xl font-black ${s.color} animate-count-up`}>{s.value}</p>
+                <p className="text-xs font-bold text-slate-500 uppercase tracking-wider mt-1">{s.label}</p>
+              </div>
+            ))}
+          </div>
+
+          {/* Trust Badges */}
+          <div className="mt-10 flex flex-wrap justify-center gap-4">
+            {[
+              { icon: <ShieldCheck className="w-4 h-4" />, label: 'NABL Accredited', color: 'text-green-700 bg-green-50 border-green-200' },
+              { icon: <Award className="w-4 h-4" />, label: 'ISO 15189 Certified', color: 'text-blue-700 bg-blue-50 border-blue-200' },
+              { icon: <Clock className="w-4 h-4" />, label: '6-12 Hr TAT', color: 'text-amber-700 bg-amber-50 border-amber-200' },
+              { icon: <Heart className="w-4 h-4" />, label: 'Compassionate Care', color: 'text-red-600 bg-red-50 border-red-200' },
+              { icon: <Zap className="w-4 h-4" />, label: 'Digital Reports', color: 'text-purple-700 bg-purple-50 border-purple-200' },
+              { icon: <Phone className="w-4 h-4" />, label: 'Free Home Collection', color: 'text-teal-700 bg-teal-50 border-teal-200' },
+            ].map((badge, i) => (
+              <div key={i} className={`inline-flex items-center gap-2 border px-4 py-2 rounded-full text-xs font-bold ${badge.color}`}>
+                {badge.icon} {badge.label}
+              </div>
+            ))}
+          </div>
+        </div>
+      </section>
+
+      {/* Lab Result Search Card */}
+      <section id="search-section" className="py-8 px-4 sm:px-6 lg:px-8 bg-slate-50">
         <div className="max-w-4xl mx-auto bg-white rounded-2xl shadow-xl border border-gray-100 p-6 md:p-8">
           <div className="flex items-center gap-3 mb-6">
             <div className="bg-primary-pale p-3 rounded-xl text-primary">

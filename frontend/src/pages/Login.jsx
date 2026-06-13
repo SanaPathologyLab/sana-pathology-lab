@@ -288,12 +288,12 @@ const Login = () => {
             </p>
           </div>
 
-          {/* Quick Stats Grid */}
-          <div className="grid grid-cols-2 gap-4">
+          {/* Quick Stats Grid - 4 cells */}
+          <div className="grid grid-cols-2 gap-3">
             <div className="bg-white/5 border border-white/10 rounded-2xl p-4 backdrop-blur-md hover:bg-white/10 transition-colors">
               <div className="flex items-center gap-2 mb-1 text-yellow-400">
-                <Award size={18} />
-                <span className="text-xs font-bold uppercase tracking-wider">Accredited</span>
+                <Award size={16} />
+                <span className="text-[10px] font-bold uppercase tracking-wider">Accredited</span>
               </div>
               <p className="text-2xl font-black">100%</p>
               <p className="text-[10px] text-emerald-200 mt-0.5">NABL Quality Standards</p>
@@ -301,24 +301,51 @@ const Login = () => {
 
             <div className="bg-white/5 border border-white/10 rounded-2xl p-4 backdrop-blur-md hover:bg-white/10 transition-colors">
               <div className="flex items-center gap-2 mb-1 text-yellow-400">
-                <Clock size={18} />
-                <span className="text-xs font-bold uppercase tracking-wider">TAT Speed</span>
+                <Clock size={16} />
+                <span className="text-[10px] font-bold uppercase tracking-wider">TAT Speed</span>
               </div>
               <p className="text-2xl font-black">6-12 Hrs</p>
               <p className="text-[10px] text-emerald-200 mt-0.5">Report turnaround time</p>
             </div>
+
+            <div className="bg-white/5 border border-white/10 rounded-2xl p-4 backdrop-blur-md hover:bg-white/10 transition-colors">
+              <div className="flex items-center gap-2 mb-1 text-yellow-400">
+                <HeartPulse size={16} />
+                <span className="text-[10px] font-bold uppercase tracking-wider">Patients</span>
+              </div>
+              <p className="text-2xl font-black">15,000+</p>
+              <p className="text-[10px] text-emerald-200 mt-0.5">Patients served since 2012</p>
+            </div>
+
+            <div className="bg-white/5 border border-white/10 rounded-2xl p-4 backdrop-blur-md hover:bg-white/10 transition-colors">
+              <div className="flex items-center gap-2 mb-1 text-yellow-400">
+                <Zap size={16} />
+                <span className="text-[10px] font-bold uppercase tracking-wider">Digital</span>
+              </div>
+              <p className="text-2xl font-black">Online</p>
+              <p className="text-[10px] text-emerald-200 mt-0.5">Reports via WhatsApp & App</p>
+            </div>
           </div>
 
           {/* Features check points */}
-          <div className="space-y-3 border-t border-white/10 pt-6">
+          <div className="space-y-2 border-t border-white/10 pt-5">
             <div className="flex items-center gap-3 text-sm text-emerald-100 font-medium">
-              <ShieldCheck className="text-yellow-400 shrink-0" size={18} />
+              <ShieldCheck className="text-yellow-400 shrink-0" size={16} />
               <span>Multi-level pathologist verification checks</span>
             </div>
             <div className="flex items-center gap-3 text-sm text-emerald-100 font-medium">
-              <ShieldCheck className="text-yellow-400 shrink-0" size={18} />
+              <ShieldCheck className="text-yellow-400 shrink-0" size={16} />
               <span>Full confidentiality and secure report archiving</span>
             </div>
+            <div className="flex items-center gap-3 text-sm text-emerald-100 font-medium">
+              <ShieldCheck className="text-yellow-400 shrink-0" size={16} />
+              <span>Free home sample collection in the city</span>
+            </div>
+          </div>
+
+          {/* Health Quote */}
+          <div className="bg-white/5 border border-white/10 rounded-2xl p-4 text-xs text-emerald-200 italic leading-relaxed">
+            “The greatest wealth is health. — Virgil”
           </div>
         </div>
 

@@ -1,10 +1,11 @@
-import React, { useEffect, useState, useContext } from 'react';
+import React, { useEffect, useState, useContext, useCallback } from 'react';
 import Layout from '../components/Layout';
 import { AuthContext } from '../context/AuthContext';
 import { 
   Users, FileText, IndianRupee, Activity, TrendingUp, Clock, 
   UserCheck, AlertTriangle, HeartPulse, Stethoscope, User, 
-  Calendar, PhoneCall, ChevronRight, CheckCircle2, Award
+  Calendar, PhoneCall, ChevronRight, CheckCircle2, Award,
+  PlusCircle, Search, Zap, Bell, RefreshCw, FlaskConical
 } from 'lucide-react';
 import { useNavigate } from 'react-router-dom';
 import {
@@ -36,6 +37,14 @@ const Dashboard = () => {
   const [trends, setTrends] = useState([]);
   const [selectedTrend, setSelectedTrend] = useState('');
   const [loading, setLoading] = useState(true);
+  const [liveTime, setLiveTime] = useState(new Date());
+  const [allReportsForActivity, setAllReportsForActivity] = useState([]);
+
+  // Live clock update
+  useEffect(() => {
+    const timer = setInterval(() => setLiveTime(new Date()), 1000);
+    return () => clearInterval(timer);
+  }, []);
 
   useEffect(() => {
     if (!user) return;
@@ -98,7 +107,9 @@ const Dashboard = () => {
           const testsData = await tRes.json();
 
           setRecentPatients(Array.isArray(patientsData) ? patientsData.slice(0, 6) : []);
-          setPendingReports(Array.isArray(reportsData) ? reportsData.filter(r => r.status === 'PENDING').slice(0, 5) : []);
+          const allReps = Array.isArray(reportsData) ? reportsData : [];
+          setPendingReports(allReps.filter(r => r.status === 'PENDING').slice(0, 5));
+          setAllReportsForActivity(allReps.slice(0, 6));
           setTests(Array.isArray(testsData) ? testsData : []);
         }
       } catch (err) {
@@ -614,18 +625,45 @@ const Dashboard = () => {
   return (
     <Layout>
       {/* Hero Banner */}
-      <div className="bg-gradient-to-r from-[#00488d] to-blue-800 text-white rounded-xl p-6 mb-6 shadow-lg relative overflow-hidden">
+      <div className="bg-gradient-to-r from-[#00488d] to-blue-800 text-white rounded-xl p-5 mb-4 shadow-lg relative overflow-hidden">
         <div className="absolute -right-10 -top-10 w-64 h-64 bg-white/5 rounded-full"></div>
         <div className="absolute -right-5 bottom-0 w-32 h-32 bg-[#ffb800]/20 rounded-full"></div>
-        <div className="relative">
-          <h2 className="text-2xl font-extrabold mb-1">Welcome, {user?.name} 👋</h2>
-          <p className="text-blue-200 text-sm">Sana Pathology Lab Management System · {new Date().toLocaleDateString('en-IN', { weekday: 'long', year: 'numeric', month: 'long', day: 'numeric' })}</p>
-          {stats.lowStockCount > 0 && (
-            <div className="mt-3 inline-flex items-center gap-2 bg-[#ffb800]/20 border border-[#ffb800]/40 text-yellow-200 px-3 py-1.5 rounded text-xs font-bold">
-              <AlertTriangle className="w-3.5 h-3.5" /> {stats.lowStockCount} inventory item{stats.lowStockCount > 1 ? 's' : ''} low on stock
-            </div>
-          )}
+        <div className="relative flex flex-col sm:flex-row sm:items-center justify-between gap-3">
+          <div>
+            <h2 className="text-xl font-extrabold mb-0.5">Welcome, {user?.name} 👋</h2>
+            <p className="text-blue-200 text-xs">{liveTime.toLocaleDateString('en-IN', { weekday: 'long', year: 'numeric', month: 'long', day: 'numeric' })}</p>
+            {stats.lowStockCount > 0 && (
+              <div className="mt-2 inline-flex items-center gap-2 bg-[#ffb800]/20 border border-[#ffb800]/40 text-yellow-200 px-3 py-1.5 rounded text-xs font-bold">
+                <AlertTriangle className="w-3.5 h-3.5" /> {stats.lowStockCount} inventory item{stats.lowStockCount > 1 ? 's' : ''} low on stock
+              </div>
+            )}
+          </div>
+          {/* Live Clock */}
+          <div className="bg-white/10 border border-white/20 rounded-2xl px-5 py-3 text-center backdrop-blur-sm shrink-0">
+            <p className="text-2xl font-black tabular-nums tracking-wide">
+              {liveTime.toLocaleTimeString('en-IN', { hour: '2-digit', minute: '2-digit', second: '2-digit' })}
+            </p>
+            <p className="text-[10px] text-blue-200 font-bold uppercase tracking-widest mt-0.5">IST Live</p>
+          </div>
         </div>
+      </div>
+
+      {/* Quick Action Bar */}
+      <div className="grid grid-cols-2 sm:grid-cols-4 gap-3 mb-5">
+        {[
+          { label: 'New Report', icon: <FileText className="w-4 h-4" />, color: 'bg-[#00488d] hover:bg-blue-800', href: '/reports/new' },
+          { label: 'Add Patient', icon: <PlusCircle className="w-4 h-4" />, color: 'bg-[#085041] hover:bg-emerald-800', href: '/patients' },
+          { label: 'View Billing', icon: <IndianRupee className="w-4 h-4" />, color: 'bg-amber-600 hover:bg-amber-700', href: '/billing' },
+          { label: 'Inventory', icon: <FlaskConical className="w-4 h-4" />, color: 'bg-purple-700 hover:bg-purple-800', href: '/inventory' },
+        ].map((action, i) => (
+          <button
+            key={i}
+            onClick={() => navigate(action.href)}
+            className={`${action.color} animate-fade-in-up stagger-${i + 1} text-white flex items-center justify-center gap-2 py-3 px-4 rounded-xl text-sm font-bold shadow-sm transition-all hover:shadow-md hover:-translate-y-0.5`}
+          >
+            {action.icon} {action.label}
+          </button>
+        ))}
       </div>
 
       {/* Stat Cards */}
@@ -716,8 +754,8 @@ const Dashboard = () => {
         </div>
       </div>
 
-      {/* Recent Patients & Pending Reports */}
-      <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
+      {/* Recent Patients, Pending Reports & Activity Feed */}
+      <div className="grid grid-cols-1 lg:grid-cols-3 gap-6">
         {/* Recent Patients */}
         <div className="bg-white rounded-xl border border-gray-200 shadow-sm">
           <div className="px-5 py-4 border-b border-gray-200 flex justify-between items-center">
@@ -763,6 +801,36 @@ const Dashboard = () => {
               </div>
             )) : (
               <div className="text-center py-8 text-gray-400 text-sm">🎉 No pending reports!</div>
+            )}
+          </div>
+        </div>
+        {/* Recent Activity Feed */}
+        <div className="bg-white rounded-xl border border-gray-200 shadow-sm">
+          <div className="px-5 py-4 border-b border-gray-200 flex items-center justify-between">
+            <h3 className="text-sm font-bold text-[#00488d] uppercase">Recent Activity</h3>
+            <Zap className="w-4 h-4 text-amber-500" />
+          </div>
+          <div className="divide-y divide-gray-50">
+            {allReportsForActivity.length > 0 ? allReportsForActivity.map((r, i) => (
+              <div key={r.id}
+                className={`px-5 py-3 animate-fade-in-up stagger-${Math.min(i + 1, 6)}`}
+              >
+                <div className="flex items-start gap-3">
+                  <div className={`mt-0.5 w-2 h-2 rounded-full shrink-0 ${r.status === 'COMPLETED' ? 'bg-green-500 animate-pulse-glow' : 'bg-amber-400'}`}></div>
+                  <div className="flex-1 min-w-0">
+                    <p className="text-xs font-bold text-gray-800 truncate">{r.reportNumber}</p>
+                    <p className="text-[10px] text-gray-400 truncate">{r.patient?.fullName}</p>
+                  </div>
+                  <span className={`text-[9px] font-black px-1.5 py-0.5 rounded shrink-0 ${r.status === 'COMPLETED' ? 'bg-green-50 text-green-700' : 'bg-amber-50 text-amber-700'}`}>
+                    {r.status === 'COMPLETED' ? 'DONE' : 'PEND'}
+                  </span>
+                </div>
+                <p className="text-[10px] text-gray-300 mt-1 pl-5">
+                  {new Date(r.reportDate).toLocaleDateString('en-IN', { day: 'numeric', month: 'short', year: '2-digit' })}
+                </p>
+              </div>
+            )) : (
+              <div className="text-center py-8 text-gray-400 text-sm">No recent activity</div>
             )}
           </div>
         </div>
