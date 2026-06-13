@@ -66,6 +66,7 @@ const CreateReport = () => {
 
     // Flat map all parameters from the selected tests
     const initialSummaries = {};
+    const initialResults = [];
 
     selectedTests.forEach(t => {
       initialSummaries[t.value] = t.summary || '';
