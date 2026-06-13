@@ -156,7 +156,7 @@ const PrintReport = () => {
                 <tbody>
                   <tr>
                     <td style={{ textAlign: 'center' }}>
-                      <Logo className="w-[100px] h-[100px]" />
+              <Logo className="w-[82px] h-[82px]" />
                       <div style={{ fontSize: '10px', fontWeight: 'bold', color: '#000', letterSpacing: '0.05em', marginTop: '4px', fontFamily: 'Arial, sans-serif', whiteSpace: 'nowrap' }}>SANA PATHOLOGY LAB</div>
                     </td>
                   </tr>
@@ -517,43 +517,50 @@ const PrintReport = () => {
   );
   };
 
-  // --- Smart Pagination (Bin Packing Algorithm) ---
-  const PAGE_CAPACITY = 18; // Strict safe limit to prevent tests from overflowing A4 bounds and disappearing
-  
-  // 1. Calculate size for each test
-  const testsWithSize = testNames.map(testName => {
+  // --- Linear Parameter-Level Pagination ---
+  const PAGE_CAPACITY = 19;
+  const COST = {
+    testHeader: 2.0,
+    groupHeader: 1.2,
+    paramRow: 1.0,
+    qualOffset: 0.5,
+    summary: 2.0,
+    endOfReport: 2.0,
+  };
+
+  const flatItems = [];
+  testNames.forEach(testName => {
     const { rows, summary } = groupedTests[testName];
-    const groupCount = new Set(rows.map(r => r.groupName).filter(Boolean)).size;
-    const rowsNeeded = rows.length + 4 + (groupCount * 1.5); 
-    return { name: testName, rows, summary, rowsNeeded };
+    rows.forEach((row, idx) => {
+      flatItems.push({ type: 'row', testName, summary, row, isLastRow: idx === rows.length - 1, groupName: row.groupName || null });
+    });
   });
+  flatItems.push({ type: 'end' });
 
-  // 2. Sort tests by size descending (largest first) to optimize packing
-  testsWithSize.sort((a, b) => b.rowsNeeded - a.rowsNeeded);
-
-  // 3. Pack tests into pages (First Fit Decreasing)
   const pages = [];
-  testsWithSize.forEach(testData => {
-    let placed = false;
-    // Look for an existing page with enough remaining space
-    for (let i = 0; i < pages.length; i++) {
-      if (pages[i].rowCount + testData.rowsNeeded <= PAGE_CAPACITY) {
-        pages[i].tests.push(testData);
-        pages[i].rowCount += testData.rowsNeeded;
-        placed = true;
-        break;
-      }
-    }
-    // If it didn't fit anywhere, start a new page
-    if (!placed) {
-      pages.push({
-        tests: [testData],
-        rowCount: testData.rowsNeeded
-      });
-    }
+  let curPage = { segments: [] };
+  let pageUsed = 0;
+  let curSeg = null;
+  let prevGroup = null;
+  let prevTest = null;
+
+  const flushSeg = () => { if (curSeg) { curPage.segments.push(curSeg); curSeg = null; } };
+  const flushPage = () => { flushSeg(); pages.push(curPage); curPage = { segments: [] }; pageUsed = 0; prevGroup = null; };
+
+  flatItems.forEach(item => {
+    if (item.type === 'end') { if (pageUsed + COST.endOfReport > PAGE_CAPACITY) flushPage(); flushSeg(); pages.push(curPage); return; }
+    const { testName, row, summary, isLastRow, groupName } = item;
+    const isNewTest  = testName !== prevTest;
+    const isNewGroup = groupName && groupName !== prevGroup;
+    const paramDef   = row.test?.parameters?.find(p => p.parameterName === row.parameterName);
+    let cost = COST.paramRow + (paramDef?.isQualitative ? COST.qualOffset : 0) + (isNewGroup ? COST.groupHeader : 0) + (isNewTest ? COST.testHeader : 0) + (isLastRow && summary ? COST.summary : 0);
+    if (pageUsed + cost > PAGE_CAPACITY && pageUsed > 0) { flushPage(); cost = COST.testHeader + COST.paramRow + (paramDef?.isQualitative ? COST.qualOffset : 0) + (isLastRow && summary ? COST.summary : 0); }
+    if (isNewTest || !curSeg || curSeg.testName !== testName) { flushSeg(); curSeg = { testName, summary, rows: [] }; prevGroup = null; }
+    curSeg.rows.push(row); pageUsed += cost; prevTest = testName; prevGroup = groupName;
   });
 
   const totalPages = pages.length;
+
 
   const handlePrint = () => {
     if (window.ReactNativeWebView) {
@@ -676,48 +683,39 @@ const PrintReport = () => {
 
       <div className="report-wrapper" id="report-content">
         {pages.map((pageData, pageIndex) => {
-          
+          const isLastPage = pageIndex === pages.length - 1;
           return (
             <div key={`page-${pageIndex}`} className="report-page">
-              
-              {/* Background Watermark (Screen/PDF share only) */}
+              {/* Background Watermark */}
               <div className="absolute inset-0 flex flex-col items-center justify-center opacity-[0.03] pointer-events-none select-none z-0 print:hidden">
-                <Logo className="w-[350px] h-[350px] grayscale" />
+                <Logo className="w-[300px] h-[300px] grayscale" />
                 <div className="text-[52px] font-black tracking-widest mt-4 text-black">SANA PATHOLOGY LAB</div>
               </div>
-
               <LetterheadHeader />
-              
               <div className="flex-grow flex flex-col relative z-10 px-2 pb-[180px]">
                 <PatientHeader pageNum={pageIndex + 1} totalPages={totalPages} />
                 <div className="flex-grow mt-2">
-                  
-                  {pageData.tests.map((testData, idx) => (
-                    <div key={testData.name} className={idx > 0 ? "mt-4" : ""}>
-                      <TestTable testName={testData.name} rows={testData.rows} showHeader={idx === 0} summary={testData.summary} />
-                    </div>
-                  ))}
-                  
-                  {/* Premium End of Report Marker - Only on last page */}
-                  {pageIndex === pages.length - 1 && (
+                  {pageData.segments.map((seg, idx) => {
+                    const isLastSegForTest = !pages.slice(pageIndex + 1).some(p => p.segments?.some(s => s.testName === seg.testName));
+                    return (
+                      <div key={seg.testName + idx} className={idx > 0 ? 'mt-4' : ''}>
+                        <TestTable testName={seg.testName} rows={seg.rows} showHeader={true} summary={isLastSegForTest ? seg.summary : ''} />
+                      </div>
+                    );
+                  })}
+                  {isLastPage && (
                     <div className="mt-8 mb-4 flex flex-col items-center justify-center w-full">
                       <div className="flex items-center w-3/4 mx-auto">
                         <div className="flex-1 border-t border-gray-300"></div>
-                        <div className="mx-4 text-[12px] font-bold tracking-[0.2em] text-[#1a2f4c] uppercase font-sans">
-                          End of Report
-                        </div>
+                        <div className="mx-4 text-[12px] font-bold tracking-[0.2em] text-[#1a2f4c] uppercase font-sans">End of Report</div>
                         <div className="flex-1 border-t border-gray-300"></div>
                       </div>
-                      <div className="text-[10px] text-gray-400 mt-2 tracking-widest uppercase font-semibold">
-                        ***
-                      </div>
+                      <div className="text-[10px] text-gray-400 mt-2 tracking-widest uppercase font-semibold">***</div>
                     </div>
                   )}
                 </div>
               </div>
-
               <LetterheadFooter />
-
             </div>
           );
         })}

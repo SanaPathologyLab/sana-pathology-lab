@@ -105,7 +105,7 @@ const PublicPrint = () => {
       </svg>
       <div className="flex items-end px-3 pt-5 pb-0.5 relative z-10 w-full">
         <div className="flex flex-col items-center w-[120px] shrink-0 mr-4 relative top-[5px]">
-          <Logo className="w-[100px] h-[100px] object-contain" />
+          <Logo className="w-[82px] h-[82px] object-contain" />
           <div className="text-[10px] font-bold text-black tracking-[0.05em] mt-1 whitespace-nowrap" style={{ fontFamily: 'Arial, sans-serif' }}>
             SANA PATHOLOGY LAB
           </div>
@@ -432,7 +432,34 @@ const PublicPrint = () => {
   );
   };
 
-  const totalPages = testNames.length;
+  // --- Linear Parameter-Level Pagination ---
+  const PAGE_CAPACITY = 19;
+  const COST = { testHeader:2.0, groupHeader:1.2, paramRow:1.0, qualOffset:0.5, summary:2.0, endOfReport:2.0 };
+
+  const flatItems = [];
+  testNames.forEach(testName => {
+    const { rows, summary } = groupedTests[testName];
+    rows.forEach((row, idx) => flatItems.push({ type:'row', testName, summary, row, isLastRow: idx === rows.length-1, groupName: row.groupName||null }));
+  });
+  flatItems.push({ type:'end' });
+
+  const pages = [];
+  let curPage = { segments:[] }, pageUsed=0, curSeg=null, prevGroup=null, prevTest=null;
+  const flushSeg  = () => { if (curSeg) { curPage.segments.push(curSeg); curSeg=null; } };
+  const flushPage = () => { flushSeg(); pages.push(curPage); curPage={ segments:[] }; pageUsed=0; prevGroup=null; };
+
+  flatItems.forEach(item => {
+    if (item.type==='end') { if (pageUsed+COST.endOfReport>PAGE_CAPACITY) flushPage(); flushSeg(); pages.push(curPage); return; }
+    const { testName, row, summary, isLastRow, groupName } = item;
+    const isNewTest=testName!==prevTest, isNewGroup=groupName&&groupName!==prevGroup;
+    const paramDef=row.test?.parameters?.find(p=>p.parameterName===row.parameterName);
+    let cost=COST.paramRow+(paramDef?.isQualitative?COST.qualOffset:0)+(isNewGroup?COST.groupHeader:0)+(isNewTest?COST.testHeader:0)+(isLastRow&&summary?COST.summary:0);
+    if (pageUsed+cost>PAGE_CAPACITY&&pageUsed>0) { flushPage(); cost=COST.testHeader+COST.paramRow+(paramDef?.isQualitative?COST.qualOffset:0)+(isLastRow&&summary?COST.summary:0); }
+    if (isNewTest||!curSeg||curSeg.testName!==testName) { flushSeg(); curSeg={testName,summary,rows:[]}; prevGroup=null; }
+    curSeg.rows.push(row); pageUsed+=cost; prevTest=testName; prevGroup=groupName;
+  });
+
+  const totalPages = pages.length;
 
   return (
     <>
@@ -468,20 +495,27 @@ const PublicPrint = () => {
       </div>
 
       <div className="report-wrapper">
-        {testNames.map((testName, pageIndex) => {
-          const { rows, summary } = groupedTests[testName];
+        {pages.map((pageData, pageIndex) => {
+          const isLastPage = pageIndex === pages.length - 1;
           return (
-            <div key={testName} className="report-page">
+            <div key={`page-${pageIndex}`} className="report-page">
               <div className="absolute inset-0 flex flex-col items-center justify-center opacity-[0.03] pointer-events-none select-none z-0 print:hidden">
-                <Logo className="w-[350px] h-[350px] grayscale" />
+                <Logo className="w-[300px] h-[300px] grayscale" />
                 <div className="text-[52px] font-black tracking-widest mt-4 text-black">SANA PATHOLOGY LAB</div>
               </div>
               <LetterheadHeader />
               <div className="flex-grow flex flex-col relative z-10 px-2">
                 <PatientHeader pageNum={pageIndex + 1} totalPages={totalPages} />
                 <div className="flex-grow mt-2">
-                  <TestTable testName={testName} rows={rows} summary={summary} />
-                  {pageIndex === testNames.length - 1 && (
+                  {pageData.segments.map((seg, idx) => {
+                    const isLastSegForTest = !pages.slice(pageIndex+1).some(p => p.segments?.some(s => s.testName===seg.testName));
+                    return (
+                      <div key={seg.testName+idx} className={idx > 0 ? 'mt-4' : ''}>
+                        <TestTable testName={seg.testName} rows={seg.rows} summary={isLastSegForTest ? seg.summary : ''} />
+                      </div>
+                    );
+                  })}
+                  {isLastPage && (
                     <div className="mt-12 mb-6 flex flex-col items-center justify-center w-full">
                       <div className="flex items-center w-3/4 mx-auto">
                         <div className="flex-1 border-t border-gray-300"></div>

@@ -1,22 +1,27 @@
 const svgString = `<svg viewBox="0 0 100 100" xmlns="http://www.w3.org/2000/svg" style="width: 100%; height: 100%;">
+  <defs>
+    <linearGradient id="gradRight" x1="0%" y1="0%" x2="100%" y2="100%">
+      <stop offset="0%"   style="stop-color:#ff2a2a;stop-opacity:1" />
+      <stop offset="45%"  style="stop-color:#d91e6e;stop-opacity:1" />
+      <stop offset="100%" style="stop-color:#7b15d9;stop-opacity:1" />
+    </linearGradient>
+    <linearGradient id="gradLeft" x1="0%" y1="0%" x2="100%" y2="100%">
+      <stop offset="0%"   style="stop-color:#00d9ff;stop-opacity:1" />
+      <stop offset="100%" style="stop-color:#0044b3;stop-opacity:1" />
+    </linearGradient>
+    <radialGradient id="gradGlow" cx="50%" cy="50%" r="50%">
+      <stop offset="0%"   style="stop-color:#ffffff;stop-opacity:0.22" />
+      <stop offset="100%" style="stop-color:#ffffff;stop-opacity:0"   />
+    </radialGradient>
+  </defs>
   <path d="M50,10 C75,10 90,30 90,50 C90,75 70,90 50,90 C50,90 80,80 80,50 C80,25 50,20 50,20 Z" fill="url(#gradRight)"/>
   <path d="M50,90 C25,90 10,70 10,50 C10,25 30,10 50,10 C50,10 20,20 20,50 C20,75 50,80 50,80 Z" fill="url(#gradLeft)"/>
-  <g transform="translate(30, 30) scale(0.4)" fill="#00488d">
+  <circle cx="50" cy="50" r="42" fill="url(#gradGlow)"/>
+  <g transform="translate(30, 30) scale(0.4)" fill="#002f70">
     <path d="M48.2,35.6l-3.3-3.3L37.1,40c-0.2,0.2-0.5,0.4-0.8,0.5c0,0-2.8,0.7-3.9-0.4L25,32.8c-1.1-1.1-0.4-3.9-0.4-3.9 c0.1-0.3,0.3-0.6,0.5-0.8l7.8-7.8l-3.3-3.3c-1.1-1.1-2.8-1.1-3.9,0L9.4,33.3c-1.1,1.1-1.1,2.8,0,3.9l3.3,3.3l-2.4,2.4 C7.9,45.3,6.5,49,6.5,52.4c0,3.4,1.4,7.1,3.8,9.5l1.6,1.6c0.5,0.5,1.2,0.8,1.9,0.8h30.6c0.7,0,1.4-0.3,1.9-0.8l5.2-5.2 C52.5,57.3,52.5,55.7,51.5,54.6z M27.8,30l6.2,6.2l-6,6l-6.2-6.2L27.8,30z M44.6,60H13.8c-0.4,0-0.7-0.1-1-0.4l-1.6-1.6 c-2.1-2.1-3.1-4.8-3.1-7.5c0-2.8,1.1-5.5,3.1-7.5l0.8-0.8l11.4,11.4c1.1,1.1,2.8,1.1,3.9,0l6.2-6.2c0.5-0.5,0.8-1.2,0.8-1.9 c0-0.7-0.3-1.4-0.8-1.9L22,12.2l5.8-5.8c0.4-0.4,1-0.4,1.4,0l3.3,3.3l15.7-15.7c0.4-0.4,1-0.4,1.4,0l6.6,6.6c0.4,0.4,0.4,1,0,1.4 L40.5,17.7l3.3,3.3c0.4,0.4,0.4,1,0,1.4l-1.1,1.1c5.9-0.8,12,0.7,16.7,4.3l3.6-3.6c0.5-0.5,1.4-0.5,1.9,0l3.6,3.6 c0.5,0.5,0.5,1.4,0,1.9l-3.6,3.6c-4.4,4.4-11,5.3-16.1,2.7l-4.5,4.5l1.8,1.8C45.6,58.7,45.6,59.5,44.6,60z" />
     <path d="M78.6,80H21.4C19,80,17,82,17,84.4v7.2C17,94,19,96,21.4,96h57.2C81,96,83,94,83,91.6v-7.2C83,82,81,80,78.6,80z" />
     <path d="M57.6,76H42.4c-2.4,0-4.4-2-4.4-4.4V56c0-2.4,2-4.4,4.4-4.4h15.2c2.4,0,4.4,2,4.4,4.4v15.6C62,74,60,76,57.6,76z" />
   </g>
-  <defs>
-    <linearGradient id="gradRight" x1="0%" y1="0%" x2="100%" y2="100%">
-      <stop offset="0%" style="stop-color: #e03a3c; stop-opacity: 1" />
-      <stop offset="50%" style="stop-color: #d62d60; stop-opacity: 1" />
-      <stop offset="100%" style="stop-color: #7a28cb; stop-opacity: 1" />
-    </linearGradient>
-    <linearGradient id="gradLeft" x1="0%" y1="0%" x2="100%" y2="100%">
-      <stop offset="0%" style="stop-color: #00a8e8; stop-opacity: 1" />
-      <stop offset="100%" style="stop-color: #00488d; stop-opacity: 1" />
-    </linearGradient>
-  </defs>
 </svg>`;
 
 export const generatePrintHTML = (report, settings, includeLetterhead = false) => {
@@ -46,35 +51,112 @@ export const generatePrintHTML = (report, settings, includeLetterhead = false) =
   // --- Smart Pagination (Bin Packing Algorithm) ---
   const PAGE_CAPACITY = 18; 
   
-  const testsWithSize = testNames.map(testName => {
+
+  // --- Linear Parameter-Level Pagination ---
+  // Cost units per row-type (empirically tuned for A4 with letterhead header)
+  const PAGE_CAPACITY = 19;
+  const COST = {
+    testHeader: 2.0,   // test title + column header row
+    groupHeader: 1.2,  // sub-group label row
+    paramRow: 1.0,     // normal parameter row
+    qualOffset: 0.5,   // extra space a qualitative result takes
+    summary: 2.0,      // note/summary block at end of test
+    endOfReport: 2.0,  // "End of Report" footer marker
+  };
+
+  // Build a flat ordered list of items to place
+  // Each item: { type, testName, testData, row, isLastRow, groupName }
+  const items = [];
+  testNames.forEach(testName => {
     const { rows, summary } = groupedTests[testName];
-    const groupCount = new Set(rows.map(r => r.groupName).filter(Boolean)).size;
-    const rowsNeeded = rows.length + 4 + (groupCount * 1.5); 
-    return { name: testName, rows, summary, rowsNeeded };
-  });
-
-  testsWithSize.sort((a, b) => b.rowsNeeded - a.rowsNeeded);
-
-  const pages = [];
-  testsWithSize.forEach(testData => {
-    let placed = false;
-    for (let i = 0; i < pages.length; i++) {
-      if (pages[i].rowCount + testData.rowsNeeded <= PAGE_CAPACITY) {
-        pages[i].tests.push(testData);
-        pages[i].rowCount += testData.rowsNeeded;
-        placed = true;
-        break;
-      }
-    }
-    if (!placed) {
-      pages.push({
-        tests: [testData],
-        rowCount: testData.rowsNeeded
+    rows.forEach((row, idx) => {
+      items.push({
+        type: 'row',
+        testName,
+        summary,
+        row,
+        isLastRow: idx === rows.length - 1,
+        groupName: row.groupName || null,
       });
+    });
+  });
+  // Append the "End of Report" sentinel
+  items.push({ type: 'end' });
+
+  // Pack items chronologically into pages
+  const pages = [];
+  let currentPage = { segments: [] };   // a segment = { testName, rows[], isFirst, isLast, summary }
+  let pageUsed = 0;
+  let currentSegment = null;
+  let prevGroupName = null;
+  let prevTestName = null;
+
+  const finaliseSegment = () => {
+    if (currentSegment) {
+      currentPage.segments.push(currentSegment);
+      currentSegment = null;
     }
+  };
+
+  const newPage = () => {
+    finaliseSegment();
+    pages.push(currentPage);
+    currentPage = { segments: [] };
+    pageUsed = 0;
+    prevGroupName = null;
+  };
+
+  items.forEach((item, itemIdx) => {
+    if (item.type === 'end') {
+      // End-of-report marker: fit on current page if possible, else new page
+      if (pageUsed + COST.endOfReport > PAGE_CAPACITY) newPage();
+      // mark last segment as final so it renders summary & end marker
+      finaliseSegment();
+      pages.push(currentPage);
+      return;
+    }
+
+    const { testName, row, summary, isLastRow, groupName } = item;
+    const isNewTest = testName !== prevTestName;
+    const isNewGroup = groupName && groupName !== prevGroupName;
+
+    // Calculate cost of this row
+    let cost = COST.paramRow;
+    const paramDef = row.test?.parameters?.find(p => p.parameterName === row.parameterName);
+    if (paramDef?.isQualitative) cost += COST.qualOffset;
+    if (isNewGroup) cost += COST.groupHeader;
+    if (isNewTest)  cost += COST.testHeader;
+    if (isLastRow && summary) cost += COST.summary;
+
+    // If it doesn't fit, flush to a new page
+    if (pageUsed + cost > PAGE_CAPACITY && pageUsed > 0) {
+      newPage();
+      // On the new page the test is a continuation – still needs header
+      cost = COST.testHeader + COST.paramRow;
+      if (paramDef?.isQualitative) cost += COST.qualOffset;
+      if (isLastRow && summary) cost += COST.summary;
+    }
+
+    // Start or continue segment for this test on this page
+    if (isNewTest || !currentSegment || currentSegment.testName !== testName) {
+      finaliseSegment();
+      currentSegment = {
+        testName,
+        summary,
+        rows: [],
+        isFirstOnPage: currentPage.segments.length === 0 && !currentSegment,
+      };
+      prevGroupName = null;
+    }
+
+    currentSegment.rows.push(row);
+    pageUsed += cost;
+    prevTestName = testName;
+    prevGroupName = groupName;
   });
 
   const totalPages = pages.length;
+
 
   const renderLogo = () => svgString;
 
@@ -330,11 +412,12 @@ export const generatePrintHTML = (report, settings, includeLetterhead = false) =
   };
 
   const pagesHTML = pages.map((pageData, pageIndex) => {
+    const isLastPage = pageIndex === pages.length - 1;
     return `
       <div class="report-page">
         <!-- Watermark (Screen & PDF share only) -->
         <div class="watermark-container">
-          <div style="display: flex; flex-direction: column; items-center: true; justify-content: center; width: 350px; height: 350px;">
+          <div style="display: flex; flex-direction: column; items-center: true; justify-content: center; width: 300px; height: 300px;">
             ${svgString}
           </div>
           <div style="font-size: 52px; font-weight: 900; letter-spacing: 0.15em; margin-top: 16px; color: #000;">SANA PATHOLOGY LAB</div>
@@ -350,8 +433,8 @@ export const generatePrintHTML = (report, settings, includeLetterhead = false) =
 
           <!-- Dynamic HTML Letterhead Header -->
           <div style="position: relative; z-index: 10; display: flex; align-items: flex-end; padding: 20px 12px 2px 12px; width: 100%; box-sizing: border-box;">
-            <div style="display: flex; flex-direction: column; align-items: center; width: 120px; flex-shrink: 0; margin-right: 16px; position: relative; top: 5px;">
-              <div style="width: 100px; height: 100px; display: flex; align-items: center; justify-content: center;">
+            <div style="display: flex; flex-direction: column; align-items: center; width: 100px; flex-shrink: 0; margin-right: 16px; position: relative; top: 5px;">
+              <div style="width: 80px; height: 80px; display: flex; align-items: center; justify-content: center;">
                 ${renderLogo()}
               </div>
               <div style="font-size: 10px; font-weight: bold; color: #000; letter-spacing: 0.05em; margin-top: 4px; font-family: Arial, sans-serif; white-space: nowrap;">
@@ -390,14 +473,22 @@ export const generatePrintHTML = (report, settings, includeLetterhead = false) =
           ${renderPatientHeader(pageIndex + 1)}
           
           <div style="flex-grow: 1; margin-top: 8px;">
-            ${pageData.tests.map((testData, idx) => `
-              <div style="margin-top: ${idx > 0 ? '16px' : '0'};">
-                ${renderTestTable(testData.name, testData.rows, idx === 0, testData.summary)}
-              </div>
-            `).join('')}
+            ${pageData.segments.map((seg, idx) => {
+              // Determine if this is the absolute last set of rows for this test across all pages
+              // by checking if any later page has a segment for the same testName
+              const isLastSegmentForTest = !pages.slice(pageIndex + 1).some(
+                p => p.segments && p.segments.some(s => s.testName === seg.testName)
+              );
+              const showSummary = isLastSegmentForTest ? seg.summary : '';
+              return `
+                <div style="margin-top: ${idx > 0 ? '16px' : '0'};">
+                  ${renderTestTable(seg.testName, seg.rows, true, showSummary)}
+                </div>
+              `;
+            }).join('')}
 
             <!-- End of Report - Only on last page -->
-            ${pageIndex === pages.length - 1 ? `
+            ${isLastPage ? `
               <div style="margin-top: 32px; margin-bottom: 16px; display: flex; flex-direction: column; align-items: center; justify-content: center; width: 100%;">
                 <div style="display: flex; align-items: center; width: 75%; margin: 0 auto;">
                   <div style="flex: 1; border-top: 1px solid #d1d5db;"></div>
@@ -439,6 +530,7 @@ export const generatePrintHTML = (report, settings, includeLetterhead = false) =
       </div>
     `;
   }).join('');
+
 
   return `
     <!DOCTYPE html>
