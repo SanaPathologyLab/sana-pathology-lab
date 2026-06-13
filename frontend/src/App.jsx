@@ -46,9 +46,12 @@ const AppContent = () => {
   return (
     <Suspense fallback={<Spinner />}>
       <Routes>
-        {/* If user is logged in, root redirects to dashboard; if not, to login */}
-        <Route path="/" element={user ? <Navigate to="/dashboard" /> : <Navigate to="/login" />} />
+        {/* Public Routes */}
+        <Route path="/" element={<PublicWelcome />} />
         <Route path="/login" element={user ? <Navigate to="/dashboard" /> : <Login />} />
+        <Route path="/book-appointment" element={<PublicAppointment />} />
+        <Route path="/report-lookup" element={<ReportLookup />} />
+        <Route path="/public-print/:reportNumber" element={<PublicPrint />} />
         
         {/* Protected dashboard and portal routes */}
         <Route path="/dashboard" element={<ProtectedRoute><Dashboard /></ProtectedRoute>} />

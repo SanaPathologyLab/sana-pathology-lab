@@ -25,6 +25,7 @@ const CreateReport = () => {
   // Result Values (Step 2)
   const [testResults, setTestResults] = useState([]);
   const [overallResults, setOverallResults] = useState({});
+  const [testSummaries, setTestSummaries] = useState({});
 
   useEffect(() => {
     fetchDropdownData();
@@ -55,7 +56,8 @@ const CreateReport = () => {
     value: t.id, 
     label: `${t.testCode} - ${t.testName}`,
     testName: t.testName,
-    parameters: t.parameters || []
+    parameters: t.parameters || [],
+    summary: t.summary || ''
   }));
 
   const handleNextStep = () => {
@@ -63,8 +65,10 @@ const CreateReport = () => {
     if (selectedTests.length === 0) return alert("Please select at least one Test.");
 
     // Flat map all parameters from the selected tests
-    const initialResults = [];
+    const initialSummaries = {};
+
     selectedTests.forEach(t => {
+      initialSummaries[t.value] = t.summary || '';
       if (t.parameters && t.parameters.length > 0) {
         t.parameters.forEach(p => {
           // Unique key for tracking inputs (testId + parameterName)
@@ -90,6 +94,7 @@ const CreateReport = () => {
       }
     });
 
+    setTestSummaries(initialSummaries);
     setTestResults(initialResults);
     setStep(2);
   };
@@ -166,6 +171,20 @@ const CreateReport = () => {
             referenceRange: '',
             unit: '',
             groupName: `__OVERALL__${testName}`
+          });
+        }
+      });
+      // Add custom summaries
+      Object.keys(testSummaries).forEach(tid => {
+        if (testSummaries[tid]) {
+          savedResults.push({
+            testId: parseInt(tid),
+            parameterName: '__SUMMARY__',
+            resultValue: testSummaries[tid],
+            flag: '',
+            referenceRange: '',
+            unit: '',
+            groupName: '__SUMMARY__'
           });
         }
       });
@@ -550,6 +569,18 @@ const CreateReport = () => {
               </tbody>
             </table>
           )}
+          
+          {/* Summary Textarea for this test */}
+          <div className="bg-gray-50 border-t border-gray-200 p-4">
+            <label className="block text-xs font-bold text-gray-600 uppercase mb-2">Test Summary / Clinical Notes</label>
+            <textarea
+              value={testSummaries[params[0]?.testId] || ''}
+              onChange={(e) => setTestSummaries(prev => ({ ...prev, [params[0].testId]: e.target.value }))}
+              rows="3"
+              className="w-full border border-gray-300 rounded px-3 py-2 text-sm focus:outline-none focus:border-[#00488d]"
+              placeholder="Optional: Add clinical notes, interpretations, or references to display on the report..."
+            />
+          </div>
         </div>
       );
     });

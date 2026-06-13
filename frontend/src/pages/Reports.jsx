@@ -19,6 +19,7 @@ const Reports = () => {
   const [editReport, setEditReport] = useState(null); // report being edited
   const [showEditModal, setShowEditModal] = useState(false);
   const [editResults, setEditResults] = useState([]);
+  const [editSummaries, setEditSummaries] = useState({});
   const [editStatus, setEditStatus] = useState('');
   const [saving, setSaving] = useState(false);
 
@@ -89,17 +90,47 @@ const Reports = () => {
       }
     });
 
-    setEditResults(finalResults);
+    // Extract custom summaries
+    const summaries = {};
+    testsInReport.forEach(tid => {
+      const testDef = tests.find(t => t.id === tid);
+      const summaryRow = finalResults.find(r => r.testId === tid && r.groupName === '__SUMMARY__');
+      if (summaryRow) {
+        summaries[tid] = summaryRow.resultValue;
+      } else {
+        summaries[tid] = testDef?.summary || '';
+      }
+    });
+    setEditSummaries(summaries);
+
+    setEditResults(finalResults.filter(r => r.groupName !== '__SUMMARY__'));
     setEditStatus(full.status);
     setShowEditModal(true);
   };
 
   const handleSaveEdit = async () => {
     setSaving(true);
+    const resultsToSave = [...editResults];
+    
+    // Append custom summaries back
+    Object.keys(editSummaries).forEach(tid => {
+      if (editSummaries[tid]) {
+        resultsToSave.push({
+          testId: parseInt(tid),
+          parameterName: '__SUMMARY__',
+          resultValue: editSummaries[tid],
+          flag: '',
+          referenceRange: '',
+          unit: '',
+          groupName: '__SUMMARY__'
+        });
+      }
+    });
+
     await fetch(`${API}/reports/${editReport.id}`, {
       method: 'PUT',
       headers,
-      body: JSON.stringify({ status: editStatus, results: editResults }),
+      body: JSON.stringify({ status: editStatus, results: resultsToSave }),
     });
     setSaving(false);
     setShowEditModal(false);
@@ -184,6 +215,11 @@ const Reports = () => {
       const uniqueNewResults = newResults.filter(r => !existingParams.has(r.parameterName));
       return [...prev, ...uniqueNewResults];
     });
+    
+    setEditSummaries(prev => ({
+      ...prev,
+      [test.id]: prev[test.id] !== undefined ? prev[test.id] : (test.summary || '')
+    }));
   };
 
   const testOptions = tests.map(t => ({
@@ -540,6 +576,19 @@ const Reports = () => {
                           </table>
                         </div>
                       )}
+                      
+                      {/* Summary Textarea for this test */}
+                      <div className="bg-gray-50 border-t border-gray-200 p-4">
+                        <label className="block text-xs font-bold text-gray-600 uppercase mb-2">Test Summary / Clinical Notes</label>
+                        <textarea
+                          value={editSummaries[params[0]?.testId] || ''}
+                          onChange={(e) => setEditSummaries(prev => ({ ...prev, [params[0].testId]: e.target.value }))}
+                          disabled={user?.userType !== 'STAFF'}
+                          rows="3"
+                          className="w-full border border-gray-300 rounded px-3 py-2 text-sm focus:outline-none focus:border-[#00488d] disabled:bg-gray-100 disabled:text-gray-500"
+                          placeholder="Optional: Add clinical notes, interpretations, or references to display on the report..."
+                        />
+                      </div>
                     </div>
                   );
                 });

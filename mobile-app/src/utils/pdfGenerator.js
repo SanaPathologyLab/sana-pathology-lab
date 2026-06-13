@@ -36,7 +36,12 @@ export const generatePrintHTML = (report, settings, includeLetterhead = false) =
     if (!groupedTests[testName]) {
       groupedTests[testName] = { rows: [], summary: r.test?.summary || '' };
     }
-    groupedTests[testName].rows.push(r);
+    
+    if (r.groupName === '__SUMMARY__') {
+      groupedTests[testName].summary = r.resultValue;
+    } else {
+      groupedTests[testName].rows.push(r);
+    }
   });
   const testNames = Object.keys(groupedTests);
 
@@ -104,8 +109,9 @@ export const generatePrintHTML = (report, settings, includeLetterhead = false) =
 
   flatTests.forEach(test => {
     const { testName, rows, summary, totalCost, summaryCost } = test;
+    const fullTestCost = totalCost + summaryCost;
 
-    if (totalCost > 0 && totalCost <= PAGE_CAPACITY && pageUsed + totalCost > PAGE_CAPACITY && pageUsed > 0) {
+    if (fullTestCost > 0 && fullTestCost <= PAGE_CAPACITY && pageUsed + fullTestCost > PAGE_CAPACITY && pageUsed > 0) {
       newPage();
     }
 
