@@ -41,6 +41,8 @@ const settingsRoutes = require('./src/routes/settingsRoutes');
 const appointmentRoutes = require('./src/routes/appointmentRoutes');
 const inventoryRoutes = require('./src/routes/inventoryRoutes');
 const staffRoutes = require('./src/routes/staffRoutes');
+const packageRoutes = require('./src/routes/packageRoutes');
+const { getActivityLog } = require('./src/controllers/packageController');
 
 app.use('/api/auth', authRoutes);
 app.use('/api/patients', patientRoutes);
@@ -52,6 +54,8 @@ app.use('/api/settings', settingsRoutes);
 app.use('/api/appointments', appointmentRoutes);
 app.use('/api/inventory', inventoryRoutes);
 app.use('/api/staff', staffRoutes);
+app.use('/api/packages', packageRoutes);
+app.get('/api/activity-log', verifyToken, getActivityLog);
 
 // ─── PUBLIC: Patient Report Lookup (no auth required) ───
 // Only returns limited non-sensitive data; full report requires auth
@@ -263,6 +267,82 @@ app.get('/api/public/tests', async (req, res) => {
     res.json(tests);
   } catch (err) {
     console.error('Get public tests error:', err.message);
+    res.status(500).json({ message: 'An error occurred.' });
+  }
+});
+
+// ─── PUBLIC: Get Packages ───
+app.get('/api/public/packages', async (req, res) => {
+  try {
+    const packages = await prisma.testPackage.findMany({
+      where: { isActive: true },
+      include: {
+        items: {
+          include: { test: { select: { testName: true, testCode: true, price: true, sampleType: true, category: { select: { name: true } } } } }
+        }
+      },
+      orderBy: { name: 'asc' }
+    });
+    res.json(packages);
+  } catch (err) {
+    console.error('Get public packages error:', err.message);
+    res.status(500).json({ message: 'An error occurred.' });
+  }
+});
+
+// ─── DASHBOARD: Due for Annual Checkup ───
+app.get('/api/dashboard/due-checkups', verifyToken, async (req, res) => {
+  try {
+    // Only staff/admin roles
+    if (req.userType === 'PATIENT' || req.userType === 'DOCTOR') {
+      return res.status(403).json({ message: 'Access denied' });
+    }
+
+    const elevenMonthsAgo = new Date();
+    elevenMonthsAgo.setMonth(elevenMonthsAgo.getMonth() - 11);
+
+    // Get all patients who have at least one completed report
+    const patients = await prisma.patient.findMany({
+      where: {
+        reports: {
+          some: { status: 'COMPLETED' }
+        }
+      },
+      select: {
+        id: true,
+        patientId: true,
+        fullName: true,
+        mobileNumber: true,
+        gender: true,
+        age: true,
+        reports: {
+          where: { status: 'COMPLETED' },
+          orderBy: { reportDate: 'desc' },
+          take: 1,
+          select: { reportDate: true, reportNumber: true }
+        }
+      }
+    });
+
+    // Filter: patients whose last completed report was 11+ months ago
+    const due = patients
+      .filter(p => p.reports.length > 0 && new Date(p.reports[0].reportDate) < elevenMonthsAgo)
+      .map(p => ({
+        id: p.id,
+        patientId: p.patientId,
+        fullName: p.fullName,
+        mobileNumber: p.mobileNumber,
+        gender: p.gender,
+        age: p.age,
+        lastReportDate: p.reports[0].reportDate,
+        lastReportNumber: p.reports[0].reportNumber,
+        monthsSinceLast: Math.floor((Date.now() - new Date(p.reports[0].reportDate)) / (1000 * 60 * 60 * 24 * 30))
+      }))
+      .sort((a, b) => new Date(a.lastReportDate) - new Date(b.lastReportDate)); // oldest first
+
+    res.json(due.slice(0, 20)); // return top 20 most overdue
+  } catch (err) {
+    console.error('Due checkups error:', err.message);
     res.status(500).json({ message: 'An error occurred.' });
   }
 });

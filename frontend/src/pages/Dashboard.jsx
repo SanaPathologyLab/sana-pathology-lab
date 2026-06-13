@@ -39,6 +39,7 @@ const Dashboard = () => {
   const [loading, setLoading] = useState(true);
   const [liveTime, setLiveTime] = useState(new Date());
   const [allReportsForActivity, setAllReportsForActivity] = useState([]);
+  const [dueCheckups, setDueCheckups] = useState([]);
 
   // Live clock update
   useEffect(() => {
@@ -111,6 +112,12 @@ const Dashboard = () => {
           setPendingReports(allReps.filter(r => r.status === 'PENDING').slice(0, 5));
           setAllReportsForActivity(allReps.slice(0, 6));
           setTests(Array.isArray(testsData) ? testsData : []);
+
+          // Fetch due checkups (non-blocking)
+          try {
+            const dcRes = await fetch(`${API}/dashboard/due-checkups`, { headers });
+            if (dcRes.ok) setDueCheckups(await dcRes.json());
+          } catch (_) {}
         }
       } catch (err) {
         console.error('Dashboard fetch error:', err);
@@ -835,6 +842,73 @@ const Dashboard = () => {
           </div>
         </div>
       </div>
+
+      {/* Annual Checkup Reminders — Admin Only */}
+      {(user?.userType !== 'PATIENT' && user?.userType !== 'DOCTOR') && dueCheckups.length > 0 && (
+        <div className="mt-6 bg-white rounded-xl border border-amber-200 shadow-sm overflow-hidden">
+          <div className="px-5 py-4 border-b border-amber-100 flex items-center justify-between bg-amber-50">
+            <div className="flex items-center gap-2">
+              <HeartPulse className="w-5 h-5 text-amber-600" />
+              <h3 className="text-sm font-bold text-amber-800 uppercase tracking-wide">
+                Due for Annual Checkup
+              </h3>
+              <span className="ml-1 bg-amber-600 text-white text-[10px] font-black px-2 py-0.5 rounded-full">
+                {dueCheckups.length}
+              </span>
+            </div>
+            <p className="text-xs text-amber-600 font-medium">Patients with no completed report in 11+ months</p>
+          </div>
+          <div className="overflow-x-auto">
+            <table className="w-full text-left">
+              <thead>
+                <tr className="bg-gray-50 border-b border-gray-100">
+                  <th className="px-5 py-2.5 text-[10px] font-bold text-gray-500 uppercase">Patient</th>
+                  <th className="px-5 py-2.5 text-[10px] font-bold text-gray-500 uppercase">Last Report</th>
+                  <th className="px-5 py-2.5 text-[10px] font-bold text-gray-500 uppercase">Months Ago</th>
+                  <th className="px-5 py-2.5 text-[10px] font-bold text-gray-500 uppercase">Mobile</th>
+                  <th className="px-5 py-2.5 text-[10px] font-bold text-gray-500 uppercase text-right">Action</th>
+                </tr>
+              </thead>
+              <tbody className="divide-y divide-gray-50">
+                {dueCheckups.map(p => {
+                  const waMsg = encodeURIComponent(
+                    `Dear ${p.fullName}, your last health checkup at Sana Pathology Lab was ${p.monthsSinceLast} months ago (${p.lastReportNumber}). We recommend scheduling your Annual Checkup. Call us: 6396786939`
+                  );
+                  return (
+                    <tr key={p.id} className="hover:bg-amber-50/30 transition-colors">
+                      <td className="px-5 py-3">
+                        <p className="text-sm font-bold text-slate-800">{p.fullName}</p>
+                        <p className="text-[10px] text-gray-400 font-mono">{p.patientId} · {p.gender} · {p.age}y</p>
+                      </td>
+                      <td className="px-5 py-3 text-xs text-gray-600 font-mono">
+                        {p.lastReportNumber}
+                        <br />
+                        <span className="text-gray-400">{new Date(p.lastReportDate).toLocaleDateString('en-IN', { day: 'numeric', month: 'short', year: 'numeric' })}</span>
+                      </td>
+                      <td className="px-5 py-3">
+                        <span className={`inline-block px-2.5 py-0.5 rounded-full text-xs font-black ${p.monthsSinceLast >= 24 ? 'bg-red-100 text-red-700' : p.monthsSinceLast >= 18 ? 'bg-orange-100 text-orange-700' : 'bg-amber-100 text-amber-700'}`}>
+                          {p.monthsSinceLast} months
+                        </span>
+                      </td>
+                      <td className="px-5 py-3 text-sm text-gray-700 font-mono">{p.mobileNumber}</td>
+                      <td className="px-5 py-3 text-right">
+                        <a
+                          href={`https://wa.me/91${p.mobileNumber}?text=${waMsg}`}
+                          target="_blank"
+                          rel="noopener noreferrer"
+                          className="inline-flex items-center gap-1.5 bg-green-600 hover:bg-green-700 text-white px-3 py-1.5 rounded-lg text-xs font-bold transition-colors"
+                        >
+                          <PhoneCall className="w-3.5 h-3.5" /> WhatsApp Reminder
+                        </a>
+                      </td>
+                    </tr>
+                  );
+                })}
+              </tbody>
+            </table>
+          </div>
+        </div>
+      )}
     </Layout>
   );
 };

@@ -103,6 +103,7 @@ model Test {
   summary        String?
   parameters     TestParameter[]
   results        ReportResult[]
+  packageItems   TestPackageItem[]
   
   createdAt      DateTime        @default(now())
   updatedAt      DateTime        @updatedAt
@@ -273,4 +274,28 @@ model ActivityLog {
   ipAddress   String?
   
   createdAt   DateTime @default(now())
+}
+
+// ─── Health Checkup Packages ───────────────────────────────────────────────
+model TestPackage {
+  id          Int               @id @default(autoincrement())
+  name        String
+  code        String            @unique
+  description String?
+  price       Float
+  isActive    Boolean           @default(true)
+  items       TestPackageItem[]
+
+  createdAt   DateTime          @default(now())
+  updatedAt   DateTime          @updatedAt
+}
+
+model TestPackageItem {
+  id        Int         @id @default(autoincrement())
+  packageId Int
+  package   TestPackage @relation(fields: [packageId], references: [id], onDelete: Cascade)
+  testId    Int
+  test      Test        @relation(fields: [testId], references: [id])
+
+  @@unique([packageId, testId])
 }

@@ -1,4 +1,5 @@
 const prisma = require('../prisma');
+const { logActivity } = require('../utils/activityLogger');
 
 const generateReportNumber = async () => {
   const last = await prisma.report.findFirst({ orderBy: { id: 'desc' } });
@@ -64,6 +65,16 @@ exports.createReport = async (req, res) => {
     });
     
     res.status(201).json(report);
+
+    // Audit log (fire-and-forget)
+    logActivity({
+      userId: req.userId,
+      action: 'CREATE',
+      entity: 'Report',
+      entityId: report.reportNumber,
+      description: `Created report ${report.reportNumber} for patient ID ${patientId}`,
+      req,
+    });
   } catch (err) {
     console.error('Create report error:', err.message);
     res.status(500).json({ message: 'An error occurred while creating the report.' });
@@ -159,6 +170,16 @@ exports.updateReport = async (req, res) => {
     }
 
     res.status(200).json(report);
+
+    // Audit log
+    logActivity({
+      userId: req.userId,
+      action: 'UPDATE',
+      entity: 'Report',
+      entityId: req.params.id,
+      description: `Updated report ID ${req.params.id}${status ? ` → status: ${status}` : ''}`,
+      req,
+    });
   } catch (err) {
     console.error('Update report error:', err.message);
     res.status(500).json({ message: 'An error occurred.' });
@@ -182,6 +203,16 @@ exports.deleteReport = async (req, res) => {
     await prisma.reportResult.deleteMany({ where: { reportId } });
     await prisma.report.delete({ where: { id: reportId } });
     res.status(200).json({ message: 'Report deleted successfully' });
+
+    // Audit log
+    logActivity({
+      userId: req.userId,
+      action: 'DELETE',
+      entity: 'Report',
+      entityId: reportId,
+      description: `Deleted report ID ${reportId}`,
+      req,
+    });
   } catch (err) {
     console.error('Delete report error:', err.message);
     res.status(500).json({ message: 'An error occurred.' });

@@ -105,11 +105,13 @@ const Layout = ({ children }) => {
       { name: 'Doctors', path: '/doctors' },
       { name: 'Dr. Analytics', path: '/doctors/analytics' },
       { name: 'Tests', path: '/tests' },
+      { name: 'Packages', path: '/packages' },
       { name: 'Reports', path: '/reports' },
       { name: 'Billing', path: '/billing' },
       { name: 'Appointments', path: '/appointments' },
       { name: 'Inventory', path: '/inventory' },
       { name: 'Staff', path: '/staff' },
+      { name: 'Activity Log', path: '/activity-log' },
       { name: 'Settings', path: '/settings' },
     ];
   }

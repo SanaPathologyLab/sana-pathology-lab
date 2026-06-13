@@ -1,4 +1,5 @@
 const prisma = require('../prisma');
+const { logActivity } = require('../utils/activityLogger');
 
 const PATIENT_CREATE_FIELDS = [
   'fullName', 'fatherHusband', 'gender', 'dateOfBirth', 'age', 'ageType',
@@ -31,6 +32,16 @@ exports.createPatient = async (req, res) => {
 
     const patient = await prisma.patient.create({ data: whitelisted });
     res.status(201).json(patient);
+
+    // Audit log
+    logActivity({
+      userId: req.userId,
+      action: 'CREATE',
+      entity: 'Patient',
+      entityId: patient.patientId,
+      description: `Created patient ${patient.fullName} (${patient.patientId})`,
+      req,
+    });
   } catch (err) {
     console.error('Create patient error:', err.message);
     res.status(500).json({ message: 'An error occurred while creating the patient.' });
@@ -91,6 +102,16 @@ exports.updatePatient = async (req, res) => {
       data: whitelisted
     });
     res.status(200).json(patient);
+
+    // Audit log
+    logActivity({
+      userId: req.userId,
+      action: 'UPDATE',
+      entity: 'Patient',
+      entityId: id,
+      description: `Updated patient ID ${id}`,
+      req,
+    });
   } catch (err) {
     console.error('Update patient error:', err.message);
     res.status(500).json({ message: 'An error occurred while updating the patient.' });
@@ -128,6 +149,16 @@ exports.deletePatient = async (req, res) => {
 
     await prisma.patient.delete({ where: { id: patientId } });
     res.status(200).json({ message: 'Patient deleted successfully' });
+
+    // Audit log
+    logActivity({
+      userId: req.userId,
+      action: 'DELETE',
+      entity: 'Patient',
+      entityId: patientId,
+      description: `Deleted patient ID ${patientId}`,
+      req,
+    });
   } catch (err) {
     console.error('Delete Patient Error:', err);
     res.status(500).json({ message: 'An error occurred while deleting the patient.' });

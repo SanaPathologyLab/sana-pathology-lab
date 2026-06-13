@@ -22,6 +22,8 @@ const ReportLookup = lazy(() => import('./pages/ReportLookup'));
 const PublicPrint = lazy(() => import('./pages/PublicPrint'));
 const PublicWelcome = lazy(() => import('./pages/PublicWelcome'));
 const PublicAppointment = lazy(() => import('./pages/PublicAppointment'));
+const ActivityLog = lazy(() => import('./pages/ActivityLog'));
+const Packages = lazy(() => import('./pages/Packages'));
 
 import Loader from './components/Loader';
 
@@ -68,6 +70,8 @@ const AppContent = () => {
         <Route path="/inventory" element={<ProtectedRoute><Inventory /></ProtectedRoute>} />
         <Route path="/staff" element={<ProtectedRoute><Staff /></ProtectedRoute>} />
         <Route path="/settings" element={<ProtectedRoute><Settings /></ProtectedRoute>} />
+        <Route path="/activity-log" element={<ProtectedRoute><ActivityLog /></ProtectedRoute>} />
+        <Route path="/packages" element={<ProtectedRoute><Packages /></ProtectedRoute>} />
         <Route path="/widal" element={<ProtectedRoute><WidalTest /></ProtectedRoute>} />
 
         {/* Catch-all redirect to root */}

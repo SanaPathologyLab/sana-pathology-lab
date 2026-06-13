@@ -3,7 +3,8 @@ import Layout from '../components/Layout';
 import { AuthContext } from '../context/AuthContext';
 import { useNavigate } from 'react-router-dom';
 import Select from 'react-select';
-import { ArrowRight, Save, ArrowLeft, Beaker } from 'lucide-react';
+import { ArrowRight, Save, ArrowLeft, Beaker, Camera, Loader2, FileText, CheckCircle2 } from 'lucide-react';
+import Tesseract from 'tesseract.js';
 
 const CreateReport = () => {
   const { user } = useContext(AuthContext);
@@ -26,6 +27,12 @@ const CreateReport = () => {
   const [testResults, setTestResults] = useState([]);
   const [overallResults, setOverallResults] = useState({});
   const [testSummaries, setTestSummaries] = useState({});
+
+  // OCR State
+  const [ocrLoading, setOcrLoading] = useState(false);
+  const [ocrText, setOcrText] = useState('');
+  const [ocrError, setOcrError] = useState('');
+  const [showOcrText, setShowOcrText] = useState(false);
 
   useEffect(() => {
     fetchDropdownData();
@@ -98,6 +105,48 @@ const CreateReport = () => {
     setTestSummaries(initialSummaries);
     setTestResults(initialResults);
     setStep(2);
+  };
+
+  const handleOcrUpload = async (e) => {
+    const file = e.target.files[0];
+    if (!file) return;
+
+    setOcrLoading(true);
+    setOcrError('');
+    setOcrText('');
+    setShowOcrText(true);
+
+    try {
+      const worker = await Tesseract.createWorker('eng');
+      const ret = await worker.recognize(file);
+      const text = ret.data.text;
+      setOcrText(text);
+      await worker.terminate();
+
+      // Simple keyword matching against available tests to auto-select
+      const textUpper = text.toUpperCase();
+      const matchedTests = testOptions.filter(t => {
+        // match testName or testCode
+        const nameMatch = textUpper.includes(t.testName.toUpperCase());
+        const codeMatch = textUpper.includes(t.label.split(' - ')[0].toUpperCase());
+        return nameMatch || codeMatch;
+      });
+
+      if (matchedTests.length > 0) {
+        // Merge with currently selected without duplicating
+        setSelectedTests(prev => {
+          const currentIds = new Set(prev.map(p => p.value));
+          const newSelections = matchedTests.filter(m => !currentIds.has(m.value));
+          return [...prev, ...newSelections];
+        });
+      }
+
+    } catch (err) {
+      console.error('OCR Error:', err);
+      setOcrError('Failed to read image. Please try again or enter manually.');
+    } finally {
+      setOcrLoading(false);
+    }
   };
 
   const autoCalculateFlag = (valueStr, rangeStr) => {
@@ -674,6 +723,65 @@ const CreateReport = () => {
                   <Select options={doctorOptions} value={selectedDoctor} onChange={setSelectedDoctor} isClearable />
                 </div>
               </div>
+
+              {/* OCR Section */}
+              <div className="bg-blue-50 border border-blue-200 rounded-xl p-5 relative overflow-hidden">
+                <div className="absolute top-0 right-0 p-4 opacity-10 pointer-events-none">
+                  <Camera className="w-24 h-24 text-blue-900" />
+                </div>
+                <div className="relative z-10 flex flex-col md:flex-row md:items-start gap-5">
+                  <div className="flex-1">
+                    <h3 className="text-base font-extrabold text-[#00488d] flex items-center gap-2">
+                      <FileText className="w-5 h-5" /> Smart Referral Scanner (OCR)
+                    </h3>
+                    <p className="text-xs text-blue-800/70 mt-1 mb-4 font-medium max-w-md">
+                      Upload a photo of the doctor's referral slip. The system will extract text and automatically select matching tests below.
+                    </p>
+                    
+                    <div>
+                      <input 
+                        type="file" 
+                        id="ocr-upload" 
+                        accept="image/*" 
+                        className="hidden" 
+                        onChange={handleOcrUpload}
+                        disabled={ocrLoading}
+                      />
+                      <label 
+                        htmlFor="ocr-upload" 
+                        className={`inline-flex items-center justify-center gap-2 px-5 py-2.5 rounded-lg text-sm font-bold shadow-sm transition-all cursor-pointer ${
+                          ocrLoading 
+                            ? 'bg-blue-200 text-blue-600 cursor-not-allowed' 
+                            : 'bg-white text-[#00488d] border border-blue-300 hover:bg-blue-50 hover:border-blue-400'
+                        }`}
+                      >
+                        {ocrLoading ? (
+                          <><Loader2 className="w-4 h-4 animate-spin" /> Analyzing Image...</>
+                        ) : (
+                          <><Camera className="w-4 h-4" /> Upload Referral Photo</>
+                        )}
+                      </label>
+                    </div>
+
+                    {ocrError && <p className="text-xs font-bold text-red-600 mt-3">{ocrError}</p>}
+                    
+                    {showOcrText && ocrText && !ocrLoading && (
+                      <div className="mt-4 bg-white/60 border border-blue-200 rounded p-3">
+                        <div className="flex justify-between items-center mb-2">
+                          <span className="text-[10px] font-black text-blue-800 uppercase tracking-wider">Extracted Text</span>
+                          <span className="flex items-center gap-1 text-[10px] font-bold text-green-700 bg-green-100 px-2 py-0.5 rounded-full">
+                            <CheckCircle2 className="w-3 h-3" /> Auto-selection complete
+                          </span>
+                        </div>
+                        <p className="text-xs text-slate-700 font-mono whitespace-pre-wrap max-h-32 overflow-y-auto custom-scrollbar">
+                          {ocrText}
+                        </p>
+                      </div>
+                    )}
+                  </div>
+                </div>
+              </div>
+
               <div>
                 <label className="block text-sm font-bold text-gray-700 mb-2">Select Test Panels *</label>
                 <Select options={testOptions} value={selectedTests} onChange={setSelectedTests} isMulti isSearchable />
