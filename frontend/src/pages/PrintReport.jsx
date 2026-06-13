@@ -702,9 +702,12 @@ const PrintReport = () => {
                 <div className="flex-grow mt-2">
                   {pageData.segments.map((seg, idx) => {
                     const isLastSegForTest = !pages.slice(pageIndex + 1).some(p => p.segments?.some(s => s.testName === seg.testName));
+                    const isTiterSeg = (s) => s?.rows?.[0]?.test?.parameters?.some(p => p.isQualitative && p.titerValues);
+                    const prevSeg = idx > 0 ? pageData.segments[idx - 1] : null;
+                    const showHeader = idx === 0 || isTiterSeg(seg) !== isTiterSeg(prevSeg);
                     return (
                       <div key={seg.testName + idx} className={idx > 0 ? 'mt-4' : ''}>
-                        <TestTable testName={seg.testName} rows={seg.rows} showHeader={true} summary={isLastSegForTest ? seg.summary : ''} />
+                        <TestTable testName={seg.testName} rows={seg.rows} showHeader={showHeader} summary={isLastSegForTest ? seg.summary : ''} />
                       </div>
                     );
                   })}

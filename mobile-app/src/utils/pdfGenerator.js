@@ -479,9 +479,12 @@ export const generatePrintHTML = (report, settings, includeLetterhead = false) =
                 p => p.segments && p.segments.some(s => s.testName === seg.testName)
               );
               const showSummary = isLastSegmentForTest ? seg.summary : '';
+              const isTiterSeg = (s) => s?.rows?.[0]?.test?.parameters?.some(p => p.isQualitative && p.titerValues);
+              const prevSeg = idx > 0 ? pageData.segments[idx - 1] : null;
+              const showHeader = idx === 0 || isTiterSeg(seg) !== isTiterSeg(prevSeg);
               return `
                 <div style="margin-top: ${idx > 0 ? '16px' : '0'};">
-                  ${renderTestTable(seg.testName, seg.rows, true, showSummary)}
+                  ${renderTestTable(seg.testName, seg.rows, showHeader, showSummary)}
                 </div>
               `;
             }).join('')}

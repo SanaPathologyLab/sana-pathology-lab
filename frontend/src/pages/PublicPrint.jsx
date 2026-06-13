@@ -189,7 +189,7 @@ const PublicPrint = () => {
     </div>
   );
 
-  const TestTable = ({ testName, rows, summary = '' }) => {
+  const TestTable = ({ testName, rows, showHeader, summary = '' }) => {
     const isMantoux = testName.toUpperCase().includes('MANTOUX') || (rows[0] && rows[0].test?.testCode === 'MANTOUX-01');
     const isMalaria = testName.toUpperCase().includes('MALARIA MICRO') || (rows[0] && rows[0].test?.testCode === 'MP-MICRO');
 
@@ -296,7 +296,7 @@ const PublicPrint = () => {
     const filteredRows = overallResult ? rows.filter((_, i) => i !== overallIdx) : rows;
     return (
     <div className="relative z-10">
-      {(() => {
+      {showHeader && (() => {
         const firstParam = filteredRows[0]?.test?.parameters?.find(p => p.parameterName === filteredRows[0]?.parameterName);
         const isTiterTest = firstParam?.isQualitative && firstParam?.titerValues;
         const titerList = isTiterTest ? firstParam.titerValues.split(',') : [];
@@ -514,9 +514,12 @@ const PublicPrint = () => {
                 <div className="flex-grow mt-2">
                   {pageData.segments.map((seg, idx) => {
                     const isLastSegForTest = !pages.slice(pageIndex+1).some(p => p.segments?.some(s => s.testName===seg.testName));
+                    const isTiterSeg = (s) => s?.rows?.[0]?.test?.parameters?.some(p => p.isQualitative && p.titerValues);
+                    const prevSeg = idx > 0 ? pageData.segments[idx - 1] : null;
+                    const showHeader = idx === 0 || isTiterSeg(seg) !== isTiterSeg(prevSeg);
                     return (
                       <div key={seg.testName+idx} className={idx > 0 ? 'mt-4' : ''}>
-                        <TestTable testName={seg.testName} rows={seg.rows} summary={isLastSegForTest ? seg.summary : ''} />
+                        <TestTable testName={seg.testName} rows={seg.rows} showHeader={showHeader} summary={isLastSegForTest ? seg.summary : ''} />
                       </div>
                     );
                   })}
