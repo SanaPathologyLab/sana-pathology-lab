@@ -66,15 +66,19 @@ export const generatePrintHTML = (report, settings, includeLetterhead = false) =
     const { rows, summary } = groupedTests[testName];
     let totalCost = 0;
     let tempPrevGroup = null;
+    let summaryCost = 0;
+    if (summary) {
+      summaryCost = 1.0 + (summary.split('\n').length * 0.5) + Math.ceil(summary.length / 80) * 0.4;
+    }
     rows.forEach((row, idx) => {
       const isNewGroup = row.groupName && row.groupName !== tempPrevGroup;
       const paramDef = row.test?.parameters?.find(p => p.parameterName === row.parameterName);
-      let cost = COST.paramRow + (paramDef?.isQualitative ? COST.qualOffset : 0) + (isNewGroup ? COST.groupHeader : 0) + (idx === 0 ? COST.testHeader : 0) + (idx === rows.length - 1 && summary ? COST.summary : 0);
+      let cost = COST.paramRow + (paramDef?.isQualitative ? COST.qualOffset : 0) + (isNewGroup ? COST.groupHeader : 0) + (idx === 0 ? COST.testHeader : 0);
       if (row.parameterName && row.parameterName.length > 26) cost += 0.8;
       totalCost += cost;
       tempPrevGroup = row.groupName;
     });
-    flatTests.push({ testName, rows, summary, totalCost });
+    flatTests.push({ testName, rows, summary, totalCost, summaryCost });
   });
 
   const pages = [];
@@ -99,9 +103,9 @@ export const generatePrintHTML = (report, settings, includeLetterhead = false) =
   };
 
   flatTests.forEach(test => {
-    const { testName, rows, summary, totalCost } = test;
+    const { testName, rows, summary, totalCost, summaryCost } = test;
 
-    if (totalCost <= PAGE_CAPACITY && pageUsed + totalCost > PAGE_CAPACITY && pageUsed > 0) {
+    if (totalCost > 0 && totalCost <= PAGE_CAPACITY && pageUsed + totalCost > PAGE_CAPACITY && pageUsed > 0) {
       newPage();
     }
 
@@ -111,19 +115,18 @@ export const generatePrintHTML = (report, settings, includeLetterhead = false) =
       let cost = COST.paramRow + (paramDef?.isQualitative ? COST.qualOffset : 0) + (isNewGroup ? COST.groupHeader : 0);
 
       if (!currentSegment) cost += COST.testHeader;
-      if (idx === rows.length - 1 && summary) cost += COST.summary;
       if (row.parameterName && row.parameterName.length > 26) cost += 0.8;
 
       if (pageUsed + cost > PAGE_CAPACITY && pageUsed > 0) {
         newPage();
-        cost = COST.testHeader + COST.paramRow + (paramDef?.isQualitative ? COST.qualOffset : 0) + (idx === rows.length - 1 && summary ? COST.summary : 0);
+        cost = COST.testHeader + COST.paramRow + (paramDef?.isQualitative ? COST.qualOffset : 0);
         if (row.parameterName && row.parameterName.length > 26) cost += 0.8;
       }
 
       if (!currentSegment) {
         currentSegment = {
           testName,
-          summary,
+          summary: null,
           rows: [],
           isFirstOnPage: currentPage.segments.length === 0,
         };
@@ -134,6 +137,25 @@ export const generatePrintHTML = (report, settings, includeLetterhead = false) =
       pageUsed += cost;
       prevGroupName = row.groupName;
     });
+
+    if (summary) {
+      if (pageUsed + summaryCost > PAGE_CAPACITY && pageUsed > 0) {
+        newPage();
+      }
+      
+      if (!currentSegment) {
+        currentSegment = {
+          testName,
+          summary,
+          rows: [],
+          isFirstOnPage: currentPage.segments.length === 0,
+        };
+      } else {
+        currentSegment.summary = summary;
+      }
+      pageUsed += summaryCost;
+    }
+
     finaliseSegment();
   });
 
@@ -269,7 +291,7 @@ export const generatePrintHTML = (report, settings, includeLetterhead = false) =
     const titerList = isTiterTest ? firstParam.titerValues.split(',') : [];
 
     let tableHeaderHTML = '';
-    if (showHeader) {
+    if (showHeader && rows.length > 0) {
       tableHeaderHTML = `
         <div style="border: 1px solid #000; border-radius: 20px; padding: 6px 16px; margin-bottom: 8px; display: flex; font-size: 13px; font-weight: bold; color: #000; align-items: center; box-sizing: border-box;">
           <div style="${isTiterTest ? 'width: 25%;' : 'width: 45%;'}">Investigations</div>
@@ -291,11 +313,17 @@ export const generatePrintHTML = (report, settings, includeLetterhead = false) =
       <div style="position: relative; z-index: 10; margin-bottom: 12px; width: 100%;">
         ${tableHeaderHTML}
         <div style="padding: 0 8px;">
-          <div style="font-weight: 900; font-size: 15px; text-decoration: underline; text-transform: uppercase; tracking-wider: 0.05em; color: #000; margin-bottom: 8px;">
-            ${testName}
-          </div>
-          <table style="width: 100%; table-layout: fixed; border-collapse: collapse; font-size: 13.5px; color: #000;">
-            <tbody>
+          ${rows.length > 0 ? `
+            <div style="font-weight: 900; font-size: 15px; text-decoration: underline; text-transform: uppercase; tracking-wider: 0.05em; color: #000; margin-bottom: 8px;">
+              ${testName}
+            </div>
+            <table style="width: 100%; table-layout: fixed; border-collapse: collapse; font-size: 13.5px; color: #000;">
+              <tbody>
+          ` : `
+            <div style="font-weight: 900; font-size: 15px; text-decoration: underline; text-transform: uppercase; tracking-wider: 0.05em; color: #000; margin-top: 8px;">
+              ${testName} (Note)
+            </div>
+          `}
               ${filteredRows.map((res, idx, arr) => {
                 const prevGroup = idx > 0 ? arr[idx - 1].groupName : null;
                 const showGroup = res.groupName && res.groupName !== prevGroup;

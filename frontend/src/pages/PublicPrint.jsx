@@ -294,20 +294,21 @@ const PublicPrint = () => {
     const overallIdx = rows.findIndex(r => r.groupName === `__OVERALL__${testName}`);
     const overallResult = overallIdx !== -1 ? rows[overallIdx] : null;
     const filteredRows = overallResult ? rows.filter((_, i) => i !== overallIdx) : rows;
+
     return (
     <div className="relative z-10">
-      {showHeader && (() => {
+      {showHeader && rows.length > 0 && (() => {
         const firstParam = filteredRows[0]?.test?.parameters?.find(p => p.parameterName === filteredRows[0]?.parameterName);
         const isTiterTest = firstParam?.isQualitative && firstParam?.titerValues;
         const titerList = isTiterTest ? firstParam.titerValues.split(',') : [];
         return (
-          <div className="border border-black rounded-full px-4 py-1 mb-2 flex text-[13px] font-bold text-black items-center">
-            <div className={isTiterTest ? 'w-[25%]' : 'w-[45%]'}>Investigations</div>
-            {isTiterTest && titerList.map((t, i) => (
-              <div key={i} className="flex-1 text-center text-[11px]">{t.trim()}</div>
-            ))}
+          <div className="border border-black rounded-3xl px-4 py-1.5 mb-2 flex items-center text-[13px] font-bold text-black box-border">
+            <div className={isTiterTest ? "w-[25%]" : "w-[45%]"}>Investigations</div>
             {isTiterTest ? (
               <>
+                {titerList.map(t => (
+                  <div key={t} className="flex-1 text-center text-[11px]">{t.trim()}</div>
+                ))}
                 <div className="w-[10%] text-center text-[10px]">Unit</div>
                 <div className="w-[20%] text-center text-[10px]">Range</div>
               </>
@@ -322,13 +323,17 @@ const PublicPrint = () => {
           </div>
         );
       })()}
+
       <div className="px-2">
-        <div className="font-black text-[15px] underline uppercase tracking-wider text-black mb-2">
-          {testName}
-        </div>
-        <table className="w-full text-[13.5px] text-black">
-          <tbody>
-            {filteredRows.map((res, idx, arr) => {
+        {rows.length > 0 ? (
+          <>
+            <div className="font-black text-[15px] underline uppercase tracking-wider text-black mb-2">
+              {testName}
+            </div>
+
+            <table className="w-full text-[13.5px] text-black">
+              <tbody>
+                {filteredRows.map((res, idx, arr) => {
               const prevGroup = idx > 0 ? arr[idx - 1].groupName : null;
               const showGroup = res.groupName && res.groupName !== prevGroup;
               const isHigh = res.flag === 'HIGH';
@@ -414,6 +419,12 @@ const PublicPrint = () => {
             })}
           </tbody>
         </table>
+        </>
+        ) : (
+          <div className="font-black text-[15px] underline uppercase tracking-wider text-black mt-2">
+            {testName} (Note)
+          </div>
+        )}
         
         {overallResult && (
           <div className="mt-3 flex items-center justify-between text-[14px] font-bold uppercase text-black border-t border-black pt-2">
@@ -441,15 +452,19 @@ const PublicPrint = () => {
     const { rows, summary } = groupedTests[testName];
     let totalCost = 0;
     let tempPrevGroup = null;
+    let summaryCost = 0;
+    if (summary) {
+      summaryCost = 1.0 + (summary.split('\n').length * 0.5) + Math.ceil(summary.length / 80) * 0.4;
+    }
     rows.forEach((row, idx) => {
       const isNewGroup = row.groupName && row.groupName !== tempPrevGroup;
       const paramDef = row.test?.parameters?.find(p => p.parameterName === row.parameterName);
-      let cost = COST.paramRow + (paramDef?.isQualitative ? COST.qualOffset : 0) + (isNewGroup ? COST.groupHeader : 0) + (idx === 0 ? COST.testHeader : 0) + (idx === rows.length - 1 && summary ? COST.summary : 0);
+      let cost = COST.paramRow + (paramDef?.isQualitative ? COST.qualOffset : 0) + (isNewGroup ? COST.groupHeader : 0) + (idx === 0 ? COST.testHeader : 0);
       if (row.parameterName && row.parameterName.length > 26) cost += 0.8;
       totalCost += cost;
       tempPrevGroup = row.groupName;
     });
-    flatTests.push({ testName, rows, summary, totalCost });
+    flatTests.push({ testName, rows, summary, totalCost, summaryCost });
   });
 
   const pages = [];
@@ -462,9 +477,9 @@ const PublicPrint = () => {
   const flushPage = () => { flushSeg(); pages.push(curPage); curPage = { segments: [] }; pageUsed = 0; prevGroup = null; };
 
   flatTests.forEach(test => {
-    const { testName, rows, summary, totalCost } = test;
+    const { testName, rows, summary, totalCost, summaryCost } = test;
     
-    if (totalCost <= PAGE_CAPACITY && pageUsed + totalCost > PAGE_CAPACITY && pageUsed > 0) {
+    if (totalCost > 0 && totalCost <= PAGE_CAPACITY && pageUsed + totalCost > PAGE_CAPACITY && pageUsed > 0) {
       flushPage();
     }
     
@@ -474,20 +489,33 @@ const PublicPrint = () => {
       let cost = COST.paramRow + (paramDef?.isQualitative ? COST.qualOffset : 0) + (isNewGroup ? COST.groupHeader : 0);
       
       if (!curSeg) cost += COST.testHeader;
-      if (idx === rows.length - 1 && summary) cost += COST.summary;
       if (row.parameterName && row.parameterName.length > 26) cost += 0.8;
 
       if (pageUsed + cost > PAGE_CAPACITY && pageUsed > 0) {
         flushPage();
-        cost = COST.testHeader + COST.paramRow + (paramDef?.isQualitative ? COST.qualOffset : 0) + (idx === rows.length - 1 && summary ? COST.summary : 0);
+        cost = COST.testHeader + COST.paramRow + (paramDef?.isQualitative ? COST.qualOffset : 0);
         if (row.parameterName && row.parameterName.length > 26) cost += 0.8;
       }
 
-      if (!curSeg) { curSeg = { testName, summary, rows: [] }; prevGroup = null; }
+      if (!curSeg) { curSeg = { testName, summary: null, rows: [] }; prevGroup = null; }
       curSeg.rows.push(row);
       pageUsed += cost;
       prevGroup = row.groupName;
     });
+
+    if (summary) {
+      if (pageUsed + summaryCost > PAGE_CAPACITY && pageUsed > 0) {
+        flushPage();
+      }
+      
+      if (!curSeg) {
+        curSeg = { testName, summary, rows: [] };
+      } else {
+        curSeg.summary = summary;
+      }
+      pageUsed += summaryCost;
+    }
+
     flushSeg();
   });
 
