@@ -518,7 +518,7 @@ const PrintReport = () => {
   };
 
   // --- Linear Parameter-Level Pagination ---
-  const PAGE_CAPACITY = 20;
+  const PAGE_CAPACITY = 22;
   const COST = {
     testHeader: 2.0,
     groupHeader: 1.2,
@@ -528,41 +528,64 @@ const PrintReport = () => {
     endOfReport: 2.0,
   };
 
-  const flatItems = [];
+  const flatTests = [];
   testNames.forEach(testName => {
     const { rows, summary } = groupedTests[testName];
+    let totalCost = 0;
+    let tempPrevGroup = null;
     rows.forEach((row, idx) => {
-      flatItems.push({ type: 'row', testName, summary, row, isLastRow: idx === rows.length - 1, groupName: row.groupName || null });
+      const isNewGroup = row.groupName && row.groupName !== tempPrevGroup;
+      const paramDef = row.test?.parameters?.find(p => p.parameterName === row.parameterName);
+      let cost = COST.paramRow + (paramDef?.isQualitative ? COST.qualOffset : 0) + (isNewGroup ? COST.groupHeader : 0) + (idx === 0 ? COST.testHeader : 0) + (idx === rows.length - 1 && summary ? COST.summary : 0);
+      if (row.parameterName && row.parameterName.length > 26) cost += 0.8;
+      totalCost += cost;
+      tempPrevGroup = row.groupName;
     });
+    flatTests.push({ testName, rows, summary, totalCost });
   });
-  flatItems.push({ type: 'end' });
 
   const pages = [];
   let curPage = { segments: [] };
   let pageUsed = 0;
   let curSeg = null;
   let prevGroup = null;
-  let prevTest = null;
 
   const flushSeg = () => { if (curSeg) { curPage.segments.push(curSeg); curSeg = null; } };
   const flushPage = () => { flushSeg(); pages.push(curPage); curPage = { segments: [] }; pageUsed = 0; prevGroup = null; };
 
-  flatItems.forEach(item => {
-    if (item.type === 'end') { if (pageUsed + COST.endOfReport > PAGE_CAPACITY) flushPage(); flushSeg(); pages.push(curPage); return; }
-    const { testName, row, summary, isLastRow, groupName } = item;
-    const isNewTest  = testName !== prevTest;
-    const isNewGroup = groupName && groupName !== prevGroup;
-    const paramDef   = row.test?.parameters?.find(p => p.parameterName === row.parameterName);
-    let cost = COST.paramRow + (paramDef?.isQualitative ? COST.qualOffset : 0) + (isNewGroup ? COST.groupHeader : 0) + (isNewTest ? COST.testHeader : 0) + (isLastRow && summary ? COST.summary : 0);
-    if (row.parameterName && row.parameterName.length > 26) cost += 0.8;
-    if (pageUsed + cost > PAGE_CAPACITY && pageUsed > 0) { 
-      flushPage(); 
-      cost = COST.testHeader + COST.paramRow + (paramDef?.isQualitative ? COST.qualOffset : 0) + (isLastRow && summary ? COST.summary : 0); 
-      if (row.parameterName && row.parameterName.length > 26) cost += 0.8;
+  flatTests.forEach(test => {
+    const { testName, rows, summary, totalCost } = test;
+    
+    // Shift whole test to new page if it fits on a single page but not the current one
+    if (totalCost <= PAGE_CAPACITY && pageUsed + totalCost > PAGE_CAPACITY && pageUsed > 0) {
+      flushPage();
     }
-    if (isNewTest || !curSeg || curSeg.testName !== testName) { flushSeg(); curSeg = { testName, summary, rows: [] }; prevGroup = null; }
-    curSeg.rows.push(row); pageUsed += cost; prevTest = testName; prevGroup = groupName;
+    
+    rows.forEach((row, idx) => {
+      const isNewGroup = row.groupName && row.groupName !== prevGroup;
+      const paramDef = row.test?.parameters?.find(p => p.parameterName === row.parameterName);
+      let cost = COST.paramRow + (paramDef?.isQualitative ? COST.qualOffset : 0) + (isNewGroup ? COST.groupHeader : 0);
+      
+      if (!curSeg) cost += COST.testHeader;
+      if (idx === rows.length - 1 && summary) cost += COST.summary;
+      if (row.parameterName && row.parameterName.length > 26) cost += 0.8;
+
+      if (pageUsed + cost > PAGE_CAPACITY && pageUsed > 0) {
+        flushPage();
+        cost = COST.testHeader + COST.paramRow + (paramDef?.isQualitative ? COST.qualOffset : 0) + (idx === rows.length - 1 && summary ? COST.summary : 0);
+        if (row.parameterName && row.parameterName.length > 26) cost += 0.8;
+      }
+
+      if (!curSeg) { curSeg = { testName, summary, rows: [] }; prevGroup = null; }
+      curSeg.rows.push(row);
+      pageUsed += cost;
+      prevGroup = row.groupName;
+    });
+    flushSeg();
   });
+
+  if (pageUsed + COST.endOfReport > PAGE_CAPACITY) flushPage();
+  pages.push(curPage);
 
   const totalPages = pages.length;
 
@@ -697,7 +720,7 @@ const PrintReport = () => {
                 <div className="text-[52px] font-black tracking-widest mt-4 text-black">SANA PATHOLOGY LAB</div>
               </div>
               <LetterheadHeader />
-              <div className="flex-grow flex flex-col relative z-10 px-2 pb-[220px]">
+              <div className="flex-grow flex flex-col relative z-10 px-2 pb-[170px]">
                 <PatientHeader pageNum={pageIndex + 1} totalPages={totalPages} />
                 <div className="flex-grow mt-2">
                   {pageData.segments.map((seg, idx) => {

@@ -51,7 +51,7 @@ export const generatePrintHTML = (report, settings, includeLetterhead = false) =
 
   // --- Linear Parameter-Level Pagination ---
   // Cost units per row-type (empirically tuned for A4 with letterhead header)
-  const PAGE_CAPACITY = 20;
+  const PAGE_CAPACITY = 22;
   const COST = {
     testHeader: 2.0,   // test title + column header row
     groupHeader: 1.2,  // sub-group label row
@@ -61,32 +61,27 @@ export const generatePrintHTML = (report, settings, includeLetterhead = false) =
     endOfReport: 2.0,  // "End of Report" footer marker
   };
 
-  // Build a flat ordered list of items to place
-  // Each item: { type, testName, testData, row, isLastRow, groupName }
-  const items = [];
+  const flatTests = [];
   testNames.forEach(testName => {
     const { rows, summary } = groupedTests[testName];
+    let totalCost = 0;
+    let tempPrevGroup = null;
     rows.forEach((row, idx) => {
-      items.push({
-        type: 'row',
-        testName,
-        summary,
-        row,
-        isLastRow: idx === rows.length - 1,
-        groupName: row.groupName || null,
-      });
+      const isNewGroup = row.groupName && row.groupName !== tempPrevGroup;
+      const paramDef = row.test?.parameters?.find(p => p.parameterName === row.parameterName);
+      let cost = COST.paramRow + (paramDef?.isQualitative ? COST.qualOffset : 0) + (isNewGroup ? COST.groupHeader : 0) + (idx === 0 ? COST.testHeader : 0) + (idx === rows.length - 1 && summary ? COST.summary : 0);
+      if (row.parameterName && row.parameterName.length > 26) cost += 0.8;
+      totalCost += cost;
+      tempPrevGroup = row.groupName;
     });
+    flatTests.push({ testName, rows, summary, totalCost });
   });
-  // Append the "End of Report" sentinel
-  items.push({ type: 'end' });
 
-  // Pack items chronologically into pages
   const pages = [];
-  let currentPage = { segments: [] };   // a segment = { testName, rows[], isFirst, isLast, summary }
+  let currentPage = { segments: [] };
   let pageUsed = 0;
   let currentSegment = null;
   let prevGroupName = null;
-  let prevTestName = null;
 
   const finaliseSegment = () => {
     if (currentSegment) {
@@ -103,59 +98,49 @@ export const generatePrintHTML = (report, settings, includeLetterhead = false) =
     prevGroupName = null;
   };
 
-  items.forEach((item, itemIdx) => {
-    if (item.type === 'end') {
-      // End-of-report marker: fit on current page if possible, else new page
-      if (pageUsed + COST.endOfReport > PAGE_CAPACITY) newPage();
-      // mark last segment as final so it renders summary & end marker
-      finaliseSegment();
-      pages.push(currentPage);
-      return;
-    }
+  flatTests.forEach(test => {
+    const { testName, rows, summary, totalCost } = test;
 
-    const { testName, row, summary, isLastRow, groupName } = item;
-    const isNewTest = testName !== prevTestName;
-    const isNewGroup = groupName && groupName !== prevGroupName;
-
-    // Calculate cost of this row
-    let cost = COST.paramRow;
-    const paramDef = row.test?.parameters?.find(p => p.parameterName === row.parameterName);
-    if (paramDef?.isQualitative) cost += COST.qualOffset;
-    if (isNewGroup) cost += COST.groupHeader;
-    if (isNewTest)  cost += COST.testHeader;
-    if (isLastRow && summary) cost += COST.summary;
-    if (row.parameterName && row.parameterName.length > 26) cost += 0.8;
-
-    // If it doesn't fit, flush to a new page
-    if (pageUsed + cost > PAGE_CAPACITY && pageUsed > 0) {
+    if (totalCost <= PAGE_CAPACITY && pageUsed + totalCost > PAGE_CAPACITY && pageUsed > 0) {
       newPage();
-      // On the new page the test is a continuation – still needs header
-      cost = COST.testHeader + COST.paramRow;
-      if (paramDef?.isQualitative) cost += COST.qualOffset;
-      if (isLastRow && summary) cost += COST.summary;
+    }
+
+    rows.forEach((row, idx) => {
+      const isNewGroup = row.groupName && row.groupName !== prevGroupName;
+      const paramDef = row.test?.parameters?.find(p => p.parameterName === row.parameterName);
+      let cost = COST.paramRow + (paramDef?.isQualitative ? COST.qualOffset : 0) + (isNewGroup ? COST.groupHeader : 0);
+
+      if (!currentSegment) cost += COST.testHeader;
+      if (idx === rows.length - 1 && summary) cost += COST.summary;
       if (row.parameterName && row.parameterName.length > 26) cost += 0.8;
-    }
 
-    // Start or continue segment for this test on this page
-    if (isNewTest || !currentSegment || currentSegment.testName !== testName) {
-      finaliseSegment();
-      currentSegment = {
-        testName,
-        summary,
-        rows: [],
-        isFirstOnPage: currentPage.segments.length === 0 && !currentSegment,
-      };
-      prevGroupName = null;
-    }
+      if (pageUsed + cost > PAGE_CAPACITY && pageUsed > 0) {
+        newPage();
+        cost = COST.testHeader + COST.paramRow + (paramDef?.isQualitative ? COST.qualOffset : 0) + (idx === rows.length - 1 && summary ? COST.summary : 0);
+        if (row.parameterName && row.parameterName.length > 26) cost += 0.8;
+      }
 
-    currentSegment.rows.push(row);
-    pageUsed += cost;
-    prevTestName = testName;
-    prevGroupName = groupName;
+      if (!currentSegment) {
+        currentSegment = {
+          testName,
+          summary,
+          rows: [],
+          isFirstOnPage: currentPage.segments.length === 0,
+        };
+        prevGroupName = null;
+      }
+
+      currentSegment.rows.push(row);
+      pageUsed += cost;
+      prevGroupName = row.groupName;
+    });
+    finaliseSegment();
   });
 
-  const totalPages = pages.length;
+  if (pageUsed + COST.endOfReport > PAGE_CAPACITY) newPage();
+  pages.push(currentPage);
 
+  const totalPages = pages.length;
 
   const renderLogo = () => svgString;
 
@@ -468,7 +453,7 @@ export const generatePrintHTML = (report, settings, includeLetterhead = false) =
         ` : ''}
 
         <!-- Report Main Area -->
-        <div style="flex-grow: 1; display: flex; flex-direction: column; position: relative; z-index: 10; padding: 0 8px; padding-bottom: 72mm; box-sizing: border-box;">
+        <div style="flex-grow: 1; display: flex; flex-direction: column; position: relative; z-index: 10; padding: 0 8px; padding-bottom: 45mm; box-sizing: border-box;">
           ${renderPatientHeader(pageIndex + 1)}
           
           <div style="flex-grow: 1; margin-top: 8px;">
