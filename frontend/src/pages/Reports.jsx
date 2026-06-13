@@ -177,17 +177,67 @@ const Reports = () => {
   };
 
   const updateResult = (idx, field, value) => {
-    setEditResults(prev => prev.map((r, i) => {
-      if (i === idx) {
-        const updated = { ...r, [field]: value };
-        if (field === 'resultValue') {
-          const autoFlag = autoCalculateFlag(value, r.referenceRange);
-          if (autoFlag || value === '') updated.flag = autoFlag;
+    setEditResults(prev => {
+      let newResults = prev.map((r, i) => {
+        if (i === idx) {
+          const updated = { ...r, [field]: value };
+          if (field === 'resultValue') {
+            const autoFlag = autoCalculateFlag(value, r.referenceRange);
+            if (autoFlag || value === '') updated.flag = autoFlag;
+          }
+          return updated;
         }
-        return updated;
+        return r;
+      });
+
+      // Auto-calculate CBC Parameters
+      const modifiedRow = newResults[idx];
+      if (modifiedRow && field === 'resultValue') {
+        const paramName = modifiedRow.parameterName;
+        if (paramName === 'HAEMOGLOBIN' || paramName === 'H.C.T.' || paramName === 'R.B.C. COUNT') {
+          const hbRow = newResults.find(tr => tr.testId === modifiedRow.testId && tr.parameterName === 'HAEMOGLOBIN');
+          let hb = hbRow && hbRow.resultValue ? parseFloat(hbRow.resultValue) : NaN;
+          
+          let hct = NaN, rbc = NaN;
+
+          if (paramName === 'HAEMOGLOBIN' && !isNaN(hb)) {
+            hct = hb * 3;
+            rbc = hb / 3;
+          } else {
+            const hctRow = newResults.find(tr => tr.testId === modifiedRow.testId && tr.parameterName === 'H.C.T.');
+            const rbcRow = newResults.find(tr => tr.testId === modifiedRow.testId && tr.parameterName === 'R.B.C. COUNT');
+            hct = hctRow && hctRow.resultValue ? parseFloat(hctRow.resultValue) : NaN;
+            rbc = rbcRow && rbcRow.resultValue ? parseFloat(rbcRow.resultValue) : NaN;
+          }
+
+          if (!isNaN(hb) && !isNaN(hct) && !isNaN(rbc) && rbc > 0 && hct > 0) {
+            const mcv = (hct * 10) / rbc;
+            const mch = (hb * 10) / rbc;
+            const mchc = (hb * 100) / hct;
+
+            newResults = newResults.map(tr => {
+              if (tr.testId === modifiedRow.testId) {
+                let updatedVal = null;
+                if (paramName === 'HAEMOGLOBIN') {
+                  if (tr.parameterName === 'H.C.T.') updatedVal = hct.toFixed(1);
+                  if (tr.parameterName === 'R.B.C. COUNT') updatedVal = rbc.toFixed(2);
+                }
+                if (tr.parameterName === 'M.C.V.') updatedVal = mcv.toFixed(1);
+                if (tr.parameterName === 'M.C.H.') updatedVal = mch.toFixed(1);
+                if (tr.parameterName === 'M.C.H.C.') updatedVal = mchc.toFixed(1);
+
+                if (updatedVal !== null) {
+                  const autoFlag = autoCalculateFlag(updatedVal, tr.referenceRange);
+                  return { ...tr, resultValue: updatedVal, flag: autoFlag || tr.flag || '' };
+                }
+              }
+              return tr;
+            });
+          }
+        }
       }
-      return r;
-    }));
+      return newResults;
+    });
   };
 
   const handleRemoveResult = (idx) => {
