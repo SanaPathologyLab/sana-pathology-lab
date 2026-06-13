@@ -433,7 +433,7 @@ const PublicPrint = () => {
   };
 
   // --- Linear Parameter-Level Pagination ---
-  const PAGE_CAPACITY = 19;
+  const PAGE_CAPACITY = 13;
   const COST = { testHeader:2.0, groupHeader:1.2, paramRow:1.0, qualOffset:0.5, summary:2.0, endOfReport:2.0 };
 
   const flatItems = [];
@@ -504,7 +504,7 @@ const PublicPrint = () => {
                 <div className="text-[52px] font-black tracking-widest mt-4 text-black">SANA PATHOLOGY LAB</div>
               </div>
               <LetterheadHeader />
-              <div className="flex-grow flex flex-col relative z-10 px-2">
+              <div className="flex-grow flex flex-col relative z-10 px-2 pb-[230px]">
                 <PatientHeader pageNum={pageIndex + 1} totalPages={totalPages} />
                 <div className="flex-grow mt-2">
                   {pageData.segments.map((seg, idx) => {
