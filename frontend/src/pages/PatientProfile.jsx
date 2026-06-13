@@ -4,6 +4,7 @@ import Layout from '../components/Layout';
 import { AuthContext } from '../context/AuthContext';
 import { User, Phone, FileText, IndianRupee, Calendar, ArrowLeft, Printer, Activity } from 'lucide-react';
 import Loader from '../components/Loader';
+import PatientIDCard from '../components/PatientIDCard';
 
 const API = '/api';
 
@@ -138,6 +139,12 @@ const PatientProfile = () => {
               </div>
             </div>
           )}
+
+          {/* ID Card Widget */}
+          <div className="bg-white rounded-lg border border-gray-200 shadow-sm flex flex-col items-center p-5">
+            <h3 className="text-sm font-bold text-[#00488d] uppercase mb-4 w-full text-left">Digital ID Card</h3>
+            <PatientIDCard patient={patient} settings={{ labName: 'Sana Pathology Lab', labAddress: 'Datawali Road, Near Aara Machine, Hayat Nagar' }} />
+          </div>
         </div>
 
         {/* Reports & Billing */}

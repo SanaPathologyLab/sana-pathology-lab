@@ -1,6 +1,7 @@
-import React, { useContext, Suspense, lazy } from 'react';
+import React, { useContext, Suspense, lazy, useEffect } from 'react';
 import { Routes, Route, Navigate } from 'react-router-dom';
 import { AuthContext, AuthProvider } from './context/AuthContext';
+import { LanguageProvider } from './context/LanguageContext';
 
 const Login = lazy(() => import('./pages/Login'));
 const Dashboard = lazy(() => import('./pages/Dashboard'));
@@ -26,6 +27,7 @@ const ActivityLog = lazy(() => import('./pages/ActivityLog'));
 const Packages = lazy(() => import('./pages/Packages'));
 
 import Loader from './components/Loader';
+import { syncOfflineRequests } from './utils/offlineSync';
 
 const Spinner = () => (
   <div className="flex items-center justify-center min-h-screen">
@@ -82,10 +84,24 @@ const AppContent = () => {
 };
 
 function App() {
+  useEffect(() => {
+    const handleOnline = () => {
+      syncOfflineRequests();
+    };
+    window.addEventListener('online', handleOnline);
+    // Try syncing on initial load if online
+    if (navigator.onLine) {
+      syncOfflineRequests();
+    }
+    return () => window.removeEventListener('online', handleOnline);
+  }, []);
+
   return (
-    <AuthProvider>
-      <AppContent />
-    </AuthProvider>
+    <LanguageProvider>
+      <AuthProvider>
+        <AppContent />
+      </AuthProvider>
+    </LanguageProvider>
   );
 }
 

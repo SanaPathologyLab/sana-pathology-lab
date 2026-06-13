@@ -1,6 +1,7 @@
 import React, { useState, useEffect } from 'react';
 import { useParams, useNavigate } from 'react-router-dom';
 import { QRCodeSVG } from 'qrcode.react';
+import { Sparkles, X, BrainCircuit, AlertCircle } from 'lucide-react';
 import Logo from '../components/Logo';
 import Loader from '../components/Loader';
 
@@ -18,6 +19,11 @@ const PublicPrint = () => {
     labPhone2: '6397240575',
     reportFooter: 'This Report is not Valid for medico legal Purpose.',
   });
+
+  // AI Explainer State
+  const [isExplaining, setIsExplaining] = useState(false);
+  const [explanation, setExplanation] = useState('');
+  const [showExplainerModal, setShowExplainerModal] = useState(false);
 
   useEffect(() => {
     Promise.all([
@@ -98,6 +104,45 @@ const PublicPrint = () => {
 
   const handlePrint = () => {
     window.print();
+  };
+
+  const handleExplainReport = async () => {
+    if (isExplaining) return;
+    setIsExplaining(true);
+    setShowExplainerModal(true);
+    setExplanation('');
+
+    try {
+      const abnormalResults = [];
+      const normalResults = [];
+
+      Object.entries(groupedTests).forEach(([testName, data]) => {
+        data.rows.forEach(r => {
+          if (r.flag === 'HIGH' || r.flag === 'LOW') {
+            abnormalResults.push(`${r.parameterName}: ${r.resultValue} ${r.unit} (Normal: ${r.referenceRange})`);
+          } else if (r.parameterName && r.resultValue) {
+            normalResults.push(`${r.parameterName}: ${r.resultValue}`);
+          }
+        });
+      });
+
+      let prompt = `You are a friendly, empathetic medical AI assistant helping a patient understand their lab report. `;
+      if (abnormalResults.length > 0) {
+        prompt += `The patient has these abnormal results: ${abnormalResults.join('; ')}. `;
+      } else {
+        prompt += `The patient's results are mostly normal. `;
+      }
+      prompt += `Explain the abnormal results in very simple, non-medical terms. What do they mean? What could cause them? Give general, safe advice. Keep it under 4 paragraphs. Do not provide a diagnosis.`;
+
+      const response = await fetch(`https://text.pollinations.ai/${encodeURIComponent(prompt)}`);
+      const text = await response.text();
+      setExplanation(text);
+    } catch (err) {
+      console.error(err);
+      setExplanation("Sorry, I couldn't generate an explanation at this time. Please check your internet connection.");
+    } finally {
+      setIsExplaining(false);
+    }
   };
 
   // ── High Quality HTML Letterhead Header (Screen & PDF share only) ──
@@ -558,10 +603,54 @@ const PublicPrint = () => {
         <button onClick={handleWhatsApp} className="flex items-center gap-2 px-4 py-2 bg-green-500 hover:bg-green-600 text-white rounded text-sm font-bold shadow-sm transition-colors ml-auto">
           WhatsApp
         </button>
+        <button onClick={handleExplainReport} disabled={isExplaining} className="flex items-center gap-2 px-4 py-2 bg-gradient-to-r from-indigo-500 to-purple-600 hover:from-indigo-600 hover:to-purple-700 text-white rounded text-sm font-bold shadow-sm transition-colors disabled:opacity-70">
+          <Sparkles className="w-4 h-4" /> Explain in Simple Terms
+        </button>
         <button onClick={handlePrint} className="flex items-center gap-2 px-5 py-2 bg-[#00488d] hover:bg-blue-800 text-white rounded text-sm font-bold shadow-sm transition-colors">
           🖨️ Print / Save PDF
         </button>
       </div>
+
+      {showExplainerModal && (
+        <div className="fixed inset-0 z-[60] flex items-center justify-center p-4 bg-black/50 backdrop-blur-sm animate-fade-in no-print">
+          <div className="bg-white rounded-3xl w-full max-w-2xl max-h-[90vh] flex flex-col shadow-2xl overflow-hidden animate-slide-up">
+            <div className="p-6 border-b border-gray-100 flex items-center justify-between bg-gradient-to-r from-indigo-50 to-purple-50">
+              <div className="flex items-center gap-3">
+                <div className="bg-gradient-to-br from-indigo-500 to-purple-600 p-2 rounded-xl text-white shadow-sm">
+                  <BrainCircuit className="w-6 h-6" />
+                </div>
+                <h3 className="text-xl font-black text-indigo-900">AI Report Summary</h3>
+              </div>
+              <button onClick={() => setShowExplainerModal(false)} className="p-2 text-gray-400 hover:bg-white hover:text-gray-700 rounded-xl transition-all shadow-sm">
+                <X className="w-5 h-5" />
+              </button>
+            </div>
+            
+            <div className="p-6 overflow-y-auto flex-1">
+              {isExplaining && !explanation ? (
+                <div className="flex flex-col items-center justify-center py-12 text-indigo-600">
+                  <Loader size="lg" className="text-indigo-600 mb-4" />
+                  <p className="font-bold text-lg animate-pulse">Analyzing your results...</p>
+                  <p className="text-sm text-gray-500 mt-2">Generating simple explanation...</p>
+                </div>
+              ) : (
+                <div className="prose prose-sm md:prose-base prose-indigo max-w-none text-slate-700 whitespace-pre-wrap leading-relaxed">
+                  {explanation}
+                </div>
+              )}
+            </div>
+            
+            {!isExplaining && explanation && (
+              <div className="p-4 bg-amber-50 border-t border-amber-100/50 flex items-start gap-3 text-amber-800">
+                <AlertCircle className="w-5 h-5 shrink-0 mt-0.5" />
+                <p className="text-xs font-semibold leading-relaxed">
+                  <strong>Disclaimer:</strong> This explanation is generated by AI to help you understand your results. It is <strong>NOT</strong> medical advice, diagnosis, or treatment. Always consult with a qualified doctor.
+                </p>
+              </div>
+            )}
+          </div>
+        </div>
+      )}
 
       <div className="report-wrapper">
         {pages.map((pageData, pageIndex) => {

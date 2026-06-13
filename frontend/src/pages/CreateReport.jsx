@@ -3,8 +3,9 @@ import Layout from '../components/Layout';
 import { AuthContext } from '../context/AuthContext';
 import { useNavigate } from 'react-router-dom';
 import Select from 'react-select';
-import { ArrowRight, Save, ArrowLeft, Beaker, Camera, Loader2, FileText, CheckCircle2 } from 'lucide-react';
+import { ArrowRight, Save, ArrowLeft, Beaker, Camera, Loader2, FileText, CheckCircle2, MessageSquare, Sparkles, QrCode } from 'lucide-react';
 import Tesseract from 'tesseract.js';
+import QRScanner from '../components/QRScanner';
 
 const CreateReport = () => {
   const { user } = useContext(AuthContext);
@@ -33,6 +34,14 @@ const CreateReport = () => {
   const [ocrText, setOcrText] = useState('');
   const [ocrError, setOcrError] = useState('');
   const [showOcrText, setShowOcrText] = useState(false);
+
+  // AI Suggester State
+  const [symptoms, setSymptoms] = useState('');
+  const [suggestingTests, setSuggestingTests] = useState(false);
+  const [suggestedText, setSuggestedText] = useState('');
+
+  // QR Scanner State
+  const [showQRScanner, setShowQRScanner] = useState(false);
 
   useEffect(() => {
     fetchDropdownData();
@@ -146,6 +155,53 @@ const CreateReport = () => {
       setOcrError('Failed to read image. Please try again or enter manually.');
     } finally {
       setOcrLoading(false);
+    }
+  };
+
+  const handleSuggestTests = async () => {
+    if (!symptoms.trim() || suggestingTests) return;
+    setSuggestingTests(true);
+    setSuggestedText('');
+    
+    try {
+      const testNames = testOptions.map(t => t.testName).join(', ');
+      const prompt = `A patient has the following symptoms: "${symptoms}". Based on these symptoms, which of the following lab tests would you recommend? Available tests: [${testNames}]. Return ONLY a comma-separated list of the test names you recommend from the available list. No extra text, no explanations.`;
+      
+      const response = await fetch(`https://text.pollinations.ai/${encodeURIComponent(prompt)}`);
+      const text = await response.text();
+      setSuggestedText(text);
+
+      // Auto-select tests
+      const suggestedArray = text.split(',').map(s => s.trim().toUpperCase());
+      const matchedTests = testOptions.filter(t => 
+        suggestedArray.some(sa => sa.includes(t.testName.toUpperCase()) || t.testName.toUpperCase().includes(sa))
+      );
+
+      if (matchedTests.length > 0) {
+        setSelectedTests(prev => {
+          const currentIds = new Set(prev.map(p => p.value));
+          const newSelections = matchedTests.filter(m => !currentIds.has(m.value));
+          return [...prev, ...newSelections];
+        });
+      }
+    } catch (err) {
+      console.error('AI Suggestion Error:', err);
+      setSuggestedText('Failed to get suggestions. Please check your connection.');
+    } finally {
+      setSuggestingTests(false);
+    }
+  };
+
+  const handleQRScan = (decodedText) => {
+    setShowQRScanner(false);
+    // The decodedText is the patientId (e.g., P001 or id)
+    const match = patientOptions.find(opt => 
+      opt.label.includes(decodedText) || String(opt.value) === String(decodedText)
+    );
+    if (match) {
+      setSelectedPatient(match);
+    } else {
+      alert(`Patient ID "${decodedText}" not found.`);
     }
   };
 
@@ -715,7 +771,15 @@ const CreateReport = () => {
             <div className="max-w-3xl mx-auto space-y-8">
               <div className="grid grid-cols-1 md:grid-cols-2 gap-8">
                 <div>
-                  <label className="block text-sm font-bold text-gray-700 mb-2">Select Patient *</label>
+                  <div className="flex items-center justify-between mb-2">
+                    <label className="block text-sm font-bold text-gray-700">Select Patient *</label>
+                    <button 
+                      onClick={() => setShowQRScanner(true)}
+                      className="text-xs font-bold text-[#00488d] flex items-center gap-1 hover:underline"
+                    >
+                      <QrCode className="w-3.5 h-3.5" /> Scan ID Card
+                    </button>
+                  </div>
                   <Select options={patientOptions} value={selectedPatient} onChange={setSelectedPatient} isClearable />
                 </div>
                 <div>
@@ -782,6 +846,52 @@ const CreateReport = () => {
                 </div>
               </div>
 
+              {/* AI Symptom Suggester */}
+              <div className="bg-indigo-50 border border-indigo-200 rounded-xl p-5 relative overflow-hidden">
+                <div className="absolute top-0 right-0 p-4 opacity-10 pointer-events-none">
+                  <Sparkles className="w-24 h-24 text-indigo-900" />
+                </div>
+                <div className="relative z-10 flex flex-col gap-4">
+                  <div>
+                    <h3 className="text-base font-extrabold text-indigo-900 flex items-center gap-2">
+                      <MessageSquare className="w-5 h-5" /> AI Symptom-to-Test Suggester
+                    </h3>
+                    <p className="text-xs text-indigo-800/70 mt-1 mb-2 font-medium">
+                      Enter patient symptoms (e.g., "fever, joint pain, fatigue"). The AI will suggest relevant tests and auto-select them.
+                    </p>
+                  </div>
+                  
+                  <div className="flex flex-col sm:flex-row gap-3">
+                    <input 
+                      type="text" 
+                      value={symptoms}
+                      onChange={(e) => setSymptoms(e.target.value)}
+                      placeholder="Enter symptoms here..."
+                      className="flex-1 border border-indigo-300 rounded-lg px-4 py-2.5 text-sm focus:outline-none focus:border-indigo-500 focus:ring-1 focus:ring-indigo-500"
+                      onKeyDown={(e) => e.key === 'Enter' && handleSuggestTests()}
+                    />
+                    <button 
+                      onClick={handleSuggestTests}
+                      disabled={suggestingTests || !symptoms.trim()}
+                      className="flex items-center justify-center gap-2 px-5 py-2.5 bg-gradient-to-r from-indigo-500 to-purple-600 hover:from-indigo-600 hover:to-purple-700 text-white rounded-lg text-sm font-bold shadow-sm transition-all disabled:opacity-70 disabled:cursor-not-allowed whitespace-nowrap"
+                    >
+                      {suggestingTests ? (
+                        <><Loader2 className="w-4 h-4 animate-spin" /> Analyzing...</>
+                      ) : (
+                        <><Sparkles className="w-4 h-4" /> Suggest Tests</>
+                      )}
+                    </button>
+                  </div>
+
+                  {suggestedText && !suggestingTests && (
+                    <div className="mt-2 bg-white/80 border border-indigo-200 rounded p-3 text-sm">
+                      <span className="text-[10px] font-black text-indigo-800 uppercase tracking-wider block mb-1">AI Recommendation:</span>
+                      <p className="text-slate-700 font-semibold">{suggestedText}</p>
+                    </div>
+                  )}
+                </div>
+              </div>
+
               <div>
                 <label className="block text-sm font-bold text-gray-700 mb-2">Select Test Panels *</label>
                 <Select options={testOptions} value={selectedTests} onChange={setSelectedTests} isMulti isSearchable />
@@ -807,6 +917,13 @@ const CreateReport = () => {
               </button>
             </div>
           </div>
+        )}
+
+        {showQRScanner && (
+          <QRScanner 
+            onScan={handleQRScan} 
+            onClose={() => setShowQRScanner(false)} 
+          />
         )}
       </div>
     </Layout>

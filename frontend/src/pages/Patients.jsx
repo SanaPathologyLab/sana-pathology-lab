@@ -2,7 +2,7 @@ import React, { useState, useEffect, useContext } from 'react';
 import Layout from '../components/Layout';
 import { AuthContext } from '../context/AuthContext';
 import { useNavigate, useLocation } from 'react-router-dom';
-import { Plus, Search, Edit2, Trash2, X, Users, Eye, Download } from 'lucide-react';
+import { Plus, Search, Edit2, Trash2, X, Users, Eye, Download, Mic, MicOff, Loader2 } from 'lucide-react';
 import * as XLSX from 'xlsx';
 
 const Patients = () => {
@@ -24,6 +24,10 @@ const Patients = () => {
   const [deletingId, setDeletingId] = useState(null);
   const [selectedIds, setSelectedIds] = useState([]);
   const [bulkDeleting, setBulkDeleting] = useState(false);
+
+  // Voice Input State
+  const [isListening, setIsListening] = useState(false);
+  const [voiceProcessing, setVoiceProcessing] = useState(false);
 
   useEffect(() => {
     fetchPatients();
@@ -158,6 +162,67 @@ const Patients = () => {
     setEditingId(null);
     setFormData({ fullName: '', age: '', ageType: 'Years', gender: 'Male', mobileNumber: '', city: '', bloodGroup: '' });
     setIsModalOpen(true);
+  };
+
+  const handleVoiceInput = () => {
+    const SpeechRecognition = window.SpeechRecognition || window.webkitSpeechRecognition;
+    if (!SpeechRecognition) {
+      alert("Your browser does not support Voice Recognition. Please use Chrome or Edge.");
+      return;
+    }
+
+    const recognition = new SpeechRecognition();
+    recognition.lang = 'en-IN'; // Indian English, catches Hindi names well
+    recognition.interimResults = false;
+    recognition.maxAlternatives = 1;
+
+    recognition.onstart = () => {
+      setIsListening(true);
+    };
+
+    recognition.onresult = async (event) => {
+      setIsListening(false);
+      const transcript = event.results[0][0].transcript;
+      
+      setVoiceProcessing(true);
+      try {
+        // Send the dictated text to AI to parse into JSON
+        const prompt = `Extract patient details from this text into a strict JSON object with keys: fullName (string), age (number), ageType (Years/Months/Days), gender (Male/Female/Other), mobileNumber (string), city (string). Text: "${transcript}". Return ONLY valid JSON, no markdown formatting or extra text.`;
+        
+        const res = await fetch(`https://text.pollinations.ai/${encodeURIComponent(prompt)}`);
+        let text = await res.text();
+        
+        // Clean markdown if present
+        text = text.replace(/```json/g, '').replace(/```/g, '').trim();
+        const parsed = JSON.parse(text);
+
+        setFormData(prev => ({
+          ...prev,
+          fullName: parsed.fullName || prev.fullName,
+          age: parsed.age ? String(parsed.age) : prev.age,
+          ageType: parsed.ageType || prev.ageType,
+          gender: parsed.gender || prev.gender,
+          mobileNumber: parsed.mobileNumber || prev.mobileNumber,
+          city: parsed.city || prev.city
+        }));
+      } catch (err) {
+        console.error("AI Parsing Error:", err);
+        alert(`Captured text: "${transcript}". Failed to auto-fill form. Please fill manually.`);
+      } finally {
+        setVoiceProcessing(false);
+      }
+    };
+
+    recognition.onerror = (event) => {
+      console.error("Speech recognition error", event.error);
+      setIsListening(false);
+    };
+
+    recognition.onend = () => {
+      setIsListening(false);
+    };
+
+    recognition.start();
   };
 
   const openEditModal = (patient) => {
@@ -323,7 +388,30 @@ const Patients = () => {
         <div className="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center z-50 p-4">
           <div className="bg-white rounded-lg shadow-xl w-full max-w-2xl overflow-hidden">
             <div className="flex justify-between items-center p-6 border-b border-gray-200">
-              <h3 className="text-xl font-bold text-[#00488d]">{editingId ? 'Edit Patient' : 'Register New Patient'}</h3>
+              <div className="flex items-center gap-4">
+                <h3 className="text-xl font-bold text-[#00488d]">{editingId ? 'Edit Patient' : 'Register New Patient'}</h3>
+                {!editingId && (
+                  <button 
+                    type="button"
+                    onClick={handleVoiceInput}
+                    disabled={voiceProcessing}
+                    className={`flex items-center gap-2 px-3 py-1.5 rounded-full text-xs font-bold transition-all shadow-sm ${
+                      isListening ? 'bg-red-500 text-white animate-pulse' : 
+                      voiceProcessing ? 'bg-blue-100 text-blue-600 cursor-wait' : 
+                      'bg-indigo-50 text-indigo-700 hover:bg-indigo-100 border border-indigo-200'
+                    }`}
+                    title="Dictate details (e.g. 'Rahul Sharma 35 years old male mobile 9876543210 from Delhi')"
+                  >
+                    {isListening ? (
+                      <><Mic className="w-3.5 h-3.5" /> Listening...</>
+                    ) : voiceProcessing ? (
+                      <><Loader2 className="w-3.5 h-3.5 animate-spin" /> Processing...</>
+                    ) : (
+                      <><Mic className="w-3.5 h-3.5" /> Voice Entry</>
+                    )}
+                  </button>
+                )}
+              </div>
               <button onClick={closeModal} className="text-gray-400 hover:text-gray-600">
                 <X className="w-6 h-6" />
               </button>

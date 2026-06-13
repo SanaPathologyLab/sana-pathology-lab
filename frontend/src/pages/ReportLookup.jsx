@@ -6,7 +6,7 @@ import {
   Microscope, FlaskConical, Clock, Mail, MapPin,
   Syringe, Pill, Activity, Users, BadgeCheck,
   ChevronRight, BookOpen, Lightbulb,
-  Thermometer, Droplets, Wind, HeartPulse, Phone
+  Thermometer, Droplets, Wind, HeartPulse, Phone, Sparkles, X, BrainCircuit
 } from 'lucide-react';
 import { useNavigate } from 'react-router-dom';
 import Loader from '../components/Loader';
@@ -94,6 +94,11 @@ const ReportLookup = () => {
   const [currentTip, setCurrentTip] = useState(0);
   const [openFaq, setOpenFaq] = useState(null);
 
+  // AI Explainer State
+  const [isExplaining, setIsExplaining] = useState(false);
+  const [explanation, setExplanation] = useState('');
+  const [explainingReportId, setExplainingReportId] = useState(null);
+
   useEffect(() => {
     const hash = window.location.hash;
     const qIndex = hash.indexOf('?');
@@ -160,7 +165,49 @@ const ReportLookup = () => {
 
   const handleSearch = (e) => {
     e.preventDefault();
+    setExplanation('');
     executeSearch(searchType, query);
+  };
+
+  const handleExplainReport = async (report, groups) => {
+    if (isExplaining) return;
+    setIsExplaining(true);
+    setExplainingReportId(report.id);
+    setExplanation('');
+
+    try {
+      // Build a simple summary of abnormal or key results to send to AI
+      let promptData = `Patient: ${report.patient?.age} ${report.patient?.ageType} ${report.patient?.gender}. `;
+      const abnormalResults = [];
+      const normalResults = [];
+
+      Object.entries(groups).forEach(([cat, results]) => {
+        results.forEach(r => {
+          if (r.flag === 'HIGH' || r.flag === 'LOW') {
+            abnormalResults.push(`${r.parameterName}: ${r.resultValue} ${r.unit} (Normal: ${r.referenceRange})`);
+          } else if (r.parameterName && r.resultValue) {
+            normalResults.push(`${r.parameterName}: ${r.resultValue}`);
+          }
+        });
+      });
+
+      let prompt = `You are a friendly, empathetic medical AI assistant helping a patient understand their lab report. `;
+      if (abnormalResults.length > 0) {
+        prompt += `The patient has these abnormal results: ${abnormalResults.join('; ')}. `;
+      } else {
+        prompt += `The patient's results are mostly normal. `;
+      }
+      prompt += `Explain the abnormal results in very simple, non-medical terms. What do they mean? What could cause them? Give general, safe advice. Keep it under 4 paragraphs. Do not provide a diagnosis.`;
+
+      const response = await fetch(`https://text.pollinations.ai/${encodeURIComponent(prompt)}`);
+      const text = await response.text();
+      setExplanation(text);
+    } catch (err) {
+      console.error(err);
+      setExplanation("Sorry, I couldn't generate an explanation at this time. Please check your internet connection.");
+    } finally {
+      setIsExplaining(false);
+    }
   };
 
   const groupByCategory = (results) => {
@@ -500,6 +547,54 @@ const ReportLookup = () => {
                               className="flex items-center justify-center gap-2 bg-gradient-to-r from-primary to-primary-light hover:from-primary-light hover:to-primary text-white text-xs font-bold px-6 py-3 rounded-xl transition-all duration-300 shadow-md shadow-primary/20 active:scale-[0.97] w-full sm:w-auto hover:-translate-y-0.5 hover:shadow-xl hover:shadow-primary/30"
                             ><Printer className="w-4 h-4" /> Print Verified Report</button>
                           </div>
+                          
+                          {/* AI Explainer Button Section */}
+                          <div className="px-6 py-4 bg-slate-50 border-t border-slate-100 flex justify-center">
+                            <button
+                              onClick={() => handleExplainReport(report, groups)}
+                              disabled={isExplaining}
+                              className="flex items-center gap-2 px-6 py-3 bg-gradient-to-r from-indigo-500 to-purple-600 hover:from-indigo-600 hover:to-purple-700 text-white rounded-xl font-bold text-sm shadow-md transition-all active:scale-[0.98] disabled:opacity-70"
+                            >
+                              {isExplaining && explainingReportId === report.id ? (
+                                <><Loader type="button" className="text-white" /> Generating Explanation...</>
+                              ) : (
+                                <><Sparkles className="w-4 h-4" /> Explain in Simple Terms</>
+                              )}
+                            </button>
+                          </div>
+
+                          {/* AI Explanation Box */}
+                          {explanation && explainingReportId === report.id && (
+                            <div className="mx-6 mb-6 mt-2 relative animate-fade-in-up">
+                              <div className="absolute inset-0 bg-gradient-to-br from-indigo-50 to-purple-50 rounded-2xl border border-indigo-100 transform -skew-y-1"></div>
+                              <div className="relative bg-white/80 backdrop-blur-md p-6 rounded-2xl border border-indigo-100 shadow-sm">
+                                <button 
+                                  onClick={() => setExplanation('')}
+                                  className="absolute top-4 right-4 p-1 rounded-lg text-slate-400 hover:text-slate-600 hover:bg-slate-100 transition-colors"
+                                >
+                                  <X className="w-4 h-4" />
+                                </button>
+                                
+                                <div className="flex items-center gap-2 mb-4">
+                                  <div className="bg-gradient-to-br from-indigo-500 to-purple-600 p-2 rounded-xl text-white shadow-sm">
+                                    <BrainCircuit className="w-5 h-5" />
+                                  </div>
+                                  <h4 className="font-black text-indigo-900 text-lg">AI Report Summary</h4>
+                                </div>
+                                
+                                <div className="prose prose-sm prose-indigo max-w-none text-slate-700 whitespace-pre-wrap leading-relaxed">
+                                  {explanation}
+                                </div>
+                                
+                                <div className="mt-5 pt-4 border-t border-indigo-100/50 flex items-start gap-2 text-amber-700 bg-amber-50 p-3 rounded-xl border border-amber-200/50">
+                                  <AlertCircle className="w-4 h-4 shrink-0 mt-0.5" />
+                                  <p className="text-[11px] font-semibold leading-relaxed">
+                                    <strong>Disclaimer:</strong> This explanation is generated by AI (Artificial Intelligence) to help you understand your test results in simple language. It is <strong>NOT</strong> medical advice, diagnosis, or treatment. Always consult with a qualified healthcare provider or doctor regarding your health and lab reports.
+                                  </p>
+                                </div>
+                              </div>
+                            </div>
+                          )}
                         </>
                       )}
                     </div>

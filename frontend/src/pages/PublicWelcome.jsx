@@ -9,6 +9,7 @@ import {
 } from 'lucide-react';
 import Logo from '../components/Logo';
 import Loader from '../components/Loader';
+import { useLanguage } from '../context/LanguageContext';
 
 import BloodTube3D from '../components/BloodTube3D';
 
@@ -96,6 +97,7 @@ const TICKER_TESTS = [
 
 const PublicWelcome = () => {
   const navigate = useNavigate();
+  const { t, language, toggleLanguage } = useLanguage();
   const [openFaq, setOpenFaq] = useState(null);
   const [currentSlide, setCurrentSlide] = useState(0);
   const [currentTip, setCurrentTip] = useState(0);
@@ -394,11 +396,18 @@ const PublicWelcome = () => {
             </div>
             
             <button 
+              onClick={toggleLanguage}
+              className="hidden md:flex items-center justify-center font-bold text-slate-600 bg-gray-100 hover:bg-gray-200 transition-colors px-3 py-2 rounded-full shadow-inner"
+              title="Switch Language"
+            >
+              {language === 'en' ? 'HI' : 'EN'}
+            </button>
+            <button 
               onClick={() => navigate('/login')}
               className="flex items-center gap-1.5 text-sm font-bold text-white bg-primary hover:bg-primary-light transition-all px-4 py-2 md:px-6 md:py-2.5 rounded-full shadow-lg shadow-primary/30 ring-2 ring-primary/40 ring-offset-2 ring-offset-white"
             >
               <UserCircle size={18} className="hidden sm:block" />
-              <span>Login</span>
+              Staff Login
             </button>
           </div>
         </div>
@@ -429,33 +438,25 @@ const PublicWelcome = () => {
             {/* Left Content */}
             <div className="w-full lg:w-1/2 text-center lg:text-left">
               <div className="inline-flex items-center gap-2 px-4 py-1.5 rounded-full bg-white/10 text-primary-pale text-xs font-semibold tracking-wider uppercase mb-6 backdrop-blur-md border border-white/20">
-                <Sparkles size={14} className="text-[#F1C40F]" />
-                <span>NABL Standards • 100% Quality Assured</span>
+                <CheckCircle2 size={16} className="text-secondary" />
+                ISO 9001:2015 Certified
               </div>
-
-              <h2 className="text-5xl md:text-6xl lg:text-7xl font-heading text-white mb-6 leading-tight drop-shadow-sm">
-                Trusted Pathology Lab <span className="text-[#F1C40F]">in Your City</span>
+              <h2 className="text-4xl md:text-5xl lg:text-7xl font-heading text-white leading-[1.1] mb-6 drop-shadow-lg">
+                {t('welcome')}
               </h2>
-              
-              <p className="text-lg md:text-xl text-primary-pale mb-10 font-light max-w-2xl mx-auto lg:mx-0">
-                Providing high-precision diagnostics, blood tests, and health packages with free home collection at your convenience.
+              <p className="text-lg md:text-xl text-blue-100 mb-8 max-w-2xl mx-auto lg:mx-0 font-medium leading-relaxed drop-shadow-md">
+                {t('welcomeSub')}
               </p>
-
-              <div className="flex flex-col sm:flex-row items-center justify-center lg:justify-start gap-4 mb-12">
-                <a 
-                  href="#packages"
-                  onClick={(e) => { e.preventDefault(); scrollToSection('packages'); }}
-                  className="w-full sm:w-auto min-h-[44px] bg-[#F1C40F] hover:bg-yellow-400 text-[#085041] px-8 py-4 rounded-full font-bold text-lg transition-all shadow-lg shadow-[#F1C40F]/30 hover:-translate-y-1 text-center cursor-pointer"
-                >
-                  Explore Packages
-                </a>
-                <a 
-                  href="#services"
-                  onClick={(e) => { e.preventDefault(); scrollToSection('services'); }}
-                  className="w-full sm:w-auto min-h-[44px] bg-white/10 hover:bg-white/20 text-white border border-white/30 px-8 py-4 rounded-full font-bold text-lg transition-all text-center cursor-pointer"
-                >
-                  Find a Test
-                </a>
+              
+              <div className="flex flex-col sm:flex-row items-center gap-4 justify-center lg:justify-start">
+                <button onClick={() => scrollToSection('booking')} className="w-full sm:w-auto bg-secondary hover:bg-yellow-400 text-slate-900 px-8 py-4 rounded-xl font-bold text-lg shadow-xl shadow-secondary/20 transition-all flex items-center justify-center gap-2 hover:-translate-y-1">
+                  <Calendar size={20} />
+                  {t('bookHomeCollection')}
+                </button>
+                <button onClick={() => scrollToSection('services')} className="w-full sm:w-auto bg-white/10 hover:bg-white/20 border border-white/30 text-white px-8 py-4 rounded-xl font-bold text-lg shadow-lg transition-all flex items-center justify-center gap-2 backdrop-blur-md">
+                  <FileText size={20} />
+                  {t('trackReports')}
+                </button>
               </div>
             </div>
 
