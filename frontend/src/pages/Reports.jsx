@@ -551,7 +551,19 @@ const Reports = () => {
                                 <tr key={res.id || res.originalIndex} className={idx % 2 === 0 ? 'bg-white' : 'bg-gray-50/50'}>
                                   <td className="px-4 py-2 font-semibold text-gray-700 text-xs">{res.parameterName}</td>
                                   <td className="px-4 py-2">
-                                    {(res.parameterName?.toUpperCase().includes('TYPHI') || res.parameterName?.toUpperCase().includes('WIDAL')) ? (
+                                    {res.parameterName?.toUpperCase().includes('TYPHIDOT') ? (
+                                      <select
+                                        value={res.resultValue || ''}
+                                        onChange={e => updateResult(res.originalIndex, 'resultValue', e.target.value)}
+                                        disabled={user?.userType !== 'STAFF'}
+                                        className="w-full border border-gray-300 rounded px-2 py-1 text-sm focus:outline-none focus:border-[#00488d] font-bold disabled:bg-transparent disabled:border-transparent disabled:appearance-none"
+                                      >
+                                        <option value="">- Select -</option>
+                                        <option value="NON-REACTIVE">NON-REACTIVE</option>
+                                        <option value="REACTIVE">REACTIVE</option>
+                                        <option value="WEAKLY-REACTIVE">WEAKLY-REACTIVE</option>
+                                      </select>
+                                    ) : (res.parameterName?.toUpperCase().includes('TYPHI') || res.parameterName?.toUpperCase().includes('WIDAL')) ? (
                                       <select
                                         value={res.resultValue || ''}
                                         onChange={e => updateResult(res.originalIndex, 'resultValue', e.target.value)}

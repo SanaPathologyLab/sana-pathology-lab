@@ -673,7 +673,18 @@ const CreateReport = () => {
                       <tr className="hover:bg-gray-50">
                         <td className="px-4 py-4 text-sm font-bold text-gray-800 pl-6">{tr.parameterName}</td>
                         <td className="px-4 py-4">
-                          {(tr.parameterName?.toUpperCase().includes('TYPHI') || tr.parameterName?.toUpperCase().includes('WIDAL')) ? (
+                          {tr.parameterName?.toUpperCase().includes('TYPHIDOT') ? (
+                            <select
+                              value={tr.resultValue || ''}
+                              onChange={(e) => handleResultChange(tr.key, 'resultValue', e.target.value)}
+                              className="w-full border border-gray-300 rounded px-3 py-2 text-sm font-bold focus:outline-none focus:border-[#00488d]"
+                            >
+                              <option value="">-- Select --</option>
+                              <option value="NON-REACTIVE">NON-REACTIVE</option>
+                              <option value="REACTIVE">REACTIVE</option>
+                              <option value="WEAKLY-REACTIVE">WEAKLY-REACTIVE</option>
+                            </select>
+                          ) : (tr.parameterName?.toUpperCase().includes('TYPHI') || tr.parameterName?.toUpperCase().includes('WIDAL')) ? (
                             <select
                               value={tr.resultValue || ''}
                               onChange={(e) => handleResultChange(tr.key, 'resultValue', e.target.value)}
