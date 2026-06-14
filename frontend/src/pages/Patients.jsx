@@ -4,6 +4,7 @@ import { AuthContext } from '../context/AuthContext';
 import { useNavigate, useLocation } from 'react-router-dom';
 import { Plus, Search, Edit2, Trash2, X, Users, Eye, Download, Mic, MicOff, Loader2 } from 'lucide-react';
 import * as XLSX from 'xlsx';
+import { generateAI } from '../utils/ai';
 
 const Patients = () => {
   const { user } = useContext(AuthContext);
@@ -189,8 +190,7 @@ const Patients = () => {
         // Send the dictated text to AI to parse into JSON
         const prompt = `Extract patient details from this text into a strict JSON object with keys: fullName (string), age (number), ageType (Years/Months/Days), gender (Male/Female/Other), mobileNumber (string), city (string). Text: "${transcript}". Return ONLY valid JSON, no markdown formatting or extra text.`;
         
-        const res = await fetch(`https://text.pollinations.ai/${encodeURIComponent(prompt)}`);
-        let text = await res.text();
+        let text = await generateAI(prompt);
         
         // Clean markdown if present
         text = text.replace(/```json/g, '').replace(/```/g, '').trim();

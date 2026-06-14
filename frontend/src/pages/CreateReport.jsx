@@ -4,6 +4,7 @@ import { AuthContext } from '../context/AuthContext';
 import { useNavigate } from 'react-router-dom';
 import Select from 'react-select';
 import { ArrowRight, Save, ArrowLeft, Beaker, Camera, Loader2, FileText, CheckCircle2, MessageSquare, Sparkles, QrCode } from 'lucide-react';
+import { generateAI } from '../utils/ai';
 import Tesseract from 'tesseract.js';
 import QRScanner from '../components/QRScanner';
 
@@ -167,8 +168,7 @@ const CreateReport = () => {
       const testNames = testOptions.map(t => t.testName).join(', ');
       const prompt = `A patient has the following symptoms: "${symptoms}". Based on these symptoms, which of the following lab tests would you recommend? Available tests: [${testNames}]. Return ONLY a comma-separated list of the test names you recommend from the available list. No extra text, no explanations.`;
       
-      const response = await fetch(`https://text.pollinations.ai/${encodeURIComponent(prompt)}`);
-      const text = await response.text();
+      const text = await generateAI(prompt);
       setSuggestedText(text);
 
       // Auto-select tests

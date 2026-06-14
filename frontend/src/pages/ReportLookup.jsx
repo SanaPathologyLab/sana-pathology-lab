@@ -10,6 +10,7 @@ import {
 } from 'lucide-react';
 import { useNavigate } from 'react-router-dom';
 import Loader from '../components/Loader';
+import { generateAI } from '../utils/ai';
 
 const API = '/api';
 
@@ -199,12 +200,11 @@ const ReportLookup = () => {
       }
       prompt += `Explain the abnormal results in very simple, non-medical terms. What do they mean? What could cause them? Give general, safe advice. Keep it under 4 paragraphs. Do not provide a diagnosis.`;
 
-      const response = await fetch(`https://text.pollinations.ai/${encodeURIComponent(prompt)}`);
-      const text = await response.text();
+      const text = await generateAI(prompt);
       setExplanation(text);
     } catch (err) {
-      console.error(err);
-      setExplanation("Sorry, I couldn't generate an explanation at this time. Please check your internet connection.");
+      console.error("AI Explanation Error:", err);
+      setExplanation("The AI explanation service is currently busy or rate-limited. Please wait a moment and click 'Explain in Simple Terms' again.");
     } finally {
       setIsExplaining(false);
     }
