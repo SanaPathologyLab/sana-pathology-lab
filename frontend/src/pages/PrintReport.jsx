@@ -491,7 +491,7 @@ const PrintReport = () => {
                       <td className={`py-1 font-semibold uppercase ${res.groupName ? '' : ''} ${isQual ? 'w-[45%]' : 'w-[45%]'} align-top`}>
                         {res.parameterName}
                       </td>
-                      <td colSpan={isQual ? 4 : 1} className={`py-1 ${isQual ? 'text-left pl-4' : 'text-center'} align-top ${isQual ? 'w-[55%]' : 'w-[12%]'}`}>
+                      <td colSpan={isQual ? 4 : 1} className={`py-1 ${isQual ? 'text-left pl-4' : 'text-center'} align-top ${isQual ? 'w-[55%]' : 'w-[12%]'} whitespace-nowrap`}>
                         <span className={`${isQual ? 'font-black text-[15px]' + (res.resultValue?.startsWith('POSITIVE') ? ' text-green-700' : res.resultValue?.startsWith('NEGATIVE') ? ' text-red-600' : '') : isAbnormal ? 'font-black border-b-[1.5px] border-black pb-0.5' : 'font-bold'}`}>
                           {res.resultValue === '+' ? 'POSITIVE' : res.resultValue === '-' ? 'NEGATIVE' : res.resultValue}
                         </span>
