@@ -375,35 +375,34 @@ const PrintReport = () => {
 
     return (
     <div className="relative z-10">
-      {showHeader && rows.length > 0 && (() => {
-        const firstParam = filteredRows[0]?.test?.parameters?.find(p => p.parameterName === filteredRows[0]?.parameterName);
-        const isTiterTest = firstParam?.isQualitative && firstParam?.titerValues;
-        const titerList = isTiterTest ? firstParam.titerValues.split(',') : [];
-
-        return (
-          <div className="border border-black rounded-3xl px-4 py-1.5 mb-2 flex items-center text-[13px] font-bold text-black box-border">
-            <div className={isTiterTest ? "w-[25%]" : "w-[45%]"}>Investigations</div>
-            {isTiterTest ? (
-              <>
-                {titerList.map(t => (
-                  <div key={t} className="flex-1 text-center text-[11px]">{t.trim()}</div>
-                ))}
-                <div className="w-[10%] text-center text-[10px]">Unit</div>
-                <div className="w-[20%] text-center text-[10px]">Range</div>
-              </>
-            ) : (
-              <>
-                <div className="w-[12%] text-center">Results</div>
-                <div className="w-[8%] text-center">Flag</div>
-                <div className="w-[12%] text-center">Units</div>
-                <div className="w-[23%] text-center">Normal values</div>
-              </>
-            )}
-          </div>
-        );
-      })()}
-
       <div className="px-2">
+        {showHeader && rows.length > 0 && (() => {
+          const firstParam = filteredRows[0]?.test?.parameters?.find(p => p.parameterName === filteredRows[0]?.parameterName);
+          const isTiterTest = firstParam?.isQualitative && firstParam?.titerValues;
+          const titerList = isTiterTest ? firstParam.titerValues.split(',') : [];
+
+          return (
+            <div className="border border-black rounded-3xl px-2 py-1.5 mb-2 flex items-center text-[13px] font-bold text-black box-border">
+              <div className={(isTiterTest ? "w-[25%]" : "w-[45%]") + " pl-2"}>Investigations</div>
+              {isTiterTest ? (
+                <>
+                  {titerList.map(t => (
+                    <div key={t} className="flex-1 text-center text-[11px]">{t.trim()}</div>
+                  ))}
+                  <div className="w-[10%] text-center text-[10px]">Unit</div>
+                  <div className="w-[20%] text-center text-[10px] pr-2">Range</div>
+                </>
+              ) : (
+                <>
+                  <div className="w-[12%] text-center">Results</div>
+                  <div className="w-[8%] text-center">Flag</div>
+                  <div className="w-[12%] text-center">Units</div>
+                  <div className="w-[23%] text-center pr-2">Normal values</div>
+                </>
+              )}
+            </div>
+          );
+        })()}
         {rows.length > 0 ? (
           <>
             <div className="font-black text-[15px] underline uppercase tracking-wider text-black mb-2">
@@ -461,7 +460,7 @@ const PrintReport = () => {
                     </>
                   ) : titerResults.length > 0 ? (
                     <tr>
-                      <td className="py-1 font-semibold uppercase w-[25%] align-top">
+                      <td className="py-1 pl-2 font-semibold uppercase w-[25%] align-top">
                         {res.parameterName}
                       </td>
                       {titerVals ? titerVals.split(',').map((titer, ti) => {
@@ -482,13 +481,13 @@ const PrintReport = () => {
                       <td className="py-1 text-center font-semibold text-gray-500 w-[10%] align-top text-[12px]">
                         {res.unit || ''}
                       </td>
-                      <td className="py-1 text-center font-semibold whitespace-nowrap text-gray-500 w-[20%] align-top text-[12px] leading-tight">
+                      <td className="py-1 text-center pr-2 font-semibold whitespace-nowrap text-gray-500 w-[20%] align-top text-[12px] leading-tight">
                         {res.referenceRange || ''}
                       </td>
                     </tr>
                   ) : (
                     <tr>
-                      <td className={`py-1 font-semibold uppercase ${res.groupName ? '' : ''} ${isQual ? 'w-[45%]' : 'w-[45%]'} align-top`}>
+                      <td className={`py-1 pl-2 font-semibold uppercase ${res.groupName ? '' : ''} ${isQual ? 'w-[45%]' : 'w-[45%]'} align-top`}>
                         {res.parameterName}
                       </td>
                       <td colSpan={isQual ? 4 : 1} className={`py-1 ${isQual ? 'text-left pl-4' : 'text-center'} align-top ${isQual ? 'w-[55%]' : 'w-[12%]'} whitespace-nowrap`}>
@@ -502,7 +501,7 @@ const PrintReport = () => {
                             {isHigh ? 'High' : isLow ? 'Low' : ''}
                           </td>
                           <td className="py-1 text-center font-semibold w-[12%] align-top">{res.unit}</td>
-                          <td className="py-1 text-center font-semibold w-[23%] align-top text-[12px] leading-tight break-words">
+                          <td className="py-1 text-center pr-2 font-semibold w-[23%] align-top text-[12px] leading-tight break-words">
                             {res.referenceRange}
                           </td>
                         </>
