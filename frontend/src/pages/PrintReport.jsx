@@ -71,6 +71,8 @@ const PrintReport = () => {
       document.body.style.background = 'white';
       
       // Switch to simplified PDF capture mode
+      const wrapper = document.getElementById('report-content');
+      if (wrapper) wrapper.classList.add('is-capturing');
       document.querySelectorAll('.report-page').forEach(p => p.classList.add('is-capturing'));
       
       // Dynamically import html2pdf
@@ -81,23 +83,14 @@ const PrintReport = () => {
         filename:     `${report.reportNumber}_${patient.fullName}.pdf`,
         image:        { type: 'png', quality: 0.95 },
         html2canvas:  { scale: 2, useCORS: true, windowWidth: 1400 },
-        jsPDF:        { unit: 'mm', format: 'a4', orientation: 'portrait' }
+        jsPDF:        { unit: 'mm', format: 'a4', orientation: 'portrait' },
+        pagebreak:    { mode: ['avoid-all', 'css'] }
       };
 
-      const pages = document.querySelectorAll('.report-page');
-      
-      let worker = html2pdf().set(opt).from(pages[0]);
-      
-      // Chain additional pages
-      for (let i = 1; i < pages.length; i++) {
-        worker = worker.toPdf().get('pdf').then(pdf => {
-          pdf.addPage();
-        }).from(pages[i]).toContainer().toCanvas().toPdf();
-      }
-
-      const pdfBlob = await worker.output('blob');
+      const pdfBlob = await html2pdf().set(opt).from(wrapper).output('blob');
       
       // Restore UI
+      if (wrapper) wrapper.classList.remove('is-capturing');
       document.querySelectorAll('.report-page').forEach(p => p.classList.remove('is-capturing'));
       noPrintElements.forEach(el => el.style.display = '');
       document.body.style.background = originalBodyBg;
@@ -161,49 +154,47 @@ const PrintReport = () => {
         borderBottomLeftRadius: '80px'
       }}></div>
 
-      <table style={{ width: '100%', borderCollapse: 'collapse', position: 'relative', zIndex: 10 }}>
-        <tbody>
-          <tr>
-            <td style={{ width: '120px', verticalAlign: 'bottom', padding: '12px 12px 0 8px' }}>
-              <table style={{ margin: '0 auto' }}>
-                <tbody>
-                  <tr>
-                    <td style={{ textAlign: 'center' }}>
-              <Logo className="w-[82px] h-[82px]" />
-                      <div style={{ fontSize: '10px', fontWeight: 'bold', color: '#000', letterSpacing: '0.05em', marginTop: '4px', fontFamily: 'Arial, sans-serif', whiteSpace: 'nowrap' }}>SANA PATHOLOGY LAB</div>
-                    </td>
-                  </tr>
-                </tbody>
-              </table>
-            </td>
-            <td style={{ verticalAlign: 'bottom', padding: '12px 8px 0 0' }}>
-              <div style={{ color: '#1a2f4c', fontFamily: '"Arial Black", Impact, sans-serif', fontSize: '42px', fontWeight: '900', lineHeight: '0.85', letterSpacing: '-0.02em', whiteSpace: 'nowrap', marginLeft: '-20px' }}>
-                {settings.labName || 'SANA PATHOLOGY LAB'}
-              </div>
+      <div className="flex items-end px-3 pt-5 pb-0.5 relative z-10 w-full">
+        {/* Logo and Lab Name Sub-Label */}
+        <div className="flex flex-col items-center w-[120px] shrink-0 mr-4">
+          <Logo className="w-[82px] h-[82px] object-contain" />
+          <div className="text-[10px] font-bold text-black tracking-[0.05em] mt-1 whitespace-nowrap" style={{ fontFamily: 'Arial, sans-serif' }}>
+            SANA PATHOLOGY LAB
+          </div>
+        </div>
 
-              <table style={{ width: '100%', marginTop: '4px' }}>
-                <tbody>
-                  <tr>
-                    <td style={{ textAlign: 'center', verticalAlign: 'bottom', width: '33%' }}>
-                      <div style={{ fontFamily: '"Times New Roman", Times, serif', fontSize: '18px', fontWeight: 'bold', color: '#000', whiteSpace: 'nowrap' }}>Mohd. Altamash</div>
-                      <div style={{ fontSize: '11px', fontWeight: 'bold', color: '#000', fontFamily: 'Arial, sans-serif' }}>D.M.L.T.</div>
-                      <div style={{ fontSize: '11px', fontWeight: 'bold', color: '#000', fontFamily: 'Arial, sans-serif' }}>Technician</div>
-                    </td>
-                    <td style={{ textAlign: 'center', verticalAlign: 'bottom', width: '34%' }}>
-                      <div style={{ fontFamily: '"Times New Roman", Times, serif', fontSize: '17px', fontWeight: 'bold', color: '#000', letterSpacing: '0.02em', whiteSpace: 'nowrap' }}>Fully Computerized Lab</div>
-                      <div style={{ background: '#1e2a8a', color: '#fff', fontSize: '11px', fontWeight: 'bold', padding: '3px 12px', borderRadius: '3px', display: 'inline-block', marginTop: '4px', fontFamily: 'Arial, sans-serif', letterSpacing: '0.03em', whiteSpace: 'nowrap' }}>Emergency 24 Hours Service</div>
-                    </td>
-                    <td style={{ textAlign: 'right', verticalAlign: 'bottom', width: '33%', paddingBottom: '2px' }}>
-                      <div style={{ fontSize: '13px', fontWeight: 'bold', color: '#000', fontFamily: 'Arial, sans-serif', whiteSpace: 'nowrap', lineHeight: 1.3 }}>M.:6396786939</div>
-                      <div style={{ fontSize: '13px', fontWeight: 'bold', color: '#000', fontFamily: 'Arial, sans-serif', whiteSpace: 'nowrap', lineHeight: 1.3 }}>M.:6397240575</div>
-                    </td>
-                  </tr>
-                </tbody>
-              </table>
-            </td>
-          </tr>
-        </tbody>
-      </table>
+        {/* Lab Info Container */}
+        <div className="flex-grow flex flex-col justify-end">
+          {/* Main Lab Title */}
+          <div className="w-full text-[#1a2f4c] uppercase font-black mb-2 tracking-tight whitespace-nowrap" style={{ fontFamily: 'Arial Black, Impact, sans-serif', fontSize: '42px', lineHeight: '1.05' }}>
+            {settings.labName || 'SANA PATHOLOGY LAB'}
+          </div>
+
+          {/* Three-column Sub-info Row */}
+          <div className="flex items-end justify-between w-full pb-1">
+            {/* Left Col: Technician Info */}
+            <div className="flex flex-col items-center shrink-0" style={{ fontFamily: '"Times New Roman", Times, serif' }}>
+              <div className="text-[18px] font-bold leading-none text-black whitespace-nowrap">Mohd. Altamash</div>
+              <div className="text-[11px] font-bold leading-tight text-black mt-1 font-sans">D.M.L.T.</div>
+              <div className="text-[11px] font-bold leading-tight text-black font-sans">Technician</div>
+            </div>
+
+            {/* Middle Col: Service Info */}
+            <div className="flex flex-col items-center flex-1 px-2" style={{ fontFamily: '"Times New Roman", Times, serif' }}>
+              <div className="text-[17px] font-bold leading-none text-black tracking-wide whitespace-nowrap">Fully Computerized Lab</div>
+              <div className="bg-[#1e2a8a] text-white text-[11px] font-bold px-3 py-[3px] rounded-[3px] mt-1.5 shadow-sm font-sans tracking-wide whitespace-nowrap">
+                Emergency 24 Hours Service
+              </div>
+            </div>
+
+            {/* Right Col: Phone Numbers */}
+            <div className="flex flex-col items-end shrink-0 text-black mb-0.5" style={{ fontFamily: 'Arial, sans-serif' }}>
+              <div className="text-[13px] font-bold leading-[1.3] tracking-wide whitespace-nowrap">M.:6396786939</div>
+              <div className="text-[13px] font-bold leading-[1.3] tracking-wide whitespace-nowrap">M.:6397240575</div>
+            </div>
+          </div>
+        </div>
+      </div>
 
       {/* Double Border Line */}
       <div style={{ marginTop: '8px', borderBottom: '3px solid #000' }}></div>
@@ -679,6 +670,21 @@ const PrintReport = () => {
           font-family: Arial, sans-serif;
           box-sizing: border-box;
           overflow: hidden; /* Prevent breaking the A4 boundary */
+        }
+
+        /* Capture styles for html2pdf */
+        .report-wrapper.is-capturing {
+          padding: 0 !important;
+          background: white !important;
+        }
+
+        .report-page.is-capturing {
+          margin: 0 !important;
+          box-shadow: none !important;
+          width: 210mm !important;
+          height: 297mm !important; /* Strict A4 */
+          page-break-after: always !important;
+          break-after: page !important;
         }
 
         /* ── PRINT STYLES ──────────────────────────────────────── */

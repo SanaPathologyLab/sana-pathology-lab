@@ -154,31 +154,42 @@ const PublicPrint = () => {
         <path d="M140,0 C170,20 185,40 200,60 L200,0 Z" fill="#00488d" opacity="0.5"/>
       </svg>
       <div className="flex items-end px-3 pt-5 pb-0.5 relative z-10 w-full">
-        <div className="flex flex-col items-center w-[120px] shrink-0 mr-4 relative top-[5px]">
+        {/* Logo and Lab Name Sub-Label */}
+        <div className="flex flex-col items-center w-[120px] shrink-0 mr-4">
           <Logo className="w-[82px] h-[82px] object-contain" />
           <div className="text-[10px] font-bold text-black tracking-[0.05em] mt-1 whitespace-nowrap" style={{ fontFamily: 'Arial, sans-serif' }}>
             SANA PATHOLOGY LAB
           </div>
         </div>
-        <div className="flex-1 flex flex-col justify-end">
-          <div className="w-full text-[#1a2f4c] uppercase font-black mb-2 tracking-tight whitespace-nowrap -ml-10" style={{ fontFamily: 'Arial Black, Impact, sans-serif', fontSize: '44px', lineHeight: '0.8', transform: 'scaleY(1.05)', transformOrigin: 'bottom' }}>
+
+        {/* Lab Info Container */}
+        <div className="flex-grow flex flex-col justify-end">
+          {/* Main Lab Title */}
+          <div className="w-full text-[#1a2f4c] uppercase font-black mb-2 tracking-tight whitespace-nowrap" style={{ fontFamily: 'Arial Black, Impact, sans-serif', fontSize: '42px', lineHeight: '1.05' }}>
             {settings.labName || 'SANA PATHOLOGY LAB'}
           </div>
+
+          {/* Three-column Sub-info Row */}
           <div className="flex items-end justify-between w-full pb-1">
+            {/* Left Col: Technician Info */}
             <div className="flex flex-col items-center shrink-0" style={{ fontFamily: '"Times New Roman", Times, serif' }}>
-              <div className="text-[19px] font-bold leading-none text-black whitespace-nowrap">Mohd. Altamash</div>
-              <div className="text-[12px] font-bold leading-tight text-black mt-1 font-sans">D.M.L.T.</div>
-              <div className="text-[12px] font-bold leading-tight text-black font-sans">Technician</div>
+              <div className="text-[18px] font-bold leading-none text-black whitespace-nowrap">Mohd. Altamash</div>
+              <div className="text-[11px] font-bold leading-tight text-black mt-1 font-sans">D.M.L.T.</div>
+              <div className="text-[11px] font-bold leading-tight text-black font-sans">Technician</div>
             </div>
+
+            {/* Middle Col: Service Info */}
             <div className="flex flex-col items-center flex-1 px-2" style={{ fontFamily: '"Times New Roman", Times, serif' }}>
-              <div className="text-[18px] font-bold leading-none text-black tracking-wide whitespace-nowrap">Fully Computerized Lab</div>
-              <div className="bg-[#1e2a8a] text-white text-[12px] font-bold px-3 py-[2px] rounded-[3px] mt-1.5 shadow-sm font-sans tracking-wide whitespace-nowrap">
+              <div className="text-[17px] font-bold leading-none text-black tracking-wide whitespace-nowrap">Fully Computerized Lab</div>
+              <div className="bg-[#1e2a8a] text-white text-[11px] font-bold px-3 py-[3px] rounded-[3px] mt-1.5 shadow-sm font-sans tracking-wide whitespace-nowrap">
                 Emergency 24 Hours Service
               </div>
             </div>
-            <div className="flex flex-col items-start shrink-0 text-black mb-1" style={{ fontFamily: 'Arial, sans-serif' }}>
-              <div className="text-[14px] font-bold leading-[1.2] tracking-wide whitespace-nowrap">M.:6396786939</div>
-              <div className="text-[14px] font-bold leading-[1.2] tracking-wide whitespace-nowrap">M.:6397240575</div>
+
+            {/* Right Col: Phone Numbers */}
+            <div className="flex flex-col items-end shrink-0 text-black mb-0.5" style={{ fontFamily: 'Arial, sans-serif' }}>
+              <div className="text-[13px] font-bold leading-[1.3] tracking-wide whitespace-nowrap">M.:6396786939</div>
+              <div className="text-[13px] font-bold leading-[1.3] tracking-wide whitespace-nowrap">M.:6397240575</div>
             </div>
           </div>
         </div>
