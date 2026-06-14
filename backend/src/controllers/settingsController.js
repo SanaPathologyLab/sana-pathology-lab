@@ -21,6 +21,7 @@ const getSettings = async (req, res) => {
       technicianName: 'Lab Technician',
       reportFooter: 'This report is electronically generated.',
       logoUrl: '',
+      aiApiKey: '',
     };
     res.json({ ...defaults, ...settings });
   } catch (err) {

@@ -23,6 +23,7 @@ const Settings = () => {
     technicianName: 'Lab Technician',
     reportFooter: 'This report is electronically generated. Results are for diagnostic purposes only.',
     logoUrl: '',
+    aiApiKey: '',
   });
   const [saving, setSaving] = useState(false);
   const [saved, setSaved] = useState(false);
@@ -127,6 +128,22 @@ const Settings = () => {
 
       <Section icon={<FileText className="w-4 h-4" />} title="Report Configuration">
         <Field label="Report Footer Text" field="reportFooter" type="textarea" fullWidth />
+      </Section>
+
+      <Section icon={<Settings2 className="w-4 h-4" />} title="AI Configuration">
+        <Field label="Pollinations AI API Key (Optional)" field="aiApiKey" type="password" />
+        <div className="md:col-span-2 text-xs text-gray-500 font-medium leading-relaxed mt-1">
+          To prevent rate limiting and 429 error messages, you can obtain a free API key from{' '}
+          <a
+            href="https://enter.pollinations.ai"
+            target="_blank"
+            rel="noopener noreferrer"
+            className="text-blue-600 hover:text-[#00488d] underline font-semibold transition-colors"
+          >
+            enter.pollinations.ai
+          </a>{' '}
+          and paste it above. If empty, the system will use anonymous requests.
+        </div>
       </Section>
     </Layout>
   );

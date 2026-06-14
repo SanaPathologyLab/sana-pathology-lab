@@ -780,11 +780,25 @@ const CreateReport = () => {
                       <QrCode className="w-3.5 h-3.5" /> Scan ID Card
                     </button>
                   </div>
-                  <Select options={patientOptions} value={selectedPatient} onChange={setSelectedPatient} isClearable />
+                  <Select 
+                    options={patientOptions} 
+                    value={selectedPatient} 
+                    onChange={setSelectedPatient} 
+                    isClearable 
+                    menuPortalTarget={document.body}
+                    styles={{ menuPortal: base => ({ ...base, zIndex: 9999 }) }}
+                  />
                 </div>
                 <div>
                   <label className="block text-sm font-bold text-gray-700 mb-2">Referring Doctor</label>
-                  <Select options={doctorOptions} value={selectedDoctor} onChange={setSelectedDoctor} isClearable />
+                  <Select 
+                    options={doctorOptions} 
+                    value={selectedDoctor} 
+                    onChange={setSelectedDoctor} 
+                    isClearable 
+                    menuPortalTarget={document.body}
+                    styles={{ menuPortal: base => ({ ...base, zIndex: 9999 }) }}
+                  />
                 </div>
               </div>
 
@@ -894,7 +908,15 @@ const CreateReport = () => {
 
               <div>
                 <label className="block text-sm font-bold text-gray-700 mb-2">Select Test Panels *</label>
-                <Select options={testOptions} value={selectedTests} onChange={setSelectedTests} isMulti isSearchable />
+                <Select 
+                  options={testOptions} 
+                  value={selectedTests} 
+                  onChange={setSelectedTests} 
+                  isMulti 
+                  isSearchable 
+                  menuPortalTarget={document.body}
+                  styles={{ menuPortal: base => ({ ...base, zIndex: 9999 }) }}
+                />
               </div>
               <div className="pt-6 flex justify-end">
                 <button onClick={handleNextStep} className="bg-[#00488d] hover:bg-[#003875] text-white px-8 py-3 rounded text-sm font-bold">NEXT STEP <ArrowRight className="w-4 h-4 ml-2 inline" /></button>

@@ -429,6 +429,8 @@ const Reports = () => {
                     placeholder="Search and select a test to add..."
                     isClearable
                     value={null} // Always reset after selection
+                    menuPortalTarget={document.body}
+                    styles={{ menuPortal: base => ({ ...base, zIndex: 9999 }) }}
                   />
                 </div>
               )}

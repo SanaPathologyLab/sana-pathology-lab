@@ -57,6 +57,74 @@ app.use('/api/staff', staffRoutes);
 app.use('/api/packages', packageRoutes);
 app.get('/api/activity-log', verifyToken, getActivityLog);
 
+// ─── PUBLIC: AI Proxy (calls Pollinations AI securely) ───
+app.post('/api/public/ai-generate', async (req, res) => {
+  try {
+    const { prompt } = req.body;
+    if (!prompt) {
+      return res.status(400).json({ message: 'Prompt is required.' });
+    }
+
+    // Retrieve settings to check for API key
+    const rows = await prisma.settings.findMany();
+    const settings = {};
+    rows.forEach(r => { settings[r.key] = r.value; });
+    const apiKey = settings.aiApiKey || '';
+
+    // List of models for fallback rotation (just like in frontend utility)
+    const models = ['openai', 'mistral', 'qwen-coder', 'gemma', 'gemini'];
+    let lastError = null;
+
+    for (const model of models) {
+      let retries = 2; // Retry twice per model
+      let delay = 1000; // Start with 1s delay
+      
+      while (retries > 0) {
+        try {
+          const seed = Math.floor(Math.random() * 1000000);
+          let url = `https://text.pollinations.ai/${encodeURIComponent(prompt)}?model=${model}&seed=${seed}`;
+          
+          if (apiKey) {
+            url += `&key=${encodeURIComponent(apiKey)}`;
+          }
+
+          const headers = {};
+          if (apiKey) {
+            headers['Authorization'] = `Bearer ${apiKey}`;
+          }
+
+          const response = await fetch(url, { headers });
+          
+          if (response.ok) {
+            const text = await response.text();
+            // Verify we didn't get a JSON error response disguised as 200 OK
+            if (text && !text.trim().startsWith('{"error":') && !text.includes('"status":429')) {
+              return res.send(text);
+            } else {
+              throw new Error(text || "API returned error JSON");
+            }
+          } else {
+            throw new Error(`HTTP ${response.status}: ${response.statusText}`);
+          }
+        } catch (err) {
+          lastError = err;
+          console.warn(`AI model "${model}" failed in backend. Retries left: ${retries - 1}. Error:`, err.message);
+          retries--;
+          if (retries > 0) {
+            await new Promise(resolve => setTimeout(resolve, delay));
+            delay *= 2; // Exponential backoff
+          }
+        }
+      }
+    }
+    
+    throw lastError || new Error("All AI models failed to generate response.");
+  } catch (err) {
+    console.error('AI generation proxy error:', err.message);
+    res.status(500).json({ error: err.message || 'An error occurred during AI generation.' });
+  }
+});
+
 // ─── PUBLIC: Patient Report Lookup (no auth required) ───
 // Only returns limited non-sensitive data; full report requires auth
 app.get('/api/public/report-lookup', async (req, res) => {
