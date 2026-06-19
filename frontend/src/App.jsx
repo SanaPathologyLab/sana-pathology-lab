@@ -43,6 +43,7 @@ const DoctorExperts = lazy(() => import('./pages/DoctorExperts'));
 const LabTour = lazy(() => import('./pages/LabTour'));
 const HealthCalculators = lazy(() => import('./pages/HealthCalculators'));
 const CityPages = lazy(() => import('./pages/CityPages'));
+const PatientDashboard = lazy(() => import('./pages/PatientDashboard'));
 
 import Loader from './components/Loader';
 import { syncOfflineRequests } from './utils/offlineSync';
@@ -96,6 +97,8 @@ const AppContent = () => {
         <Route path="/blood-test-bahjoi" element={<CityPages />} />
         <Route path="/blood-test-sirsi" element={<CityPages />} />
         <Route path="/home-collection-sambhal" element={<CityPages />} />
+        {/* Patient Dashboard (Public, OTP-secured) */}
+        <Route path="/my-health" element={<PatientDashboard />} />
         
         {/* Protected dashboard and portal routes */}
         <Route path="/dashboard" element={<ProtectedRoute><Dashboard /></ProtectedRoute>} />

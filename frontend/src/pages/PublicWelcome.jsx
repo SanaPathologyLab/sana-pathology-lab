@@ -5,7 +5,8 @@ import {
   UserCircle, Star, ChevronDown, ChevronUp, MessageCircle, ShieldCheck,
   Search, FileText, Heart, Filter, Sparkles, Check, Info, Trash2, Calendar,
   ArrowRight, Award, ShieldAlert, BadgePercent, TrendingUp, Zap, FlaskConical,
-  ChevronLeft, ChevronRight, MessageSquare, Loader2, Send
+  ChevronLeft, ChevronRight, MessageSquare, Loader2, Send,
+  Baby, Droplets, Calculator, AlertCircle
 } from 'lucide-react';
 import Logo from '../components/Logo';
 import Loader from '../components/Loader';
@@ -29,9 +30,6 @@ import TestimonialVideoSection from '../components/TestimonialVideoSection';
 import LiveChatWidget from '../components/LiveChatWidget';
 import CouponSystem from '../components/CouponSystem';
 import UpsellRecommendations from '../components/UpsellRecommendations';
-import ReferralProgram from '../components/ReferralProgram';
-import LoyaltyPoints from '../components/LoyaltyPoints';
-import ReportExplainer from '../components/ReportExplainer';
 import BloodTube3D from '../components/BloodTube3D';
 import BookingWizard from '../components/BookingWizard';
 import EmergencyWidget from '../components/EmergencyWidget';
@@ -1356,49 +1354,125 @@ Question: ${userMsg}`;
       </section>
 
       {/* ══ LAB TOUR PREVIEW STRIP ══ */}
-      <section className="py-16 bg-[#063b30] px-4 sm:px-6 lg:px-8">
+      <section className="py-20 bg-gradient-to-b from-[#F5F7F6] to-white border-y border-slate-200/50 px-4 sm:px-6 lg:px-8 relative overflow-hidden">
         <div className="max-w-7xl mx-auto">
-          <div className="flex flex-col md:flex-row items-center justify-between gap-6 mb-10">
+          <div className="flex flex-col md:flex-row items-center justify-between gap-6 mb-12">
             <div>
-              <span className="text-xs font-bold text-[#F1C40F] uppercase tracking-widest bg-white/10 px-3 py-1 rounded-full">Virtual Lab Tour</span>
-              <h2 className="text-2xl md:text-3xl font-heading font-black text-white mt-3">Inside Sana Pathology</h2>
-              <p className="text-white/60 mt-1 max-w-md">State-of-the-art NABL accredited facility. See our equipment & biosafe environment.</p>
+              <span className="text-xs font-black text-[#0F6E56] uppercase tracking-widest bg-emerald-50 border border-emerald-200/60 px-3.5 py-1.5 rounded-full">
+                Virtual Lab Tour
+              </span>
+              <h2 className="text-3xl md:text-4xl font-heading font-black text-[#085041] mt-4">
+                Inside Sana Pathology
+              </h2>
+              <p className="text-slate-500 mt-2 max-w-xl font-medium text-sm leading-relaxed">
+                Step inside Sambhal's state-of-the-art diagnostic facility. Take a 3D-guided look at our equipment, clinical workflows, and biosafe environments.
+              </p>
             </div>
-            <Link to="/lab-tour" className="shrink-0 flex items-center gap-2 bg-white/10 hover:bg-white/20 border border-white/20 text-white px-6 py-3 rounded-2xl font-bold text-sm transition-all hover:-translate-y-0.5">
-              Full Lab Tour →
+            <Link to="/lab-tour" className="shrink-0 flex items-center gap-2 bg-[#0F6E56] hover:bg-[#085041] text-white px-7 py-3.5 rounded-2xl font-bold text-sm shadow-lg shadow-emerald-700/20 transition-all hover:-translate-y-0.5">
+              Launch Full Lab Tour <ArrowRight size={16} />
             </Link>
           </div>
-          <div className="grid grid-cols-2 sm:grid-cols-3 lg:grid-cols-6 gap-3">
+          <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-6 gap-4">
             {[
-              { emoji: '🏥', name: 'Reception' },
-              { emoji: '💉', name: 'Sample Collection' },
-              { emoji: '🩸', name: 'Hematology' },
-              { emoji: '⚗️', name: 'Biochemistry' },
-              { emoji: '🛡️', name: 'Serology' },
-              { emoji: '🔬', name: 'Microscopy' },
-            ].map(sec => (
-              <Link key={sec.name} to="/lab-tour" className="bg-white/5 hover:bg-white/15 border border-white/10 hover:border-white/25 rounded-2xl p-5 text-center transition-all group hover:-translate-y-1">
-                <div className="text-4xl mb-2 group-hover:scale-110 transition-transform">{sec.emoji}</div>
-                <p className="text-white/80 font-bold text-xs">{sec.name}</p>
-              </Link>
-            ))}
+              { icon: UserCircle, name: 'Welcome Reception', color: 'from-blue-500 to-indigo-600', textClass: 'text-blue-600', bgClass: 'bg-blue-50 border border-blue-100', desc: 'Digital check-in & comfortable waiting space' },
+              { icon: Activity, name: 'Sample Collection', color: 'from-emerald-500 to-teal-600', textClass: 'text-emerald-600', bgClass: 'bg-emerald-50 border border-emerald-100', desc: 'Sterile private cubicles & vacuum blood draw' },
+              { icon: Heart, name: 'Hematology Section', color: 'from-red-500 to-rose-600', textClass: 'text-rose-600', bgClass: 'bg-red-50 border border-red-100', desc: '5-part cell counter for cell calculations' },
+              { icon: FlaskConical, name: 'Biochemistry', color: 'from-amber-500 to-orange-600', textClass: 'text-amber-600', bgClass: 'bg-amber-50 border border-amber-100', desc: 'Automated liver, kidney & sugar panels' },
+              { icon: ShieldCheck, name: 'Serology & Immunology', color: 'from-purple-500 to-violet-600', textClass: 'text-purple-600', bgClass: 'bg-purple-50 border border-purple-100', desc: 'Sensitive ELISA tests & infection screening' },
+              { icon: Microscope, name: 'Microscopy Room', color: 'from-cyan-500 to-sky-600', textClass: 'text-cyan-600', bgClass: 'bg-cyan-50 border border-cyan-100', desc: 'High-powered manual review & smear analysis' },
+            ].map(sec => {
+              const IconComponent = sec.icon;
+              return (
+                <Link 
+                  key={sec.name} 
+                  to="/lab-tour" 
+                  className="bg-white hover:bg-slate-50 border border-slate-100 hover:border-emerald-500/20 rounded-3xl p-6 text-left transition-all duration-300 group hover:-translate-y-1.5 flex flex-col justify-between shadow-sm hover:shadow-md"
+                >
+                  <div>
+                    <div className={`w-12 h-12 rounded-2xl ${sec.bgClass} flex items-center justify-center mb-4 group-hover:scale-110 transition-transform duration-300`}>
+                      <IconComponent className={`w-6 h-6 ${sec.textClass}`} />
+                    </div>
+                    <h3 className="text-slate-800 font-extrabold text-sm mb-1.5 group-hover:text-[#0F6E56] transition-colors">{sec.name}</h3>
+                    <p className="text-slate-500 text-[11px] leading-relaxed font-semibold">{sec.desc}</p>
+                  </div>
+                  <div className="mt-4 flex items-center gap-1 text-[10px] font-black text-emerald-600 uppercase tracking-wider opacity-0 group-hover:opacity-100 transition-opacity">
+                    Explore <ArrowRight size={10} />
+                  </div>
+                </Link>
+              );
+            })}
           </div>
         </div>
       </section>
 
       {/* ══ HEALTH CALCULATORS CTA ══ */}
-      <section className="py-12 bg-gradient-to-br from-emerald-50 to-teal-50 px-4 sm:px-6 lg:px-8 border-y border-emerald-100">
-        <div className="max-w-7xl mx-auto flex flex-col md:flex-row items-center justify-between gap-6">
-          <div className="flex items-center gap-4">
-            <div className="w-16 h-16 bg-[#1D9E75]/10 rounded-2xl flex items-center justify-center text-3xl shrink-0">🧮</div>
-            <div>
-              <h3 className="text-xl font-heading font-black text-slate-900">Free Health Risk Calculators</h3>
-              <p className="text-slate-500 text-sm mt-0.5">BMI · Diabetes Risk · Heart Risk · Pregnancy Due Date · Water Intake</p>
+      <section className="py-20 bg-gradient-to-br from-slate-900 via-slate-950 to-slate-900 border-y border-slate-800/80 px-4 sm:px-6 lg:px-8 relative overflow-hidden">
+        {/* Glow ambient background effects */}
+        <div className="absolute top-[-30%] left-[-10%] w-[400px] h-[400px] bg-emerald-500/10 rounded-full blur-[120px] pointer-events-none"></div>
+        <div className="absolute bottom-[-30%] right-[-10%] w-[400px] h-[400px] bg-blue-500/5 rounded-full blur-[120px] pointer-events-none"></div>
+
+        <div className="max-w-7xl mx-auto relative z-10 flex flex-col lg:flex-row items-center gap-12">
+          {/* Left Column: Heading Block */}
+          <div className="flex-1 space-y-6 text-center lg:text-left">
+            <span className="inline-flex items-center gap-1.5 text-xs font-black text-[#F1C40F] uppercase tracking-widest bg-white/10 px-4 py-1.5 rounded-full border border-white/10">
+              <Calculator size={13} /> Free Health Tools
+            </span>
+            <h2 className="text-3xl md:text-5xl font-heading font-black bg-gradient-to-r from-emerald-400 via-teal-300 to-cyan-400 bg-clip-text text-transparent leading-tight animate-pulse" style={{ animationDuration: '4s' }}>
+              Interactive Health Risk Assessment
+            </h2>
+            <p className="text-slate-400 max-w-xl mx-auto lg:mx-0 font-medium text-sm leading-relaxed">
+              Knowledge is prevention. Assess your risk profiles instantly with our clinically aligned calculators, and get direct test recommendations based on your scores.
+            </p>
+            <div className="pt-2">
+              <Link to="/health-calculators" className="inline-flex items-center gap-2 bg-gradient-to-r from-[#BA7517] to-[#d48924] hover:from-amber-600 hover:to-amber-500 text-white px-8 py-4 rounded-2xl font-bold shadow-xl shadow-amber-500/10 hover:scale-[1.01] active:scale-[0.99] transition-all hover:-translate-y-0.5 text-sm">
+                Try Free Health Calculators <ArrowRight size={16} />
+              </Link>
             </div>
           </div>
-          <Link to="/health-calculators" className="shrink-0 flex items-center gap-2 bg-gradient-to-r from-[#0F6E56] to-[#1D9E75] text-white px-8 py-3.5 rounded-2xl font-bold shadow-lg shadow-emerald-500/25 hover:-translate-y-0.5 transition-all text-sm">
-            Try Free Calculators →
-          </Link>
+
+          {/* Right Column: 5 Mini Cards Grid + 1 filler */}
+          <div className="flex-[1.2] w-full grid grid-cols-1 sm:grid-cols-2 md:grid-cols-3 gap-4">
+            {[
+              { id: 'bmi', icon: Activity, label: 'BMI Calc', desc: 'Check body mass index and find metabolic screening needs.', color: 'emerald', textClass: 'text-emerald-400', bgClass: 'bg-emerald-500/10 border-emerald-500/20 hover:border-emerald-500/40 hover:shadow-emerald-500/5' },
+              { id: 'diabetes', icon: AlertCircle, label: 'Diabetes Risk', desc: 'Assess Type 2 diabetes risks based on lifestyle indicators.', color: 'amber', textClass: 'text-amber-400', bgClass: 'bg-amber-500/10 border-amber-500/20 hover:border-amber-500/40 hover:shadow-amber-500/5' },
+              { id: 'heart', icon: Heart, label: 'Heart Risk', desc: 'Evaluate cardiovascular risk markers & recommended tests.', color: 'red', textClass: 'text-red-400', bgClass: 'bg-red-500/10 border-red-500/20 hover:border-red-500/40 hover:shadow-red-500/5' },
+              { id: 'duedate', icon: Baby, label: 'Pregnancy Due Date', desc: 'Track expected delivery date & crucial ANC test intervals.', color: 'pink', textClass: 'text-pink-400', bgClass: 'bg-pink-500/10 border-pink-500/20 hover:border-pink-500/40 hover:shadow-pink-500/5' },
+              { id: 'water', icon: Droplets, label: 'Water Intake', desc: 'Estimate ideal daily hydration targets based on weight.', color: 'blue', textClass: 'text-blue-400', bgClass: 'bg-blue-500/10 border-blue-500/20 hover:border-blue-500/40 hover:shadow-blue-500/5' },
+            ].map(calc => {
+              const IconComponent = calc.icon;
+              return (
+                <Link
+                  key={calc.id}
+                  to={`/health-calculators`}
+                  className={`bg-white/5 border border-white/5 backdrop-blur-md rounded-2xl p-5 text-left transition-all duration-300 group hover:-translate-y-1 ${calc.bgClass}`}
+                >
+                  <div className="flex items-center justify-between mb-4">
+                    <div className={`w-10 h-10 rounded-xl ${calc.bgClass.split(' ')[0]} flex items-center justify-center group-hover:scale-110 transition-transform duration-300`}>
+                      <IconComponent className={`w-5 h-5 ${calc.textClass}`} />
+                    </div>
+                    <span className="text-[10px] font-black text-slate-500 group-hover:text-white uppercase tracking-widest transition-colors">Start →</span>
+                  </div>
+                  <h4 className="text-white font-extrabold text-sm mb-1.5">{calc.label}</h4>
+                  <p className="text-slate-400 text-[11px] leading-relaxed font-semibold">{calc.desc}</p>
+                </Link>
+              );
+            })}
+
+            {/* View All Card filler */}
+            <Link
+              to="/health-calculators"
+              className="bg-white/5 border border-white/5 hover:border-white/10 backdrop-blur-md rounded-2xl p-5 text-left transition-all duration-300 group hover:-translate-y-1 flex flex-col justify-between"
+            >
+              <div className="flex items-center justify-between">
+                <span className="text-[10px] font-black text-emerald-400 uppercase tracking-widest">Interactive Tools</span>
+                <span className="text-white font-black text-sm">🧮</span>
+              </div>
+              <div>
+                <h4 className="text-white font-extrabold text-sm mt-4 mb-1">Explore All Tools</h4>
+                <p className="text-slate-400 text-[11px] font-semibold leading-relaxed">Access the full clinical wellness suite of free tools.</p>
+              </div>
+            </Link>
+          </div>
         </div>
       </section>
 
@@ -1484,23 +1558,7 @@ Question: ${userMsg}`;
 
       <LiveChatWidget />
 
-      <section id="referral-program" className="py-20 bg-bg px-4 sm:px-6 lg:px-8">
-        <div className="max-w-7xl mx-auto">
-          <ReferralProgram />
-        </div>
-      </section>
 
-      <section id="loyalty-points" className="py-20 bg-primary-pale/25 px-4 sm:px-6 lg:px-8">
-        <div className="max-w-7xl mx-auto">
-          <LoyaltyPoints />
-        </div>
-      </section>
-
-      <section id="report-explainer" className="py-20 bg-bg px-4 sm:px-6 lg:px-8">
-        <div className="max-w-7xl mx-auto">
-          <ReportExplainer />
-        </div>
-      </section>
 
       {/* Glassmorphic AI Consultation Modal */}
       {isAiModalOpen && (

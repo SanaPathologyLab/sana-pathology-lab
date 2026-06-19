@@ -247,6 +247,15 @@ const PublicLayout = ({ children }) => {
               Upload Rx
             </button>
 
+            {/* My Health Account */}
+            <button
+              onClick={() => navigate('/my-health')}
+              className="hidden sm:flex items-center gap-1.5 bg-gradient-to-r from-indigo-500 to-purple-600 hover:from-indigo-600 hover:to-purple-700 text-white text-xs font-bold px-3.5 py-2 rounded-full transition-all shadow-md shadow-indigo-500/25 whitespace-nowrap"
+            >
+              <Heart size={13} />
+              My Health
+            </button>
+
             {/* Staff Login */}
             <button
               onClick={() => navigate('/login')}
@@ -297,6 +306,7 @@ const PublicLayout = ({ children }) => {
               { label: '📍 Blood Test Sambhal', route: '/blood-test-sambhal' },
               { label: '📍 Blood Test Chandausi', route: '/blood-test-chandausi' },
               { label: '📄 My Report', route: '/report-lookup' },
+              { label: '❤️ My Health Account', route: '/my-health' },
             ].map((item) => (
               <button
                 key={item.route}
