@@ -1,0 +1,345 @@
+@tailwind base;
+@tailwind components;
+@tailwind utilities;
+
+@layer base {
+  :root {
+    --background: 0 0% 100%; 
+    --foreground: 222.2 84% 4.9%;
+    --card: 0 0% 100%;
+    --card-foreground: 222.2 84% 4.9%;
+    
+    /* Sana Pathology New Theme */
+    --color-primary: #0F6E56;
+    --color-primary-light: #1D9E75;
+    --color-primary-pale: #E1F5EE;
+    --color-accent: #BA7517;
+    --color-accent-pale: #FAEEDA;
+    --color-bg: #F5F7F6;
+
+    /* Legacy mapping for dashboard compatibility */
+    --primary: 165 75% 24%; /* #0F6E56 */
+    --primary-foreground: 0 0% 100%;
+    --secondary: 35 78% 41%; /* #BA7517 */
+    --secondary-foreground: 222.2 84% 4.9%;
+    --accent-legacy: 165 75% 95%; 
+    
+    --success: 142 71% 45%;
+    --warning: 38 92% 50%;
+    --danger: 348 83% 47%;
+    
+    --radius: 0.5rem; /* softer corners */
+  }
+}
+
+body {
+  font-family: 'Plus Jakarta Sans', sans-serif;
+  background-color: var(--color-bg);
+  color: #1A202C;
+  -webkit-font-smoothing: antialiased;
+  -moz-osx-font-smoothing: grayscale;
+}
+
+/* Custom Nav Link styling */
+.nav-link {
+  position: relative;
+  transition: color 0.2s ease;
+}
+
+.nav-link::after {
+  content: '';
+  position: absolute;
+  width: 0;
+  height: 3px;
+  bottom: -4px;
+  left: 0;
+  background-color: hsl(var(--secondary));
+  transition: width 0.3s ease;
+}
+
+.nav-link:hover::after, .nav-link.active::after {
+  width: 100%;
+}
+
+/* Custom Scrollbar */
+::-webkit-scrollbar {
+  width: 8px;
+  height: 8px;
+}
+::-webkit-scrollbar-track {
+  background: rgba(0,0,0,0.02);
+}
+::-webkit-scrollbar-thumb {
+  background: #cbd5e1;
+  border-radius: 4px;
+}
+::-webkit-scrollbar-thumb:hover {
+  background: #94a3b8;
+}
+
+/* Hide scrollbar but allow scrolling (used on the desktop nav row) */
+.nav-scroll {
+  -ms-overflow-style: none;
+  scrollbar-width: none;
+}
+.nav-scroll::-webkit-scrollbar {
+  display: none;
+}
+
+/* ═══════════════════════════════════════════════════
+   SANA PATHOLOGY — GLOBAL ANIMATION UTILITIES
+   ═══════════════════════════════════════════════════ */
+
+/* Marquee / Ticker Scroll */
+@keyframes marquee {
+  0%   { transform: translateX(0); }
+  100% { transform: translateX(-50%); }
+}
+.animate-marquee {
+  display: flex;
+  animation: marquee 28s linear infinite;
+  width: max-content;
+}
+.animate-marquee:hover { animation-play-state: paused; }
+
+/* Counter Number Pop-in */
+@keyframes countUp {
+  from { opacity: 0; transform: translateY(12px) scale(0.9); }
+  to   { opacity: 1; transform: translateY(0) scale(1); }
+}
+.animate-count-up { animation: countUp 0.6s ease-out both; }
+
+/* Pulse Glow — for live status dots */
+@keyframes pulseGlow {
+  0%, 100% { box-shadow: 0 0 0 0 rgba(34,197,94,0.5); }
+  50%       { box-shadow: 0 0 0 6px rgba(34,197,94,0); }
+}
+.animate-pulse-glow {
+  animation: pulseGlow 2s infinite;
+}
+
+/* Staggered fade-in-up for list items */
+@keyframes fadeInUp {
+  from { opacity: 0; transform: translateY(16px); }
+  to   { opacity: 1; transform: translateY(0); }
+}
+.animate-fade-in-up { animation: fadeInUp 0.5s ease-out both; }
+.stagger-1 { animation-delay: 0.05s; }
+.stagger-2 { animation-delay: 0.10s; }
+.stagger-3 { animation-delay: 0.15s; }
+.stagger-4 { animation-delay: 0.20s; }
+.stagger-5 { animation-delay: 0.25s; }
+.stagger-6 { animation-delay: 0.30s; }
+
+/* Fade-in-down (used by login left panel) */
+@keyframes fadeInDown {
+  from { opacity: 0; transform: translateY(-12px); }
+  to   { opacity: 1; transform: translateY(0); }
+}
+.animate-fade-in-down { animation: fadeInDown 0.5s ease-out both; }
+
+/* Float — gentle up/down for decorative elements */
+@keyframes float {
+  0%, 100% { transform: translateY(0px); }
+  50%       { transform: translateY(-8px); }
+}
+@keyframes floatSlow {
+  0%, 100% { transform: translateY(0px); }
+  50%       { transform: translateY(-12px); }
+}
+@keyframes floatDelayed {
+  0%, 100% { transform: translateY(0px); }
+  50%       { transform: translateY(-6px); }
+}
+.animate-float        { animation: float 3s ease-in-out infinite; }
+.animate-float-slow   { animation: floatSlow 5s ease-in-out infinite; }
+.animate-float-delayed{ animation: floatDelayed 4s ease-in-out infinite; }
+
+/* Shake (form error) */
+@keyframes shake {
+  0%, 100% { transform: translateX(0); }
+  20%       { transform: translateX(-6px); }
+  40%       { transform: translateX(6px); }
+  60%       { transform: translateX(-4px); }
+  80%       { transform: translateX(4px); }
+}
+.animate-shake { animation: shake 0.4s ease; }
+
+/* Bounce-in (success toast) */
+@keyframes bounceIn {
+  0%   { opacity: 0; transform: scale(0.8); }
+  60%  { opacity: 1; transform: scale(1.05); }
+  100% { transform: scale(1); }
+}
+.animate-bounce-in { animation: bounceIn 0.4s ease; }
+
+/* Slide-in-right (activity feed) */
+@keyframes slideInRight {
+  from { opacity: 0; transform: translateX(20px); }
+  to   { opacity: 1; transform: translateX(0); }
+}
+.animate-slide-in-right { animation: slideInRight 0.4s ease-out both; }
+
+/* Gradient text shimmer */
+@keyframes shimmer {
+  0%   { background-position: -200% center; }
+  100% { background-position:  200% center; }
+}
+.text-shimmer {
+  background: linear-gradient(90deg, #085041, #0f766e, #ffb800, #085041);
+  background-size: 200% auto;
+  -webkit-background-clip: text;
+  -webkit-text-fill-color: transparent;
+  background-clip: text;
+  animation: shimmer 4s linear infinite;
+}
+
+/* Glassmorphism Styles */
+.glass-panel {
+  background: rgba(255, 255, 255, 0.75);
+  backdrop-filter: blur(16px);
+  -webkit-backdrop-filter: blur(16px);
+  border: 1px solid rgba(255, 255, 255, 0.45);
+}
+
+.glass-panel-dark {
+  background: rgba(8, 80, 65, 0.65);
+  backdrop-filter: blur(12px);
+  -webkit-backdrop-filter: blur(12px);
+  border: 1px solid rgba(255, 255, 255, 0.1);
+}
+
+.glass-input {
+  background: rgba(255, 255, 255, 0.8);
+  backdrop-filter: blur(8px);
+  border: 1px solid rgba(15, 110, 86, 0.15);
+  transition: all 0.3s ease;
+}
+
+.glass-input:focus {
+  background: rgba(255, 255, 255, 0.95);
+  border-color: #1D9E75;
+  box-shadow: 0 0 0 4px rgba(29, 158, 117, 0.1);
+}
+
+/* Premium Animations */
+@keyframes float-particle-1 {
+  0%, 100% { transform: translateY(0px) translateX(0px); }
+  50% { transform: translateY(-15px) translateX(10px); }
+}
+@keyframes float-particle-2 {
+  0%, 100% { transform: translateY(0px) translateX(0px); }
+  50% { transform: translateY(12px) translateX(-15px); }
+}
+.animate-float-p1 { animation: float-particle-1 8s ease-in-out infinite; }
+.animate-float-p2 { animation: float-particle-2 10s ease-in-out infinite; }
+
+/* Pulse Glow Gold */
+@keyframes pulse-glow-gold {
+  0%, 100% { box-shadow: 0 0 0 0 rgba(186, 117, 23, 0.4); }
+  50% { box-shadow: 0 0 0 8px rgba(186, 117, 23, 0); }
+}
+.animate-pulse-glow-gold {
+  animation: pulse-glow-gold 2.5s infinite;
+}
+
+/* Pulse Glow Teal */
+@keyframes pulse-glow-teal {
+  0%, 100% { box-shadow: 0 0 0 0 rgba(29, 158, 117, 0.4); }
+  50% { box-shadow: 0 0 0 8px rgba(29, 158, 117, 0); }
+}
+.animate-pulse-glow-teal {
+  animation: pulse-glow-teal 2.5s infinite;
+}
+
+/* Shimmer border reflection effect */
+.shimmer-btn {
+  position: relative;
+  overflow: hidden;
+}
+.shimmer-btn::after {
+  content: '';
+  position: absolute;
+  top: -50%;
+  left: -60%;
+  width: 30%;
+  height: 200%;
+  background: linear-gradient(
+    to right,
+    rgba(255, 255, 255, 0) 0%,
+    rgba(255, 255, 255, 0.35) 50%,
+    rgba(255, 255, 255, 0) 100%
+  );
+  transform: rotate(25deg);
+  transition: all 0.75s ease;
+  pointer-events: none;
+}
+.shimmer-btn:hover::after {
+  left: 120%;
+}
+
+/* 3D Chat Panel */
+.chat-panel-3d {
+  transform: translateZ(0) rotateX(0deg);
+  animation: panelRise 0.4s cubic-bezier(0.22, 1, 0.36, 1) forwards;
+  transform-origin: bottom left;
+}
+
+@keyframes panelRise {
+  0% {
+    opacity: 0;
+    transform: translateY(20px) rotateX(2deg) scale(0.96);
+  }
+  100% {
+    opacity: 1;
+    transform: translateY(0) rotateX(0deg) scale(1);
+  }
+}
+
+/* 3D Avatar float */
+.avatar-3d-float {
+  animation: avatarFloat 3s ease-in-out infinite;
+  transform-style: preserve-3d;
+}
+
+@keyframes avatarFloat {
+  0%, 100% {
+    transform: translateY(0px) rotateY(0deg);
+  }
+  25% {
+    transform: translateY(-2px) rotateY(2deg);
+  }
+  75% {
+    transform: translateY(1px) rotateY(-1deg);
+  }
+}
+
+/* Pulse ring for avatar */
+.avatar-pulse-ring {
+  animation: pulseRing 2s cubic-bezier(0.4, 0, 0.6, 1) infinite;
+}
+
+@keyframes pulseRing {
+  0%, 100% {
+    opacity: 0.3;
+    transform: scale(1);
+  }
+  50% {
+    opacity: 0.1;
+    transform: scale(1.08);
+  }
+}
+
+/* Glow effect for chat toggle button */
+.chat-toggle-glow {
+  animation: toggleGlow 3s ease-in-out infinite;
+}
+
+@keyframes toggleGlow {
+  0%, 100% {
+    box-shadow: 0 8px 32px rgba(0, 72, 141, 0.35), 0 0 0 0 rgba(0, 72, 141, 0.2);
+  }
+  50% {
+    box-shadow: 0 8px 40px rgba(0, 72, 141, 0.45), 0 0 0 8px rgba(0, 72, 141, 0.05);
+  }
+}

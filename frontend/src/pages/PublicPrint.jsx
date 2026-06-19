@@ -1,0 +1,779 @@
+import React, { useState, useEffect } from 'react';
+import { useParams, useNavigate } from 'react-router-dom';
+import { QRCodeSVG } from 'qrcode.react';
+import { Sparkles, X, BrainCircuit, AlertCircle } from 'lucide-react';
+import Logo from '../components/Logo';
+import Loader from '../components/Loader';
+import { generateAI } from '../utils/ai';
+import { useLanguage } from '../context/LanguageContext';
+
+const API = '/api';
+
+const PublicPrint = () => {
+  const { reportNumber } = useParams();
+  const navigate = useNavigate();
+  const { language } = useLanguage();
+  const [report, setReport] = useState(null);
+  const [error, setError] = useState('');
+  const [settings, setSettings] = useState({
+    labName: 'Sana Pathology Lab',
+    labAddress: 'Datawali Road, Near Aara Machine, Hayat Nagar, Distt. Sambhal-244303 (U.P)',
+    labPhone: '6396786939',
+    labPhone2: '6397240575',
+    reportFooter: 'This Report is not Valid for medico legal Purpose.',
+  });
+
+  // AI Explainer State
+  const [isExplaining, setIsExplaining] = useState(false);
+  const [explanation, setExplanation] = useState('');
+  const [showExplainerModal, setShowExplainerModal] = useState(false);
+  const [aiLanguage, setAiLanguage] = useState(language || 'en');
+
+  useEffect(() => {
+    const hash = window.location.hash;
+    const qIndex = hash.indexOf('?');
+    const params = new URLSearchParams(qIndex !== -1 ? hash.substring(qIndex) : '');
+    const token = params.get('token');
+    const patientName = params.get('patientName');
+
+    const fetchUrl = patientName
+      ? `${API}/public/report-direct-lookup?reportNumber=${encodeURIComponent(reportNumber)}&patientName=${encodeURIComponent(patientName)}`
+      : (token 
+        ? `${API}/public/report-lookup?reportNumber=${encodeURIComponent(reportNumber)}&token=${encodeURIComponent(token)}`
+        : `${API}/public/report-lookup?reportNumber=${encodeURIComponent(reportNumber)}`);
+
+    Promise.all([
+      fetch(fetchUrl).then(async r => {
+        const data = await r.json();
+        if (!r.ok) throw new Error(data.message || 'Report not found');
+        return data[0]; // array returned from lookup
+      }),
+      fetch(`${API}/settings`).then(r => r.json()).catch(() => ({})), // Public settings fetch might fail if protected, but we have defaults
+    ]).then(([reportData, settingsData]) => {
+      setReport(reportData);
+      if (settingsData && !settingsData.error && Object.keys(settingsData).length > 0) {
+        setSettings(prev => ({ ...prev, ...settingsData }));
+      }
+    }).catch(err => {
+      console.error(err);
+      setError(err.message || 'Failed to load report.');
+    });
+  }, [reportNumber]);
+
+  // Auto-trigger print dialog when report is fully loaded
+  useEffect(() => {
+    if (report) {
+      // Small delay to ensure rendering is complete before print dialog opens
+      const timer = setTimeout(() => {
+        window.print();
+      }, 500);
+      return () => clearTimeout(timer);
+    }
+  }, [report]);
+
+  if (error) return (
+    <div className="flex flex-col items-center justify-center min-h-screen bg-gray-100 p-6 text-center">
+      <div className="bg-white p-8 rounded-xl shadow-lg max-w-md w-full">
+        <div className="w-16 h-16 bg-red-100 text-red-600 rounded-full flex items-center justify-center mx-auto mb-4 text-3xl">!</div>
+        <h2 className="text-xl font-bold text-gray-900 mb-2">Report Unavailable</h2>
+        <p className="text-gray-600 mb-6">{error}</p>
+        <button onClick={() => navigate('/')} className="bg-[#00488d] text-white px-6 py-2 rounded-lg font-bold">Go to Home</button>
+      </div>
+    </div>
+  );
+
+  if (!report) return (
+    <div className="flex flex-col items-center justify-center min-h-screen bg-gray-100">
+      <Loader size="lg" />
+      <p className="text-gray-600 font-semibold mt-4">Loading Report...</p>
+    </div>
+  );
+
+  const patient = report.patient || {};
+  const doctor = report.doctor || { name: 'Self' };
+  const results = report.results || [];
+
+  const groupedTests = {};
+  results.forEach(r => {
+    const testName = r.test?.testName || 'Test Results';
+    if (!groupedTests[testName]) {
+      groupedTests[testName] = { rows: [], summary: r.test?.summary || '' };
+    }
+    
+    if (r.groupName === '__SUMMARY__') {
+      groupedTests[testName].summary = r.resultValue;
+    } else {
+      groupedTests[testName].rows.push(r);
+    }
+  });
+  const testNames = Object.keys(groupedTests);
+
+  const qrValue = `${window.location.origin}${import.meta.env.BASE_URL}#/public-print/${report.reportNumber}?patientName=${encodeURIComponent(patient.fullName || '')}`;
+
+  const handleWhatsApp = () => {
+    const publicUrl = `${window.location.origin}${import.meta.env.BASE_URL}#/public-print/${report.reportNumber}?patientName=${encodeURIComponent(patient.fullName || '')}`;
+    const msg = encodeURIComponent(
+      `*${settings.labName}*\n\nHello ${patient.fullName},\nYour test report is ready!\n\n*Report No:* ${report.reportNumber}\n*Date:* ${new Date(report.reportDate).toLocaleDateString('en-IN')}\n\n*Click the link below to instantly view and download your PDF report:*\n${publicUrl}\n\n📞 ${settings.labPhone}`
+    );
+    window.open(`https://wa.me/?text=${msg}`, '_blank');
+  };
+
+  const handlePrint = () => {
+    window.print();
+  };
+
+  const handleExplainReport = async (lang = aiLanguage) => {
+    if (isExplaining) return;
+    setIsExplaining(true);
+    setShowExplainerModal(true);
+    setExplanation('');
+
+    try {
+      const abnormalResults = [];
+      const normalResults = [];
+
+      Object.entries(groupedTests).forEach(([testName, data]) => {
+        data.rows.forEach(r => {
+          if (r.flag === 'HIGH' || r.flag === 'LOW') {
+            abnormalResults.push(`${r.parameterName}: ${r.resultValue} ${r.unit} (Normal: ${r.referenceRange})`);
+          } else if (r.parameterName && r.resultValue) {
+            normalResults.push(`${r.parameterName}: ${r.resultValue}`);
+          }
+        });
+      });
+
+      let prompt = `You are a friendly, empathetic medical AI assistant helping a patient understand their lab report. `;
+      if (abnormalResults.length > 0) {
+        prompt += `The patient has these abnormal results: ${abnormalResults.join('; ')}. `;
+      } else {
+        prompt += `The patient's results are mostly normal. `;
+      }
+
+      if (lang === 'hi') {
+        prompt += `Explain the abnormal results in very simple, non-medical terms in HINDI language (using Devanagari script). What do they mean? What could cause them? Give general, safe advice. Keep it under 4 paragraphs. Do not provide a diagnosis. Ensure the explanation is polite, friendly, and very easy to understand for an Indian patient. Use common Hindi words, and if you use English words, write them in Devanagari script (e.g. 'blood sugar' as 'ब्लड शुगर').`;
+      } else {
+        prompt += `Explain the abnormal results in very simple, non-medical terms in English language. What do they mean? What could cause them? Give general, safe advice. Keep it under 4 paragraphs. Do not provide a diagnosis.`;
+      }
+
+      const text = await generateAI(prompt);
+      setExplanation(text);
+    } catch (err) {
+      console.error("AI Explanation Error:", err);
+      setExplanation("The AI explanation service is currently busy or rate-limited. Please wait a moment and click 'Explain in Simple Terms' again.");
+    } finally {
+      setIsExplaining(false);
+    }
+  };
+
+  // ── High Quality HTML Letterhead Header (Screen & PDF share only) ──
+  const LetterheadHeader = () => (
+    <div className="relative w-full print:hidden">
+      <svg className="absolute top-0 right-0 w-[240px] h-[90px] z-0 opacity-80" viewBox="0 0 200 100" preserveAspectRatio="none">
+        <path d="M40,0 C100,50 150,80 200,100 L200,0 Z" fill="#e03a3c" opacity="0.7"/>
+        <path d="M90,0 C140,40 170,70 200,80 L200,0 Z" fill="#7a28cb" opacity="0.6"/>
+        <path d="M140,0 C170,20 185,40 200,60 L200,0 Z" fill="#00488d" opacity="0.5"/>
+      </svg>
+      <div className="flex items-end px-3 pt-5 pb-0.5 relative z-10 w-full">
+        {/* Logo and Lab Name Sub-Label */}
+        <div className="flex flex-col items-center w-[120px] shrink-0 mr-4">
+          <Logo className="w-[82px] h-[82px] object-contain" />
+          <div className="text-[10px] font-bold text-black tracking-[0.05em] mt-1 whitespace-nowrap" style={{ fontFamily: 'Arial, sans-serif' }}>
+            SANA PATHOLOGY LAB
+          </div>
+        </div>
+
+        {/* Lab Info Container */}
+        <div className="flex-grow flex flex-col justify-end">
+          {/* Main Lab Title */}
+          <div className="w-full text-[#1a2f4c] uppercase font-black mb-2 tracking-tight whitespace-nowrap" style={{ fontFamily: '"Arial Black", Impact, sans-serif', fontSize: '42px', lineHeight: '1.05' }}>
+            {settings.labName || 'SANA PATHOLOGY LAB'}
+          </div>
+
+          {/* Three-column Sub-info Row */}
+          <div className="flex items-end justify-between w-full pb-1">
+            {/* Left Col: Technician Info */}
+            <div className="flex flex-col items-center shrink-0" style={{ fontFamily: '"Times New Roman", Times, serif' }}>
+              <div className="text-[18px] font-bold leading-[1.2] text-black whitespace-nowrap">Mohd. Altamash</div>
+              <div className="text-[11px] font-bold leading-[1.2] text-black mt-1.5 font-sans">D.M.L.T.</div>
+              <div className="text-[11px] font-bold leading-[1.2] text-black font-sans">Technician</div>
+            </div>
+
+            {/* Middle Col: Service Info */}
+            <div className="flex flex-col items-center flex-1 px-2" style={{ fontFamily: '"Times New Roman", Times, serif' }}>
+              <div className="text-[17px] font-bold leading-[1.2] text-black tracking-wide whitespace-nowrap">Fully Computerized Lab</div>
+              <div className="bg-[#1e2a8a] text-white text-[11px] font-bold px-3 py-[3px] rounded-[3px] mt-2 shadow-sm font-sans tracking-wide whitespace-nowrap">
+                Emergency 24 Hours Service
+              </div>
+            </div>
+
+            {/* Right Col: Phone Numbers */}
+            <div className="flex flex-col items-end shrink-0 text-black mb-0.5" style={{ fontFamily: 'Arial, sans-serif' }}>
+              <div className="text-[13px] font-bold leading-[1.3] tracking-wide whitespace-nowrap">M.:6396786939</div>
+              <div className="text-[13px] font-bold leading-[1.3] tracking-wide whitespace-nowrap">M.:6397240575</div>
+            </div>
+          </div>
+        </div>
+      </div>
+      <div className="mt-2 border-b-[3px] border-black"></div>
+      <div className="mt-[2px] border-b-[1px] border-black mb-3"></div>
+    </div>
+  );
+
+  // ── High Quality HTML Letterhead Footer (Screen & PDF share only) ──
+  const LetterheadFooter = () => (
+    <footer className="w-full px-[14mm] bg-white z-20" style={{ position: 'absolute', bottom: '30mm', left: 0, right: 0 }}>
+      {/* Signature Area (Visible on print and screen) */}
+      <div className="flex justify-between items-end px-12 mb-1">
+        <div></div>
+        <div className="text-right">
+          <div className="italic font-bold text-[14px] mb-0.5 mr-6 text-black">Thanks for Reference</div>
+          <div className="flex items-center justify-end gap-2 text-[13px] font-bold italic text-black">
+            <span>Checked by</span>
+            {/* Signature Image */}
+            <div className="flex flex-col items-center ml-2">
+              <img src={`${import.meta.env.BASE_URL}Signature.png`} alt="Signature" className="h-[40px] w-auto object-contain" onError={(e) => { e.target.style.display = 'none'; }} />
+              <div className="w-[120px] border-b border-black mt-1"></div>
+            </div>
+          </div>
+        </div>
+      </div>
+
+      <div className="print:hidden w-full">
+        <div className="border-t-[1.5px] border-b-[1.5px] border-[#d82c2a]">
+          <div className="text-center text-[#d82c2a] font-bold text-[15px] py-1.5 font-sans tracking-wide">
+            Add.: Datawali Road, Near Aara Machine, Hayat Nagar, Distt. Sambhal-244303 (U.P)
+          </div>
+        </div>
+        <div className="text-center text-black font-bold text-[13px] pt-1.5 pb-5 font-sans">
+          This Report is not Valid for medico legal Purpose.
+        </div>
+      </div>
+    </footer>
+  );
+
+  const PatientHeader = ({ pageNum, totalPages }) => (
+    <div className="mb-4 mt-1 print:mt-0 relative z-10 flex gap-2">
+      <div className="border border-black p-2 text-[13px] font-bold uppercase text-black flex-1">
+        <div className="flex justify-between mb-1.5">
+          <div>PATIENT'S NAME:- <span className="font-black text-[14px]">{patient.fullName}</span></div>
+          <div>AGE/SEX:- {patient.age} {patient.ageType || 'Yrs'}/{patient.gender === 'Male' ? 'M' : patient.gender === 'Female' ? 'F' : 'O'}</div>
+        </div>
+        <div className="flex justify-between mb-1.5">
+          <div>REFER BY DOCTOR:- DR. {doctor.name}</div>
+          <div>DATE:- {new Date(report.reportDate).toLocaleDateString('en-GB')}</div>
+        </div>
+        <div className="flex justify-between">
+          <div>TYPE OF SAMPLE:- {report.results?.[0]?.test?.sampleType || 'BLOOD'}</div>
+          <div>REPORT NO:- {report.reportNumber} &nbsp; | &nbsp; PAGE {pageNum < 10 ? '0'+pageNum : pageNum} OF {totalPages < 10 ? '0'+totalPages : totalPages}</div>
+        </div>
+      </div>
+      <div className="border border-black p-1 shrink-0 bg-white flex items-center justify-center">
+        <QRCodeSVG value={qrValue} size={64} level="M" />
+      </div>
+    </div>
+  );
+
+  const TestTable = ({ testName, rows, showHeader, summary = '' }) => {
+    const isMantoux = testName.toUpperCase().includes('MANTOUX') || (rows[0] && rows[0].test?.testCode === 'MANTOUX-01');
+    const isMalaria = testName.toUpperCase().includes('MALARIA MICRO') || (rows[0] && rows[0].test?.testCode === 'MP-MICRO');
+
+    if (isMantoux) {
+      const doseRow = rows.find(r => r.parameterName.includes('Dose')) || rows[0];
+      const indurationRow = rows.find(r => r.parameterName.includes('Induration')) || rows[1];
+      const resultRow = rows.find(r => r.parameterName.includes('Result')) || rows[2];
+
+      return (
+        <div className="relative z-10 w-full" style={{ fontFamily: 'Georgia, serif', color: '#000' }}>
+          <div className="text-center mb-4 mt-2">
+            <h3 className="text-[17px] font-black underline uppercase tracking-wide">{testName}</h3>
+            <p className="text-[13px] font-bold mt-1 text-gray-800">(Interdermal Skin Test)</p>
+          </div>
+
+          {/* Top Data Table */}
+          <div className="border border-black mb-4">
+            <table className="w-full border-collapse text-[13.5px]">
+              <tbody>
+                <tr className="border-b border-black">
+                  <td className="w-1/2 p-2.5 font-bold border-r border-black">Tuberculin Dose</td>
+                  <td className="w-1/2 p-2.5 font-bold">{doseRow?.resultValue || '0.1 mL of TU PPD'}</td>
+                </tr>
+                <tr className="border-b border-black">
+                  <td className="w-1/2 p-2.5 font-bold border-r border-black">Induration (mm)</td>
+                  <td className="w-1/2 p-2.5 font-bold">{indurationRow?.resultValue || '—'}</td>
+                </tr>
+                <tr>
+                  <td className="w-1/2 p-2.5 font-bold border-r border-black">Result after 48 hours</td>
+                  <td className="w-1/2 p-2.5 font-black text-[15px]">{resultRow?.resultValue || '—'}</td>
+                </tr>
+              </tbody>
+            </table>
+          </div>
+
+          {/* Interpretation Section */}
+          <div className="mb-4 text-[13.5px] leading-relaxed text-black">
+            <p className="font-bold mb-1">Interpretation:</p>
+            <p className="text-justify text-gray-900">
+              Induration measuring 10 mm more is considered positive which shows hypersensitivity to <span className="italic underline">tuberculoprotein</span>. It indicates past or present infection with <span className="italic underline">Mycobacterium</span> tuberculosis.
+            </p>
+          </div>
+
+          {/* Induration Size Reference Table */}
+          <div className="border border-black text-[11px] mb-2">
+            <table className="w-full border-collapse text-left">
+              <thead>
+                <tr className="bg-gray-100 border-b border-black font-bold">
+                  <th className="p-2 border-r border-black w-1/3">Induration Size</th>
+                  <th className="p-2 w-2/3">Interpretation</th>
+                </tr>
+              </thead>
+              <tbody className="divide-y divide-black">
+                <tr>
+                  <td className="p-2 border-r border-black font-semibold">&lt; 5 mm</td>
+                  <td className="p-2">A negative result, indicating no exposure to TB</td>
+                </tr>
+                <tr>
+                  <td className="p-2 border-r border-black font-semibold">5–9 mm</td>
+                  <td className="p-2">Usually considered positive for people who are immunocompromised or have other risk factors for TB</td>
+                </tr>
+                <tr>
+                  <td className="p-2 border-r border-black font-semibold">10–14 mm</td>
+                  <td className="p-2">Usually considered positive for people with medical risk factors for TB, recent immigrants from areas with high TB prevalence, or close contacts with people with TB</td>
+                </tr>
+                <tr>
+                  <td className="p-2 border-r border-black font-semibold">&gt; 15 mm</td>
+                  <td className="p-2">Usually considered positive for people with no known risk factors for TB</td>
+                </tr>
+              </tbody>
+            </table>
+          </div>
+        </div>
+      );
+    }
+
+    if (isMalaria) {
+      const resultValue = rows[0]?.resultValue || 'NOT-SEEN';
+      return (
+        <div className="relative z-10 w-full mb-6" style={{ fontFamily: 'Georgia, serif', color: '#000' }}>
+          <h3 className="text-[17px] font-black underline uppercase text-center mb-8">IMMUNOLOGY & SEROLOGY TEST</h3>
+          
+          <div className="grid grid-cols-2 mb-8 items-center">
+            <div className="flex flex-col items-start">
+              <div className="font-bold text-[15px] uppercase tracking-wide">MALARIA PARASITE IDENTIFICATION</div>
+              <div className="text-[12px] font-bold mt-0.5 w-full text-center" style={{ maxWidth: '280px' }}>(MICROSCOPY)</div>
+            </div>
+            <div className="font-black text-[16px] uppercase tracking-wide pl-8">{resultValue}</div>
+          </div>
+
+          <div className="mt-6 text-[13px] leading-relaxed">
+            <p className="font-bold mb-2">NOTE:</p>
+            <div className="space-y-1">
+              <p className="flex items-start"><span className="mr-2">➤</span> A Single negative smear does not rule out malaria</p>
+              <p className="flex items-start"><span className="mr-2">➤</span> Test conducted on whole blood.</p>
+            </div>
+          </div>
+        </div>
+      );
+    }
+
+    const overallIdx = rows.findIndex(r => r.groupName === `__OVERALL__${testName}`);
+    const overallResult = overallIdx !== -1 ? rows[overallIdx] : null;
+    const filteredRows = overallResult ? rows.filter((_, i) => i !== overallIdx) : rows;
+
+    return (
+    <div className="relative z-10">
+      <div className="px-2">
+        {showHeader && rows.length > 0 && (() => {
+          const firstParam = filteredRows[0]?.test?.parameters?.find(p => p.parameterName === filteredRows[0]?.parameterName);
+          const isTiterTest = firstParam?.isQualitative && firstParam?.titerValues;
+          const titerList = isTiterTest ? firstParam.titerValues.split(',') : [];
+          return (
+            <div className="border border-black rounded-3xl px-2 py-1.5 mb-2 flex items-center text-[13px] font-bold text-black box-border">
+              <div className={(isTiterTest ? "w-[25%]" : "w-[45%]") + " pl-2"}>Investigations</div>
+              {isTiterTest ? (
+                <>
+                  {titerList.map(t => (
+                    <div key={t} className="flex-1 text-center text-[11px]">{t.trim()}</div>
+                  ))}
+                  <div className="w-[10%] text-center text-[10px]">Unit</div>
+                  <div className="w-[20%] text-center text-[10px] pr-2">Range</div>
+                </>
+              ) : (
+                <>
+                  <div className="w-[12%] text-center">Results</div>
+                  <div className="w-[8%] text-center">Flag</div>
+                  <div className="w-[12%] text-center">Units</div>
+                  <div className="w-[23%] text-center pr-2">Normal values</div>
+                </>
+              )}
+            </div>
+          );
+        })()}
+        {rows.length > 0 ? (
+          <>
+            <div className="font-black text-[15px] underline uppercase tracking-wider text-black mb-2">
+              {testName}
+            </div>
+
+            <table className="w-full text-[13.5px] text-black">
+              <tbody>
+                {filteredRows.map((res, idx, arr) => {
+              const prevGroup = idx > 0 ? arr[idx - 1].groupName : null;
+              const showGroup = res.groupName && res.groupName !== prevGroup;
+              const isHigh = res.flag === 'HIGH';
+              const isLow = res.flag === 'LOW';
+              const isAbnormal = isHigh || isLow;
+              const paramDef = res.test?.parameters?.find(p => p.parameterName === res.parameterName);
+              const isQual = paramDef?.isQualitative;
+              const titerVals = paramDef?.titerValues;
+              const titerResults = titerVals && res.resultValue
+                ? res.resultValue.split('||').map(entry => {
+                    const parts = entry.split('|');
+                    return { titer: parts[0], value: parts[1] || '' };
+                  })
+                : [];
+              const isImmunology = false; // Disable special immunology layout to keep columns aligned
+              const colCount = titerResults.length > 0 ? (3 + titerResults.length) : 5;
+              return (
+                <React.Fragment key={res.id || idx}>
+                  {showGroup && !isImmunology && (
+                    <tr>
+                      <td colSpan={colCount} className="pt-2 pb-1.5 font-bold underline uppercase text-[14px] text-black">
+                        {res.groupName}
+                      </td>
+                    </tr>
+                  )}
+                  {isImmunology ? (
+                    <>
+                      {showGroup && (
+                        <tr>
+                          <td colSpan={colCount} className="pt-3 pb-1 font-black text-[15px] underline uppercase tracking-wider text-black" style={{ fontFamily: 'Georgia, serif' }}>
+                            {res.groupName}
+                          </td>
+                        </tr>
+                      )}
+                      <tr>
+                        <td colSpan={colCount} className="py-1">
+                          <div className="flex items-center" style={{ fontFamily: 'Georgia, serif' }}>
+                            <span className="font-semibold uppercase text-[13.5px]">{res.parameterName}</span>
+                            <div className="flex-1 mx-3" style={{ borderBottom: '1px dotted #999', height: '1px' }}></div>
+                            <span className="font-black text-[15px]">{res.resultValue}</span>
+                          </div>
+                        </td>
+                      </tr>
+                    </>
+                  ) : titerResults.length > 0 ? (
+                    <tr>
+                      <td className="py-1 pl-2 font-semibold uppercase w-[25%] align-top">{res.parameterName}</td>
+                      {titerVals ? titerVals.split(',').map((titer, ti) => {
+                        const tr = titerResults.find(r => r.titer.trim() === titer.trim());
+                        const val = tr ? tr.value : '--';
+                        return (
+                          <td key={ti} className="py-1 text-center font-bold text-[13px] align-top">
+                            <span className={`${val === '+' ? 'text-green-700' : val === '-' ? 'text-red-600' : 'text-gray-300'}`}>{val || '—'}</span>
+                          </td>
+                        );
+                      }) : titerResults.map((tr, ti) => (
+                        <td key={ti} className="py-1 text-center font-bold text-[13px] align-top">
+                          <span className={`${tr.value === '+' ? 'text-green-700' : tr.value === '-' ? 'text-red-600' : 'text-gray-300'}`}>{tr.value || '—'}</span>
+                        </td>
+                      ))}
+                      <td className="py-1 text-center font-semibold text-gray-500 w-[10%] align-top text-[12px]">{res.unit || ''}</td>
+                      <td className="py-1 text-center pr-2 font-semibold whitespace-nowrap text-gray-500 w-[20%] align-top text-[12px]">{res.referenceRange || ''}</td>
+                    </tr>
+                  ) : (
+                    <tr>
+                      <td className={`py-1 pl-2 font-semibold uppercase ${isQual ? 'w-[45%]' : 'w-[45%]'} align-top`}>{res.parameterName}</td>
+                      <td colSpan={isQual ? 4 : 1} className={`py-1 ${isQual ? 'text-left pl-4' : 'text-center'} align-top ${isQual ? 'w-[55%]' : 'w-[12%]'} whitespace-nowrap`}>
+                        <span className={`${isQual ? 'font-black text-[15px]' + (res.resultValue?.startsWith('POSITIVE') ? ' text-green-700' : res.resultValue?.startsWith('NEGATIVE') ? ' text-red-600' : '') : isAbnormal ? 'font-black border-b-[1.5px] border-black pb-0.5' : 'font-bold'}`}>
+                          {res.resultValue === '+' ? 'POSITIVE' : res.resultValue === '-' ? 'NEGATIVE' : res.resultValue}
+                        </span>
+                      </td>
+                      {!isQual && (
+                        <>
+                          <td className="py-1 text-center font-bold text-[13px] w-[8%] align-top">{isHigh ? 'High' : isLow ? 'Low' : ''}</td>
+                          <td className="py-1 text-center font-semibold w-[12%] align-top">{res.unit}</td>
+                          <td className="py-1 text-center pr-2 font-semibold w-[23%] align-top text-[12px] leading-tight break-words">{res.referenceRange}</td>
+                        </>
+                      )}
+                    </tr>
+                  )}
+                </React.Fragment>
+              );
+            })}
+          </tbody>
+        </table>
+        </>
+        ) : (
+          <div className="font-black text-[15px] underline uppercase tracking-wider text-black mt-2">
+            {testName} (Note)
+          </div>
+        )}
+        
+        {overallResult && (
+          <div className="mt-3 flex items-center justify-between text-[14px] font-bold uppercase text-black border-t border-black pt-2">
+            <span>Result:</span>
+            <span>{overallResult.resultValue}</span>
+          </div>
+        )}
+        {summary && (
+          <div className="mt-4 p-3 border border-gray-300 rounded bg-gray-50 text-[12px] text-black leading-relaxed whitespace-pre-wrap">
+            <span className="font-bold underline mr-1">Note:</span>
+            {summary}
+          </div>
+        )}
+      </div>
+    </div>
+  );
+  };
+
+  // --- Linear Parameter-Level Pagination ---
+  const PAGE_CAPACITY = 22;
+  const COST = { testHeader:2.0, groupHeader:1.0, paramRow:1.0, qualOffset:0.5, summary:2.0, endOfReport:2.0 };
+
+  const flatTests = [];
+  testNames.forEach(testName => {
+    const { rows, summary } = groupedTests[testName];
+    let totalCost = 0;
+    let tempPrevGroup = null;
+    let summaryCost = 0;
+    if (summary) {
+      summaryCost = 1.0 + (summary.split('\n').length * 0.5) + Math.ceil(summary.length / 80) * 0.4;
+    }
+    rows.forEach((row, idx) => {
+      const isNewGroup = row.groupName && row.groupName !== tempPrevGroup;
+      const paramDef = row.test?.parameters?.find(p => p.parameterName === row.parameterName);
+      let cost = COST.paramRow + (paramDef?.isQualitative ? COST.qualOffset : 0) + (isNewGroup ? COST.groupHeader : 0) + (idx === 0 ? COST.testHeader : 0);
+      if (row.parameterName && row.parameterName.length > 26) cost += 0.8;
+      totalCost += cost;
+      tempPrevGroup = row.groupName;
+    });
+    flatTests.push({ testName, rows, summary, totalCost, summaryCost });
+  });
+
+  const pages = [];
+  let curPage = { segments: [] };
+  let pageUsed = 0;
+  let curSeg = null;
+  let prevGroup = null;
+
+  const flushSeg = () => { if (curSeg) { curPage.segments.push(curSeg); curSeg = null; } };
+  const flushPage = () => { flushSeg(); pages.push(curPage); curPage = { segments: [] }; pageUsed = 0; prevGroup = null; };
+
+  flatTests.forEach(test => {
+    const { testName, rows, summary, totalCost, summaryCost } = test;
+    const fullTestCost = totalCost + summaryCost;
+    
+    if (fullTestCost > 0 && fullTestCost <= PAGE_CAPACITY && pageUsed + fullTestCost > PAGE_CAPACITY && pageUsed > 0) {
+      flushPage();
+    }
+    
+    rows.forEach((row, idx) => {
+      const isNewGroup = row.groupName && row.groupName !== prevGroup;
+      const paramDef = row.test?.parameters?.find(p => p.parameterName === row.parameterName);
+      let cost = COST.paramRow + (paramDef?.isQualitative ? COST.qualOffset : 0) + (isNewGroup ? COST.groupHeader : 0);
+      
+      if (!curSeg) cost += COST.testHeader;
+      if (row.parameterName && row.parameterName.length > 26) cost += 0.8;
+
+      if (pageUsed + cost > PAGE_CAPACITY && pageUsed > 0) {
+        flushPage();
+        cost = COST.testHeader + COST.paramRow + (paramDef?.isQualitative ? COST.qualOffset : 0);
+        if (row.parameterName && row.parameterName.length > 26) cost += 0.8;
+      }
+
+      if (!curSeg) { curSeg = { testName, summary: null, rows: [] }; prevGroup = null; }
+      curSeg.rows.push(row);
+      pageUsed += cost;
+      prevGroup = row.groupName;
+    });
+
+    if (summary) {
+      if (pageUsed + summaryCost > PAGE_CAPACITY && pageUsed > 0) {
+        flushPage();
+      }
+      
+      if (!curSeg) {
+        curSeg = { testName, summary, rows: [] };
+      } else {
+        curSeg.summary = summary;
+      }
+      pageUsed += summaryCost;
+    }
+
+    flushSeg();
+  });
+
+  if (pageUsed + COST.endOfReport > PAGE_CAPACITY) flushPage();
+  pages.push(curPage);
+
+  const totalPages = pages.length;
+
+  return (
+    <>
+      <style dangerouslySetInnerHTML={{ __html: `
+        body { margin: 0; background: #e8edf4; }
+        .report-wrapper { background: #e8edf4; min-height: 100vh; padding: 80px 16px 40px; }
+        .report-page { background-color: white; width: 210mm; height: 297mm; margin: 0 auto 24px; box-shadow: 0 4px 32px rgba(0,0,0,0.18); padding: 0mm 14mm 0mm; position: relative; display: flex; flex-direction: column; font-family: Arial, sans-serif; box-sizing: border-box; }
+        @media print {
+          @page { margin: 0; size: A4 portrait; }
+          * { -webkit-print-color-adjust: exact; print-color-adjust: exact; }
+          body { background: white !important; margin: 0 !important; }
+          .no-print { display: none !important; }
+          .report-wrapper { background: white !important; padding: 0 !important; }
+          .report-page { box-shadow: none !important; margin: 0 !important; width: 210mm !important; height: 297mm !important; padding-top: 48mm !important; padding-bottom: 25mm !important; padding-left: 14mm !important; padding-right: 14mm !important; break-after: page; page-break-after: always; }
+          .report-page:last-of-type { break-after: avoid !important; page-break-after: avoid !important; }
+          tr { break-inside: avoid; page-break-inside: avoid; }
+          thead { display: table-header-group; }
+          .print\\:hidden { display: none !important; }
+        }
+      `}} />
+
+      <div className="no-print fixed top-0 left-0 right-0 z-50 bg-white border-b border-gray-200 shadow-sm px-6 py-3 flex items-center gap-3 flex-wrap justify-center">
+        <button onClick={() => navigate('/')} className="px-4 py-2 border border-gray-300 rounded text-sm font-bold text-gray-600 hover:bg-gray-50 transition-colors mr-auto">
+          ← Home
+        </button>
+        <div className="text-sm font-bold text-[#00488d] text-center hidden md:block">{report.reportNumber} — {patient.fullName}</div>
+        <button onClick={handleWhatsApp} className="flex items-center gap-2 px-4 py-2 bg-green-500 hover:bg-green-600 text-white rounded text-sm font-bold shadow-sm transition-colors ml-auto">
+          WhatsApp
+        </button>
+        <button onClick={() => handleExplainReport(aiLanguage)} disabled={isExplaining} className="flex items-center gap-2 px-4 py-2 bg-gradient-to-r from-indigo-500 to-purple-600 hover:from-indigo-600 hover:to-purple-700 text-white rounded text-sm font-bold shadow-sm transition-colors disabled:opacity-70">
+          <Sparkles className="w-4 h-4" /> Explain in Simple Terms
+        </button>
+        <button onClick={handlePrint} className="flex items-center gap-2 px-5 py-2 bg-[#00488d] hover:bg-blue-800 text-white rounded text-sm font-bold shadow-sm transition-colors">
+          🖨️ Print / Save PDF
+        </button>
+      </div>
+
+      {showExplainerModal && (
+        <div className="fixed inset-0 z-[60] flex items-center justify-center p-4 bg-black/50 backdrop-blur-sm animate-fade-in no-print">
+          <div className="bg-white rounded-3xl w-full max-w-2xl max-h-[90vh] flex flex-col shadow-2xl overflow-hidden animate-slide-up">
+            <div className="p-6 border-b border-gray-100 flex items-center justify-between bg-gradient-to-r from-indigo-50 to-purple-50 flex-wrap gap-4">
+              <div className="flex items-center gap-3">
+                <div className="bg-gradient-to-br from-indigo-500 to-purple-600 p-2 rounded-xl text-white shadow-sm">
+                  <BrainCircuit className="w-6 h-6" />
+                </div>
+                <h3 className="text-xl font-black text-indigo-900">AI Report Summary</h3>
+              </div>
+              
+              <div className="flex items-center gap-3">
+                {/* Language Selector Switch */}
+                <div className="flex bg-slate-200/80 p-1 rounded-xl border border-slate-300/50 shadow-inner">
+                  <button 
+                    onClick={() => {
+                      setAiLanguage('en');
+                      handleExplainReport('en');
+                    }}
+                    className={`px-3 py-1.5 rounded-lg text-xs font-bold transition-all duration-200 ${
+                      aiLanguage === 'en' 
+                        ? 'bg-white text-indigo-700 shadow-sm font-extrabold scale-[1.02]' 
+                        : 'text-slate-500 hover:text-slate-800'
+                    }`}
+                  >
+                    English
+                  </button>
+                  <button 
+                    onClick={() => {
+                      setAiLanguage('hi');
+                      handleExplainReport('hi');
+                    }}
+                    className={`px-3 py-1.5 rounded-lg text-xs font-bold transition-all duration-200 ${
+                      aiLanguage === 'hi' 
+                        ? 'bg-white text-indigo-700 shadow-sm font-extrabold scale-[1.02]' 
+                        : 'text-slate-500 hover:text-slate-800'
+                    }`}
+                  >
+                    हिन्दी
+                  </button>
+                </div>
+
+                <button onClick={() => setShowExplainerModal(false)} className="p-2 text-gray-400 hover:bg-white hover:text-gray-700 rounded-xl transition-all shadow-sm">
+                  <X className="w-5 h-5" />
+                </button>
+              </div>
+            </div>
+            
+            <div className="p-6 overflow-y-auto flex-1">
+              {isExplaining && !explanation ? (
+                <div className="flex flex-col items-center justify-center py-12 text-indigo-600">
+                  <Loader size="lg" className="text-indigo-600 mb-4" />
+                  <p className="font-bold text-lg animate-pulse">
+                    {aiLanguage === 'hi' ? 'आपके परिणामों का विश्लेषण किया जा रहा है...' : 'Analyzing your results...'}
+                  </p>
+                  <p className="text-sm text-gray-500 mt-2">
+                    {aiLanguage === 'hi' ? 'सरल हिंदी में विवरण तैयार किया जा रहा है...' : 'Generating simple explanation...'}
+                  </p>
+                </div>
+              ) : (
+                <div className="prose prose-sm md:prose-base prose-indigo max-w-none text-slate-700 whitespace-pre-wrap leading-relaxed">
+                  {explanation}
+                </div>
+              )}
+            </div>
+            
+            {!isExplaining && explanation && (
+              <div className="p-4 bg-amber-50 border-t border-amber-100/50 flex items-start gap-3 text-amber-800">
+                <AlertCircle className="w-5 h-5 shrink-0 mt-0.5" />
+                <p className="text-xs font-semibold leading-relaxed">
+                  {aiLanguage === 'hi' ? (
+                    <>
+                      <strong>अस्वीकरण (Disclaimer):</strong> यह स्पष्टीकरण आपको अपने परिणामों को समझने में मदद करने के लिए एआई (AI) द्वारा तैयार किया गया है। यह <strong>कोई चिकित्सा सलाह, निदान या उपचार नहीं है</strong>। किसी भी चिकित्सा सलाह या रिपोर्ट के बारे में हमेशा अपने डॉक्टर से परामर्श लें।
+                    </>
+                  ) : (
+                    <>
+                      <strong>Disclaimer:</strong> This explanation is generated by AI to help you understand your results. It is <strong>NOT</strong> medical advice, diagnosis, or treatment. Always consult with a qualified doctor.
+                    </>
+                  )}
+                </p>
+              </div>
+            )}
+
+          </div>
+        </div>
+      )}
+
+      <div className="report-wrapper">
+        {pages.map((pageData, pageIndex) => {
+          const isLastPage = pageIndex === pages.length - 1;
+          return (
+            <div key={`page-${pageIndex}`} className="report-page">
+              <div className="absolute inset-0 flex flex-col items-center justify-center opacity-[0.03] pointer-events-none select-none z-0 print:hidden">
+                <Logo className="w-[300px] h-[300px] grayscale" />
+                <div className="text-[52px] font-black tracking-widest mt-4 text-black">SANA PATHOLOGY LAB</div>
+              </div>
+              <LetterheadHeader />
+              <div className="flex-grow flex flex-col relative z-10 px-2 pb-[170px]">
+                <PatientHeader pageNum={pageIndex + 1} totalPages={totalPages} />
+                <div className="flex-grow mt-2">
+                  {pageData.segments.map((seg, idx) => {
+                    const isLastSegForTest = !pages.slice(pageIndex+1).some(p => p.segments?.some(s => s.testName===seg.testName));
+                    const isTiterSeg = (s) => s?.rows?.[0]?.test?.parameters?.some(p => p.isQualitative && p.titerValues);
+                    const prevSeg = idx > 0 ? pageData.segments[idx - 1] : null;
+                    const showHeader = idx === 0 || isTiterSeg(seg) !== isTiterSeg(prevSeg);
+                    return (
+                      <div key={seg.testName+idx} className={idx > 0 ? 'mt-4' : ''}>
+                        <TestTable testName={seg.testName} rows={seg.rows} showHeader={showHeader} summary={isLastSegForTest ? seg.summary : ''} />
+                      </div>
+                    );
+                  })}
+                  {isLastPage && (
+                    <div className="mt-12 mb-6 flex flex-col items-center justify-center w-full">
+                      <div className="flex items-center w-3/4 mx-auto">
+                        <div className="flex-1 border-t border-gray-300"></div>
+                        <div className="mx-4 text-[12px] font-bold tracking-[0.2em] text-[#1a2f4c] uppercase font-sans">End of Report</div>
+                        <div className="flex-1 border-t border-gray-300"></div>
+                      </div>
+                      <div className="text-[10px] text-gray-400 mt-2 tracking-widest uppercase font-semibold">***</div>
+                    </div>
+                  )}
+                </div>
+              </div>
+              <LetterheadFooter />
+            </div>
+          );
+        })}
+      </div>
+    </>
+  );
+};
+
+export default PublicPrint;

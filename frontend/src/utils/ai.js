@@ -1,0 +1,80 @@
+export const generateAI = async (prompt) => {
+  try {
+    const response = await fetch('/api/public/ai-generate', {
+      method: 'POST',
+      headers: {
+        'Content-Type': 'application/json',
+      },
+      body: JSON.stringify({ prompt }),
+    });
+
+    if (response.ok) {
+      const text = await response.text();
+      return text;
+    } else {
+      const errorData = await response.json().catch(() => ({}));
+      throw new Error(errorData.error || `HTTP ${response.status}: ${response.statusText}`);
+    }
+  } catch (err) {
+    console.error('Failed to generate AI response via backend proxy:', err.message);
+    throw err;
+  }
+};
+
+export const searchTests = (query) => {
+  const q = query.toLowerCase();
+  const results = [];
+  const testMap = {
+    'cbc': { name: 'Complete Blood Count (CBC)', code: 'CBC', price: 200 },
+    'sugar': { name: 'Blood Sugar (FBS/RBS)', code: 'FBS', price: 80 },
+    'thyroid': { name: 'Thyroid Function Test (T3/T4/TSH)', code: 'TFT', price: 450 },
+    'lipid': { name: 'Lipid Profile', code: 'LIPID', price: 650 },
+    'liver': { name: 'Liver Function Test (LFT)', code: 'LFT', price: 500 },
+    'kidney': { name: 'Kidney Function Test (KFT)', code: 'KFT', price: 500 },
+    'dengue': { name: 'Dengue Profile (IgG+IgM+NS1)', code: 'DENGUE-01', price: 1200 },
+    'dengue ns1': { name: 'Dengue NS1 Antigen', code: 'DENGUE-NS1', price: 600 },
+    'malaria': { name: 'Malaria Test (MP ELISA)', code: 'MP', price: 100 },
+    'typhoid': { name: 'Typhoid (Widal/Typhidot)', code: 'TYPHIDOT-01', price: 100 },
+    'vitamin d': { name: 'Vitamin D (25-Hydroxy)', code: 'VITD', price: 800 },
+    'vitamin b12': { name: 'Vitamin B12', code: 'VITB12', price: 700 },
+    'b12': { name: 'Vitamin B12', code: 'VITB12', price: 700 },
+    'vitb12': { name: 'Vitamin B12', code: 'VITB12', price: 700 },
+    'urine': { name: 'Urine Examination (Routine & Microscopy)', code: 'URINE', price: 150 },
+    'uric acid': { name: 'Serum Uric Acid', code: 'URIC_ACID', price: 100 },
+    'calcium': { name: 'Serum Calcium', code: 'CALCIUM-01', price: 200 },
+    'platelet': { name: 'Platelets Count', code: '015', price: 100 },
+    'hemoglobin': { name: 'Hemoglobin (Hb)', code: 'HB-01', price: 100 },
+    'hba1c': { name: 'HbA1c (Glycosylated Haemoglobin)', code: 'HBA1C', price: 400 },
+    'esr': { name: 'ESR (Erythrocyte Sedimentation Rate)', code: 'ESR-01', price: 150 },
+    'rheumatoid': { name: 'Rheumatoid Factor (RF)', code: 'RF', price: 350 },
+    'crp': { name: 'C-Reactive Protein (Quantitative)', code: 'CRP-QUANT-01', price: 350 },
+    'sgot': { name: 'SGOT (AST)', code: 'SGOT', price: 100 },
+    'sgpt': { name: 'SGPT (ALT)', code: 'SGPT', price: 100 },
+    'widal': { name: 'Widal Test', code: 'WIDAL1', price: 50 },
+    'mantoux': { name: 'Mantoux Test (Tuberculin)', code: 'MANTOUX-01', price: 250 },
+    'semen': { name: 'Semen Analysis', code: 'SEMEN-01', price: 350 },
+    'anc': { name: 'ANC (Ante-Natal Care) Profile', code: 'ANC-01', price: 1200 },
+    'blood group': { name: 'Blood Group ABO & Rh', code: 'BG', price: 50 },
+    'full body': { name: 'Sana Full Body Checkup (Package)', code: 'PKG-01', price: 999 },
+    'fit active': { name: 'Sana Fit Active Package', code: 'PKG-05', price: 699 },
+    'women premium': { name: 'Sana Women Premium Package', code: 'PKG-03', price: 1899 },
+    'senior citizen': { name: 'Sana Senior Citizen Package', code: 'PKG-04', price: 1399 },
+    'heart health': { name: 'Sana Heart Health Package', code: 'PKG-06', price: 1199 },
+    'complete blood': { name: 'Complete Blood Count (CBC)', code: 'CBC', price: 200 },
+    'fbs': { name: 'Blood Sugar Fasting (FBS)', code: 'FBS', price: 80 },
+    'rbs': { name: 'Random Blood Sugar (RBS)', code: 'GLU-01', price: 100 },
+    'tlc': { name: 'TLC (Total Leucocyte Count)', code: '016', price: 50 },
+    'bilirubin': { name: 'Total Bilirubin', code: 'BILIRUBIN-TOTAL-01', price: 150 },
+    'creatinine': { name: 'Serum Creatinine', code: 'CREAT-01', price: 150 },
+    'urea': { name: 'Blood Urea', code: 'UREA-01', price: 150 },
+    'pt': { name: 'Prothrombin Time (PT)', code: 'PT-01', price: 250 },
+    'malaria micro': { name: 'Malaria Parasite Microscopy', code: 'MP-MICRO', price: 150 },
+  };
+
+  for (const [key, test] of Object.entries(testMap)) {
+    if (q.includes(key)) {
+      results.push(test);
+    }
+  }
+  return results;
+};
