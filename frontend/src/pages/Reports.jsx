@@ -272,7 +272,11 @@ const Reports = () => {
       referenceRange: p.referenceRange,
       unit: p.unit,
       groupName: p.groupName,
-      resultValue: '',
+      isQualitative: p.isQualitative || false,
+      titerValues: p.titerValues || '',
+      resultValue: p.isQualitative && p.titerValues
+        ? p.titerValues.split(',').map(v => `${v.trim()}|--`).join('||')
+        : '',
       flag: ''
     }));
 
@@ -614,28 +618,42 @@ const Reports = () => {
                                         <option value="1:160">1:160</option>
                                         <option value="1:320">1:320</option>
                                       </select>
-                                    ) : (res.referenceRange?.toUpperCase().includes('NEGATIVE') ||
-                                      res.referenceRange?.toUpperCase().includes('POSITIVE') ||
-                                      res.referenceRange?.toUpperCase().includes('REACTIVE')) ? (
-                                      <select
-                                        value={res.resultValue || ''}
-                                        onChange={e => updateResult(res.originalIndex, 'resultValue', e.target.value)}
-                                        disabled={user?.userType !== 'STAFF'}
-                                        className="w-full border border-gray-300 rounded px-2 py-1 text-sm focus:outline-none focus:border-[#00488d] font-bold disabled:bg-transparent disabled:border-transparent disabled:appearance-none"
-                                      >
-                                        <option value="">- Select Result -</option>
-                                        {res.referenceRange?.toUpperCase().includes('REACTIVE') && !res.referenceRange?.toUpperCase().includes('NEGATIVE') ? (
-                                          <>
-                                            <option value="NON-REACTIVE">NON-REACTIVE</option>
-                                            <option value="REACTIVE">REACTIVE</option>
-                                          </>
-                                        ) : (
-                                          <>
-                                            <option value="NEGATIVE">NEGATIVE</option>
-                                            <option value="POSITIVE">POSITIVE</option>
-                                          </>
-                                        )}
-                                      </select>
+                                    ) : res.isQualitative ? (
+                                      (() => {
+                                        const rawRange = res.referenceRange || 'NEGATIVE / POSITIVE';
+                                        const opts = rawRange.includes('/')
+                                          ? rawRange.split('/').map(o => o.trim()).filter(Boolean)
+                                          : rawRange.includes(',')
+                                            ? rawRange.split(',').map(o => o.trim()).filter(Boolean)
+                                            : [rawRange.trim()];
+
+                                        // Map '+' and '-' to POSITIVE/NEGATIVE if present in opts
+                                        const displayValue = res.resultValue === '+'
+                                          ? (opts.includes('POSITIVE') ? 'POSITIVE' : '+')
+                                          : res.resultValue === '-'
+                                            ? (opts.includes('NEGATIVE') ? 'NEGATIVE' : '-')
+                                            : res.resultValue || '';
+
+                                        return (
+                                          <select
+                                            value={displayValue}
+                                            onChange={e => {
+                                              const val = e.target.value;
+                                              let savedVal = val;
+                                              if (val === 'POSITIVE') savedVal = '+';
+                                              else if (val === 'NEGATIVE') savedVal = '-';
+                                              updateResult(res.originalIndex, 'resultValue', savedVal);
+                                            }}
+                                            disabled={user?.userType !== 'STAFF'}
+                                            className="w-full border border-gray-300 rounded px-2 py-1 text-sm focus:outline-none focus:border-[#00488d] font-bold disabled:bg-transparent disabled:border-transparent disabled:appearance-none cursor-pointer"
+                                          >
+                                            <option value="">- Select Result -</option>
+                                            {opts.map(opt => (
+                                              <option key={opt} value={opt}>{opt}</option>
+                                            ))}
+                                          </select>
+                                        );
+                                      })()
                                     ) : (
                                       <input
                                         type="text"

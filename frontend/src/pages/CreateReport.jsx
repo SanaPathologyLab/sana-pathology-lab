@@ -819,21 +819,28 @@ Return ONLY the JSON. Do not include markdown code block formatting (no \`\`\`js
                     <tr>
                       <td className="w-1/2 p-3 font-bold border-r border-black text-black">Result after 48 hours</td>
                       <td className="w-1/2 p-2">
-                        <select 
-                          value={(() => {
-                            const p = params.find(p => p.parameterName.includes('Result')) || params[2];
-                            return p?.resultValue || '';
-                          })()} 
-                          onChange={e => {
-                            const p = params.find(p => p.parameterName.includes('Result')) || params[2];
-                            if (p) handleResultChange(p.key, 'resultValue', e.target.value);
-                          }} 
-                          className="w-full border border-gray-300 rounded px-2 py-1 text-sm font-bold text-black focus:outline-none focus:ring-1 focus:ring-black cursor-pointer"
-                        >
-                          <option value="">-- Select --</option>
-                          <option value="NEGATIVE">NEGATIVE</option>
-                          <option value="POSITIVE">POSITIVE</option>
-                        </select>
+                        {(() => {
+                          const p = params.find(p => p.parameterName.includes('Result')) || params[2];
+                          if (!p) return null;
+                          const rawRange = p.referenceRange || 'NEGATIVE / POSITIVE';
+                          const opts = rawRange.includes('/')
+                            ? rawRange.split('/').map(o => o.trim()).filter(Boolean)
+                            : rawRange.includes(',')
+                              ? rawRange.split(',').map(o => o.trim()).filter(Boolean)
+                              : [rawRange.trim()];
+                          return (
+                            <select 
+                              value={p.resultValue || ''} 
+                              onChange={e => handleResultChange(p.key, 'resultValue', e.target.value)} 
+                              className="w-full border border-gray-300 rounded px-2 py-1 text-sm font-bold text-black focus:outline-none focus:ring-1 focus:ring-black cursor-pointer"
+                            >
+                              <option value="">-- Select --</option>
+                              {opts.map(opt => (
+                                <option key={opt} value={opt}>{opt}</option>
+                              ))}
+                            </select>
+                          );
+                        })()}
                       </td>
                     </tr>
                   </tbody>
@@ -890,20 +897,30 @@ Return ONLY the JSON. Do not include markdown code block formatting (no \`\`\`js
                     <span className="font-bold text-[15px] text-black">MALARIA PARASITE IDENTIFICATION</span>
                     <span className="text-[12px] font-bold text-center mt-1 text-gray-800">(MICROSCOPY)</span>
                   </div>
-                  <select 
-                    value={(() => {
-                      const p = params[0];
-                      if (p && !p.resultValue) p.resultValue = 'NOT-SEEN';
-                      return p?.resultValue || 'NOT-SEEN';
-                    })()}
-                    onChange={e => {
-                      if (params[0]) handleResultChange(params[0].key, 'resultValue', e.target.value);
-                    }} 
-                    className="border border-gray-300 rounded px-3 py-2 text-[15px] font-bold text-black focus:outline-none focus:ring-1 focus:ring-black cursor-pointer shadow-sm min-w-[120px]"
-                  >
-                    <option value="NOT-SEEN">NOT-SEEN</option>
-                    <option value="SEEN">SEEN</option>
-                  </select>
+                  {(() => {
+                    const p = params[0];
+                    if (!p) return null;
+                    const rawRange = p.referenceRange || 'NOT-SEEN / SEEN';
+                    const opts = rawRange.includes('/')
+                      ? rawRange.split('/').map(o => o.trim()).filter(Boolean)
+                      : rawRange.includes(',')
+                        ? rawRange.split(',').map(o => o.trim()).filter(Boolean)
+                        : [rawRange.trim()];
+                    if (!p.resultValue && opts.length > 0) {
+                      p.resultValue = opts[0];
+                    }
+                    return (
+                      <select 
+                        value={p.resultValue || ''}
+                        onChange={e => handleResultChange(p.key, 'resultValue', e.target.value)} 
+                        className="border border-gray-300 rounded px-3 py-2 text-[15px] font-bold text-black focus:outline-none focus:ring-1 focus:ring-black cursor-pointer shadow-sm min-w-[120px]"
+                      >
+                        {opts.map(opt => (
+                          <option key={opt} value={opt}>{opt}</option>
+                        ))}
+                      </select>
+                    );
+                  })()}
                 </div>
               </div>
 
@@ -1035,15 +1052,40 @@ Return ONLY the JSON. Do not include markdown code block formatting (no \`\`\`js
                               <option value="1:320">1:320</option>
                             </select>
                           ) : tr.isQualitative ? (
-                            <select
-                              value={tr.resultValue === '+' ? 'POSITIVE' : tr.resultValue === '-' ? 'NEGATIVE' : ''}
-                              onChange={(e) => handleResultChange(tr.key, 'resultValue', e.target.value === 'POSITIVE' ? '+' : e.target.value === 'NEGATIVE' ? '-' : '')}
-                              className="border border-gray-300 rounded px-3 py-2 text-sm font-bold focus:outline-none focus:border-[#00488d]"
-                            >
-                              <option value="">-- Select --</option>
-                              <option value="POSITIVE">POSITIVE</option>
-                              <option value="NEGATIVE">NEGATIVE</option>
-                            </select>
+                            (() => {
+                              const rawRange = tr.referenceRange || 'NEGATIVE / POSITIVE';
+                              const opts = rawRange.includes('/')
+                                ? rawRange.split('/').map(o => o.trim()).filter(Boolean)
+                                : rawRange.includes(',')
+                                  ? rawRange.split(',').map(o => o.trim()).filter(Boolean)
+                                  : [rawRange.trim()];
+
+                              // Map '+' and '-' to POSITIVE/NEGATIVE if present in opts
+                              const displayValue = tr.resultValue === '+'
+                                ? (opts.includes('POSITIVE') ? 'POSITIVE' : '+')
+                                : tr.resultValue === '-'
+                                  ? (opts.includes('NEGATIVE') ? 'NEGATIVE' : '-')
+                                  : tr.resultValue || '';
+
+                              return (
+                                <select
+                                  value={displayValue}
+                                  onChange={(e) => {
+                                    const val = e.target.value;
+                                    let savedVal = val;
+                                    if (val === 'POSITIVE') savedVal = '+';
+                                    else if (val === 'NEGATIVE') savedVal = '-';
+                                    handleResultChange(tr.key, 'resultValue', savedVal);
+                                  }}
+                                  className="w-full border border-gray-300 rounded px-3 py-2 text-sm font-bold focus:outline-none focus:border-[#00488d] cursor-pointer"
+                                >
+                                  <option value="">-- Select --</option>
+                                  {opts.map(opt => (
+                                    <option key={opt} value={opt}>{opt}</option>
+                                  ))}
+                                </select>
+                              );
+                            })()
                           ) : (
                             <input type="text" value={tr.resultValue || ''} onChange={(e) => handleResultChange(tr.key, 'resultValue', e.target.value)} className="w-full border border-gray-300 rounded px-2 py-2 text-sm font-bold focus:outline-none focus:border-[#00488d]" />
                           )}

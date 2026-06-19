@@ -85,6 +85,49 @@ const Tests = () => {
     setParameters(p);
   };
 
+  const getQualitativeType = (p) => {
+    if (!p.isQualitative) return '';
+    if (p.titerValues && p.titerValues.trim() !== '') return 'titer';
+    const range = (p.referenceRange || '').toUpperCase();
+    if (range.includes('NEGATIVE') || range.includes('POSITIVE')) return 'pos_neg';
+    if (range.includes('REACTIVE') || range.includes('NON-REACTIVE')) return 'reactive_nonreactive';
+    if (range.includes('SEEN') || range.includes('NOT-SEEN') || range.includes('NOT SEEN')) return 'seen_notseen';
+    if (range.trim() !== '') return 'custom';
+    return 'pos_neg';
+  };
+
+  const handleQualitativeTypeChange = (idx, type) => {
+    const p = [...parameters];
+    p[idx].titerValues = '';
+    if (type === 'pos_neg') {
+      p[idx].referenceRange = 'NEGATIVE / POSITIVE';
+    } else if (type === 'reactive_nonreactive') {
+      p[idx].referenceRange = 'NON-REACTIVE / REACTIVE';
+    } else if (type === 'seen_notseen') {
+      p[idx].referenceRange = 'NOT-SEEN / SEEN';
+    } else if (type === 'titer') {
+      p[idx].referenceRange = '';
+      p[idx].titerValues = '1/20,1/40,1/80,1/160,1/320';
+    } else if (type === 'custom') {
+      p[idx].referenceRange = '';
+    }
+    setParameters(p);
+  };
+
+  const handleIsQualitativeToggle = (idx, checked) => {
+    const p = [...parameters];
+    p[idx].isQualitative = checked;
+    if (checked) {
+      p[idx].referenceRange = 'NEGATIVE / POSITIVE';
+      p[idx].titerValues = '';
+      p[idx].unit = '';
+    } else {
+      p[idx].referenceRange = '';
+      p[idx].titerValues = '';
+    }
+    setParameters(p);
+  };
+
   const handleSubmit = async (e) => {
     e.preventDefault();
     try {
@@ -485,10 +528,42 @@ const Tests = () => {
                       <input type="text" placeholder="Group Heading" value={p.groupName || ''} onChange={e => updateParameter(idx, 'groupName', e.target.value)} className="w-[15%] border border-gray-300 rounded px-2 py-1 text-sm focus:outline-none" />
                       <input type="text" placeholder="Parameter Name *" required value={p.parameterName} onChange={e => updateParameter(idx, 'parameterName', e.target.value)} className="w-[20%] border border-gray-300 rounded px-2 py-1 text-sm font-bold focus:outline-none" />
                       {p.isQualitative ? (
-                        <div className="flex gap-1 items-center w-[30%]">
-                          <span className="text-[11px] font-bold text-green-700 whitespace-nowrap">+/- Only</span>
-                          <input type="text" placeholder="Titers (e.g. 1/20,1/40,1/80)" value={p.titerValues || ''} onChange={e => updateParameter(idx, 'titerValues', e.target.value)} className="flex-1 border border-gray-300 rounded px-2 py-1 text-[11px] focus:outline-none" />
-                        </div>
+                        <>
+                          <select
+                            value={getQualitativeType(p)}
+                            onChange={e => handleQualitativeTypeChange(idx, e.target.value)}
+                            className="w-[15%] border border-gray-300 rounded px-2 py-1 text-sm focus:outline-none"
+                          >
+                            <option value="pos_neg">Positive / Negative</option>
+                            <option value="reactive_nonreactive">Non-Reactive / Reactive</option>
+                            <option value="seen_notseen">Not-Seen / Seen</option>
+                            <option value="custom">Custom Options</option>
+                            <option value="titer">Widal Titer Matrix</option>
+                          </select>
+                          {getQualitativeType(p) === 'custom' && (
+                            <input
+                              type="text"
+                              placeholder="e.g. NEGATIVE / POSITIVE"
+                              value={p.referenceRange || ''}
+                              onChange={e => updateParameter(idx, 'referenceRange', e.target.value)}
+                              className="w-[15%] border border-gray-300 rounded px-2 py-1 text-sm focus:outline-none font-bold"
+                            />
+                          )}
+                          {getQualitativeType(p) === 'titer' && (
+                            <input
+                              type="text"
+                              placeholder="Titers (e.g. 1/20,1/40)"
+                              value={p.titerValues || ''}
+                              onChange={e => updateParameter(idx, 'titerValues', e.target.value)}
+                              className="w-[15%] border border-gray-300 rounded px-2 py-1 text-sm focus:outline-none font-bold"
+                            />
+                          )}
+                          {(getQualitativeType(p) !== 'custom' && getQualitativeType(p) !== 'titer') && (
+                            <div className="w-[15%] text-xs text-gray-500 italic pt-1.5 px-1 truncate">
+                              {p.referenceRange}
+                            </div>
+                          )}
+                        </>
                       ) : (
                         <>
                           <input type="text" placeholder="Reference Range" value={p.referenceRange || ''} onChange={e => updateParameter(idx, 'referenceRange', e.target.value)} className="w-[17%] border border-gray-300 rounded px-2 py-1 text-sm focus:outline-none" />
@@ -496,8 +571,8 @@ const Tests = () => {
                         </>
                       )}
                       <label className="flex items-center gap-1 text-[11px] font-bold text-gray-600 cursor-pointer whitespace-nowrap pt-1">
-                        <input type="checkbox" checked={p.isQualitative} onChange={e => updateParameter(idx, 'isQualitative', e.target.checked)} className="accent-[#00488d]" />
-                        +/- Only
+                        <input type="checkbox" checked={p.isQualitative} onChange={e => handleIsQualitativeToggle(idx, e.target.checked)} className="accent-[#00488d]" />
+                        Qualitative?
                       </label>
                       <button type="button" onClick={() => removeParameterRow(idx)} className="text-red-500 p-1 hover:bg-red-100 rounded shrink-0 mt-1"><Trash2 className="w-4 h-4" /></button>
                     </div>
