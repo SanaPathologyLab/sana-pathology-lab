@@ -759,6 +759,71 @@ app.post('/api/public/appointments/:id/pay-upi', async (req, res) => {
   }
 });
 
+// ─── PUBLIC: Get UPI Payment Status (Polling) ───
+app.get('/api/public/payment-status/:id', async (req, res) => {
+  try {
+    const { id } = req.params;
+    console.log('[DEBUG] Received GET payment-status request for appointment ID:', id);
+    const appointment = await prisma.appointment.findUnique({
+      where: { id: parseInt(id) },
+      select: {
+        id: true,
+        paymentStatus: true,
+        status: true,
+        transactionId: true
+      }
+    });
+    console.log('[DEBUG] Found appointment status database result:', appointment);
+    if (!appointment) {
+      return res.status(404).json({ message: 'Appointment not found' });
+    }
+    res.json(appointment);
+  } catch (err) {
+    console.error('Get payment status error:', err.message);
+    res.status(500).json({ message: 'An error occurred while retrieving payment status.' });
+  }
+});
+
+// ─── PUBLIC: Mock Verification for UPI Payment (Demo Mode) ───
+app.post('/api/public/verify-upi-mock/:id', async (req, res) => {
+  try {
+    const { id } = req.params;
+    console.log('[DEBUG] Received POST verify-upi-mock request for appointment ID:', id);
+    const appointment = await prisma.appointment.update({
+      where: { id: parseInt(id) },
+      data: {
+        paymentStatus: 'PAID'
+      }
+    });
+    console.log('[DEBUG] Updated payment status in DB successfully:', appointment.paymentStatus);
+    res.json({ success: true, message: 'Payment auto-detected successfully (Simulated)!', appointment });
+  } catch (err) {
+    console.error('Mock verify payment error:', err.message);
+    res.status(500).json({ message: 'An error occurred while simulating payment verification.' });
+  }
+});
+
+// ─── PUBLIC: Submit UPI Payment Reference (Old Compatibility Fallback) ───
+app.post('/api/public/submit-upi-ref', async (req, res) => {
+  try {
+    const { appointmentId, utr } = req.body;
+    if (!appointmentId || !utr) {
+      return res.status(400).json({ message: 'appointmentId and utr are required.' });
+    }
+    const appointment = await prisma.appointment.update({
+      where: { id: parseInt(appointmentId) },
+      data: {
+        transactionId: utr.trim(),
+        paymentStatus: 'PENDING_VERIFICATION'
+      }
+    });
+    res.json({ success: true, message: 'Payment reference submitted successfully!', appointment });
+  } catch (err) {
+    console.error('Compatibility submit UPI payment error:', err.message);
+    res.status(500).json({ message: 'An error occurred while submitting payment details.' });
+  }
+});
+
 // ─── PUBLIC: Get Tests ───
 app.get('/api/public/tests', async (req, res) => {
   try {

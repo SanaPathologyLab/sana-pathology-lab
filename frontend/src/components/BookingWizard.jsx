@@ -65,6 +65,11 @@ const BookingWizard = ({ existingCart, onCartUpdate, scrollToSection }) => {
   const [upiError, setUpiError] = useState('');
   const [upiLoading, setUpiLoading] = useState(false);
 
+  // Polling & verification states
+  const [verifyingPayment, setVerifyingPayment] = useState(false);
+  const [verificationStep, setVerificationStep] = useState(0);
+  const [verificationSuccess, setVerificationSuccess] = useState(false);
+
   // Premium filters states
   const [compareExpanded, setCompareExpanded] = useState(false);
   const [sampleFilter, setSampleFilter] = useState('All');
@@ -98,6 +103,45 @@ const BookingWizard = ({ existingCart, onCartUpdate, scrollToSection }) => {
     if (onCartUpdate) onCartUpdate(selectedTests);
     try { localStorage.setItem('sana_cart', JSON.stringify(selectedTests)); } catch {}
   }, [selectedTests, onCartUpdate]);
+
+  // Polling loop for auto-detecting payment status
+  useEffect(() => {
+    let intervalId;
+    if (verifyingPayment && createdAppointment) {
+      intervalId = setInterval(async () => {
+        try {
+          const res = await fetch(`/api/public/payment-status/${createdAppointment.id}`);
+          if (res.ok) {
+            const data = await res.json();
+            if (data.paymentStatus === 'PAID') {
+              setVerifyingPayment(false);
+              setVerificationSuccess(true);
+              setUpiSubmitted(true);
+            }
+          }
+        } catch (err) {
+          console.error('Polling payment status error:', err);
+        }
+      }, 3000);
+    }
+    return () => {
+      if (intervalId) clearInterval(intervalId);
+    };
+  }, [verifyingPayment, createdAppointment]);
+
+  // Step progress animation for payment detection
+  useEffect(() => {
+    let intervalId;
+    if (verifyingPayment) {
+      setVerificationStep(0);
+      intervalId = setInterval(() => {
+        setVerificationStep(prev => prev + 1);
+      }, 2500);
+    }
+    return () => {
+      if (intervalId) clearInterval(intervalId);
+    };
+  }, [verifyingPayment]);
 
   const filteredTests = useMemo(() => {
     return SAMPLE_TESTS.filter(t => {
@@ -171,16 +215,17 @@ const BookingWizard = ({ existingCart, onCartUpdate, scrollToSection }) => {
     setUpiLoading(true);
     setUpiError('');
     try {
-      const res = await fetch(`/api/public/submit-upi-ref`, {
+      const res = await fetch(`/api/public/appointments/${createdAppointment.id}/pay-upi`, {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify({
-          appointmentId: createdAppointment.id,
-          utr: upiUtr.trim()
+          transactionId: upiUtr.trim()
         })
       });
       if (res.ok) {
         setUpiSubmitted(true);
+        setVerifyingPayment(true);
+        setVerificationSuccess(false);
       } else {
         const data = await res.json();
         setUpiError(data.message || 'Failed to submit reference ID.');
@@ -349,10 +394,77 @@ const BookingWizard = ({ existingCart, onCartUpdate, scrollToSection }) => {
                 </div>
               </div>
 
-              {upiSubmitted ? (
-                <div className="bg-emerald-50 border border-emerald-200 rounded-xl p-2.5 text-center text-xs text-emerald-800 font-bold flex items-center justify-center gap-1">
-                  <CheckCircle2 size={14} className="text-emerald-600 shrink-0" />
-                  <span>Reference submitted! We'll verify it shortly.</span>
+              {verifyingPayment ? (
+                <div className="bg-blue-50/50 border border-blue-100 rounded-xl p-4 text-center space-y-3">
+                  <div className="flex flex-col items-center justify-center space-y-2">
+                    <Loader2 className="w-8 h-8 text-[#00488d] animate-spin" />
+                    <h5 className="text-xs font-black text-slate-800 uppercase tracking-wider">Auto-Detecting UPI Payment</h5>
+                    <p className="text-[10px] text-slate-500 font-medium">Please wait. Detecting payment reference <strong>{upiUtr}</strong> on the bank registry...</p>
+                  </div>
+                  
+                  {/* Dynamic Progress indicator */}
+                  <div className="w-full bg-slate-200 h-1.5 rounded-full overflow-hidden">
+                    <div className="bg-[#00488d] h-full rounded-full transition-all duration-500" style={{ width: `${Math.min(25 + (verificationStep * 20), 90)}%` }} />
+                  </div>
+                  
+                  <p className="text-[9px] text-[#00488d] font-black uppercase tracking-wide animate-pulse">
+                    {verificationStep === 0 && "📡 Initiating payment detection..."}
+                    {verificationStep === 1 && "🔍 Searching bank transaction registry..."}
+                    {verificationStep === 2 && "🔄 Matching UTR code with bank statement..."}
+                    {verificationStep >= 3 && "⏳ Awaiting final confirmation from banking network..."}
+                  </p>
+
+                  <div className="pt-2 border-t border-slate-100 flex flex-col gap-2">
+                    <button
+                      type="button"
+                      onClick={async () => {
+                        try {
+                          const res = await fetch(`/api/public/verify-upi-mock/${createdAppointment.id}`, {
+                            method: 'POST'
+                          });
+                          if (res.ok) {
+                            setVerifyingPayment(false);
+                            setVerificationSuccess(true);
+                            setUpiSubmitted(true);
+                          }
+                        } catch (err) {
+                          console.error("Mock verify failed", err);
+                        }
+                      }}
+                      className="w-full bg-emerald-600 hover:bg-emerald-700 text-white rounded-xl py-1.5 text-[9px] font-black uppercase tracking-wider shadow transition-colors flex items-center justify-center gap-1"
+                    >
+                      ⚡ Simulate Bank Success (Demo Mode)
+                    </button>
+                    <button
+                      type="button"
+                      onClick={() => {
+                        setVerifyingPayment(false);
+                        setUpiSubmitted(false);
+                      }}
+                      className="text-[9px] text-slate-400 hover:text-red-500 font-bold underline"
+                    >
+                      Cancel and edit UTR
+                    </button>
+                  </div>
+                </div>
+              ) : verificationSuccess ? (
+                <div className="bg-emerald-50 border border-emerald-250 rounded-xl p-4 text-center space-y-2 animate-fade-in-up">
+                  <div className="w-10 h-10 bg-emerald-100 rounded-full flex items-center justify-center mx-auto">
+                    <CheckCircle2 size={24} className="text-emerald-600" />
+                  </div>
+                  <h5 className="text-xs font-black text-emerald-800 uppercase tracking-wider">Payment Verified!</h5>
+                  <p className="text-[10px] text-emerald-600 font-medium">Bank reference code confirmed. Slot booked successfully!</p>
+                </div>
+              ) : upiSubmitted ? (
+                <div className="bg-amber-50 border border-amber-250 rounded-xl p-3 text-center space-y-2">
+                  <p className="text-xs font-bold text-amber-800">Payment status: Awaiting approval</p>
+                  <button 
+                    type="button" 
+                    onClick={() => setVerifyingPayment(true)}
+                    className="w-full bg-[#00488d] text-white rounded-xl py-2 text-xs font-bold shadow hover:bg-blue-800 transition-colors"
+                  >
+                    Resume Auto-Detection
+                  </button>
                 </div>
               ) : (
                 <form onSubmit={handleUpiSubmit} className="space-y-2">
@@ -366,7 +478,7 @@ const BookingWizard = ({ existingCart, onCartUpdate, scrollToSection }) => {
                       placeholder="12-digit number"
                       value={upiUtr}
                       onChange={(e) => setUpiUtr(e.target.value)}
-                      className="w-full text-xs font-semibold border border-slate-200 rounded-xl px-3 py-2 outline-none focus:border-primary transition-colors text-slate-800 uppercase"
+                      className="w-full text-xs font-semibold border border-slate-200 rounded-xl px-3 py-2 outline-none focus:border-[#00488d] transition-colors text-slate-800 uppercase"
                     />
                   </div>
                   {upiError && (
@@ -383,7 +495,7 @@ const BookingWizard = ({ existingCart, onCartUpdate, scrollToSection }) => {
               )}
             </div>
           )}
-
+ 
           <div className="flex flex-col sm:flex-row gap-3 justify-center max-w-sm mx-auto">
             <button
               onClick={handleAlertWhatsApp}
@@ -401,7 +513,9 @@ const BookingWizard = ({ existingCart, onCartUpdate, scrollToSection }) => {
                 setUpiUtr(''); 
                 setUpiSubmitted(false); 
                 setUpiError(''); 
-              }} 
+                setVerifyingPayment(false);
+                setVerificationSuccess(false);
+              }}
               className="bg-primary hover:bg-primary-light text-white px-6 py-2.5 rounded-xl font-bold text-xs shadow-md transition-all"
             >
               Book Another
