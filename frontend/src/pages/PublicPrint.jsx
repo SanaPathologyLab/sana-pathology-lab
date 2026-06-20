@@ -537,7 +537,13 @@ const PublicPrint = () => {
     let tempPrevGroup = null;
     let summaryCost = 0;
     if (summary) {
-      summaryCost = 1.0 + (summary.split('\n').length * 0.5) + Math.ceil(summary.length / 80) * 0.4;
+      const lines = summary.split('\n');
+      let estimatedLines = 0;
+      lines.forEach(line => {
+        const collapsedLine = line.replace(/\s+/g, ' ');
+        estimatedLines += Math.max(1, Math.ceil(collapsedLine.length / 80));
+      });
+      summaryCost = 1.0 + (estimatedLines * 0.5);
     }
     rows.forEach((row, idx) => {
       const isNewGroup = row.groupName && row.groupName !== tempPrevGroup;
