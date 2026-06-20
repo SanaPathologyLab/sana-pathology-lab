@@ -641,22 +641,39 @@ Return ONLY the JSON. Do not include markdown code block formatting (no \`\`\`js
     if (isSubmitting) return;
     setIsSubmitting(true);
     try {
-      // Build results array
-      const savedResults = testResults.map(r => ({ 
-        testId: r.testId, 
-        parameterName: r.parameterName,
-        resultValue: r.resultValue, 
-        flag: r.flag,
-        referenceRange: r.referenceRange,
-        unit: r.unit,
-        groupName: r.groupName
-      }));
-      // Add overall result for titer matrix tests
-      Object.keys(overallResults).forEach(testName => {
-        const ti = testResults.find(r => r.parentTestName === testName)?.testId;
-        if (ti) {
+      // Build results array grouped by test to preserve strict ordering.
+      // Each test's parameters, __OVERALL__, and __SUMMARY__ entries are kept
+      // contiguous so that the database auto-increment IDs reflect test order.
+      const savedResults = [];
+      
+      // Group testResults by testId, preserving selectedTests order
+      const testOrder = selectedTests.map(t => t.value);
+      const resultsByTest = {};
+      testResults.forEach(r => {
+        if (!resultsByTest[r.testId]) resultsByTest[r.testId] = [];
+        resultsByTest[r.testId].push(r);
+      });
+
+      testOrder.forEach(testId => {
+        const params = resultsByTest[testId] || [];
+        // 1. Push all parameter rows for this test
+        params.forEach(r => {
+          savedResults.push({ 
+            testId: r.testId, 
+            parameterName: r.parameterName,
+            resultValue: r.resultValue, 
+            flag: r.flag,
+            referenceRange: r.referenceRange,
+            unit: r.unit,
+            groupName: r.groupName
+          });
+        });
+        
+        // 2. Push __OVERALL__ entry for this test (titer matrix result)
+        const testName = params[0]?.parentTestName;
+        if (testName && overallResults[testName]) {
           savedResults.push({
-            testId: ti,
+            testId: testId,
             parameterName: '',
             resultValue: overallResults[testName],
             flag: '',
@@ -665,14 +682,13 @@ Return ONLY the JSON. Do not include markdown code block formatting (no \`\`\`js
             groupName: `__OVERALL__${testName}`
           });
         }
-      });
-      // Add custom summaries
-      Object.keys(testSummaries).forEach(tid => {
-        if (testSummaries[tid]) {
+        
+        // 3. Push __SUMMARY__ entry for this test
+        if (testSummaries[testId]) {
           savedResults.push({
-            testId: parseInt(tid),
+            testId: testId,
             parameterName: '__SUMMARY__',
-            resultValue: testSummaries[tid],
+            resultValue: testSummaries[testId],
             flag: '',
             referenceRange: '',
             unit: '',

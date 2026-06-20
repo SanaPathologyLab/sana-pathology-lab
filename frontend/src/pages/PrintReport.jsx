@@ -44,10 +44,12 @@ const PrintReport = () => {
   const results = report.results || [];
 
   const groupedTests = {};
-  results.forEach(r => {
+  const testOrderMap = {}; // Track first-occurrence index for explicit ordering
+  results.forEach((r, idx) => {
     const testName = r.test?.testName || 'Test Results';
     if (!groupedTests[testName]) {
       groupedTests[testName] = { rows: [], summary: r.test?.summary || '' };
+      testOrderMap[testName] = idx; // Record first occurrence position
     }
     
     if (r.groupName === '__SUMMARY__') {
@@ -56,7 +58,9 @@ const PrintReport = () => {
       groupedTests[testName].rows.push(r);
     }
   });
-  const testNames = Object.keys(groupedTests);
+  // Sort test names by their first-occurrence order in the results array
+  // This preserves the exact order the user selected tests in CreateReport
+  const testNames = Object.keys(groupedTests).sort((a, b) => testOrderMap[a] - testOrderMap[b]);
 
   const qrValue = `${window.location.origin}${import.meta.env.BASE_URL}#/public-print/${report.reportNumber}?patientName=${encodeURIComponent(patient.fullName || '')}`;
 
@@ -566,14 +570,20 @@ const PrintReport = () => {
   let prevGroup = null;
 
   const flushSeg = () => { if (curSeg) { curPage.segments.push(curSeg); curSeg = null; } };
-  const flushPage = () => { flushSeg(); pages.push(curPage); curPage = { segments: [] }; pageUsed = 0; prevGroup = null; };
+  const flushPage = () => { flushSeg(); if (curPage.segments.length > 0) { pages.push(curPage); } curPage = { segments: [] }; pageUsed = 0; prevGroup = null; };
 
   flatTests.forEach(test => {
     const { testName, rows, summary, totalCost, summaryCost } = test;
     const fullTestCost = totalCost + summaryCost;
     
-    // Shift whole test (rows + summary) to new page if it fits on a single page but not the current one
-    if (fullTestCost > 0 && fullTestCost <= PAGE_CAPACITY && pageUsed + fullTestCost > PAGE_CAPACITY && pageUsed > 0) {
+    // Shift whole test to new page ONLY if:
+    // 1. The test fits entirely on a fresh page
+    // 2. It doesn't fit on the current page
+    // 3. The remaining space on this page is less than the test header + 3 param rows
+    //    (avoids wasting space when there's plenty of room for at least some rows)
+    const minUsefulSpace = COST.testHeader + (COST.paramRow * 3);
+    const remainingSpace = PAGE_CAPACITY - pageUsed;
+    if (fullTestCost > 0 && fullTestCost <= PAGE_CAPACITY && pageUsed + fullTestCost > PAGE_CAPACITY && pageUsed > 0 && remainingSpace < minUsefulSpace) {
       flushPage();
     }
     
@@ -613,8 +623,19 @@ const PrintReport = () => {
     flushSeg();
   });
 
-  if (pageUsed + COST.endOfReport > PAGE_CAPACITY) flushPage();
-  pages.push(curPage);
+  // Add End of Report - only create new page if needed AND there is content
+  if (pageUsed + COST.endOfReport > PAGE_CAPACITY && pageUsed > 0) {
+    flushPage();
+  }
+  // Push the last page only if it has content
+  if (curPage.segments.length > 0) {
+    pages.push(curPage);
+  }
+  
+  // Ensure we have at least 1 page even if no segments
+  if (pages.length === 0) {
+    pages.push({ segments: [] });
+  }
 
   const totalPages = pages.length;
 
