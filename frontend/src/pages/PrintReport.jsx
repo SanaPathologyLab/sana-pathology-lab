@@ -579,11 +579,7 @@ const PrintReport = () => {
     // Shift whole test to new page ONLY if:
     // 1. The test fits entirely on a fresh page
     // 2. It doesn't fit on the current page
-    // 3. The remaining space on this page is less than the test header + 3 param rows
-    //    (avoids wasting space when there's plenty of room for at least some rows)
-    const minUsefulSpace = COST.testHeader + (COST.paramRow * 3);
-    const remainingSpace = PAGE_CAPACITY - pageUsed;
-    if (fullTestCost > 0 && fullTestCost <= PAGE_CAPACITY && pageUsed + fullTestCost > PAGE_CAPACITY && pageUsed > 0 && remainingSpace < minUsefulSpace) {
+    if (fullTestCost > 0 && fullTestCost <= PAGE_CAPACITY && pageUsed + fullTestCost > PAGE_CAPACITY && pageUsed > 0) {
       flushPage();
     }
     
