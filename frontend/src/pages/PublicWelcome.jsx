@@ -1268,26 +1268,32 @@ Question: ${userMsg}`;
         </div>
       </section>
 
-      {/* ══ LAB TOUR PREVIEW STRIP ══ */}
-      <section className="py-20 bg-gradient-to-b from-[#F5F7F6] to-white border-y border-slate-200/50 px-4 sm:px-6 lg:px-8 relative overflow-hidden">
-        <div className="max-w-7xl mx-auto">
-          <div className="flex flex-col md:flex-row items-center justify-between gap-6 mb-12">
+      {/* ══ LAB TOUR PREVIEW STRIP (HIGHLIGHTED) ══ */}
+      <section className="py-24 bg-gradient-to-br from-[#042f24] via-[#085041] to-[#043d30] border-y border-emerald-900 px-4 sm:px-6 lg:px-8 relative overflow-hidden shadow-[inset_0_0_100px_rgba(0,0,0,0.3)]">
+        {/* Glow Effects */}
+        <div className="absolute -top-[20%] -left-[10%] w-[500px] h-[500px] bg-emerald-500/20 rounded-full blur-[120px] pointer-events-none"></div>
+        <div className="absolute -bottom-[20%] -right-[10%] w-[500px] h-[500px] bg-teal-500/20 rounded-full blur-[120px] pointer-events-none"></div>
+        <div className="absolute top-[20%] left-[40%] w-[300px] h-[300px] bg-[#F1C40F]/5 rounded-full blur-[100px] pointer-events-none"></div>
+
+        <div className="max-w-7xl mx-auto relative z-10">
+          <div className="flex flex-col md:flex-row items-center justify-between gap-8 mb-14">
             <div>
-              <span className="text-xs font-black text-[#0F6E56] uppercase tracking-widest bg-emerald-50 border border-emerald-200/60 px-3.5 py-1.5 rounded-full">
-                Virtual Lab Tour
+              <span className="inline-block mb-4 text-xs font-black text-emerald-200 uppercase tracking-widest bg-emerald-900/60 border border-emerald-400/30 px-4 py-1.5 rounded-full shadow-[0_0_15px_rgba(52,211,153,0.2)]">
+                ✨ Virtual Lab Tour
               </span>
-              <h2 className="text-3xl md:text-4xl font-heading font-black text-[#085041] mt-4">
+              <h2 className="text-4xl md:text-5xl font-heading font-black text-white tracking-tight drop-shadow-md">
                 Inside Sana Pathology
               </h2>
-              <p className="text-slate-500 mt-2 max-w-xl font-medium text-sm leading-relaxed">
+              <p className="text-emerald-100/80 mt-4 max-w-2xl font-medium text-sm md:text-base leading-relaxed">
                 Step inside Sambhal's state-of-the-art diagnostic facility. Take a 3D-guided look at our equipment, clinical workflows, and biosafe environments.
               </p>
             </div>
-            <Link to="/lab-tour" className="shrink-0 flex items-center gap-2 bg-[#0F6E56] hover:bg-[#085041] text-white px-7 py-3.5 rounded-2xl font-bold text-sm shadow-lg shadow-emerald-700/20 transition-all hover:-translate-y-0.5">
-              Launch Full Lab Tour <ArrowRight size={16} />
+            <Link to="/lab-tour" className="shrink-0 flex items-center gap-2 bg-gradient-to-r from-[#F1C40F] to-yellow-400 hover:from-yellow-400 hover:to-yellow-300 text-amber-950 px-8 py-4 rounded-2xl font-black text-sm shadow-[0_0_30px_rgba(241,196,15,0.3)] transition-all duration-300 hover:-translate-y-1 hover:scale-105">
+              Launch Full Lab Tour <ArrowRight size={18} />
             </Link>
           </div>
-          <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-6 gap-4">
+          
+          <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-6 gap-5">
             {[
               { icon: UserCircle, name: 'Welcome Reception', color: 'from-blue-500 to-indigo-600', textClass: 'text-blue-600', bgClass: 'bg-blue-50 border border-blue-100', desc: 'Digital check-in & comfortable waiting space' },
               { icon: Activity, name: 'Sample Collection', color: 'from-emerald-500 to-teal-600', textClass: 'text-emerald-600', bgClass: 'bg-emerald-50 border border-emerald-100', desc: 'Sterile private cubicles & vacuum blood draw' },
@@ -1301,17 +1307,17 @@ Question: ${userMsg}`;
                 <Link 
                   key={sec.name} 
                   to="/lab-tour" 
-                  className="bg-white hover:bg-slate-50 border border-slate-100 hover:border-emerald-500/20 rounded-3xl p-6 text-left transition-all duration-300 group hover:-translate-y-1.5 flex flex-col justify-between shadow-sm hover:shadow-md"
+                  className="bg-white/5 backdrop-blur-xl hover:bg-white/10 border border-white/10 hover:border-emerald-400/40 rounded-[2rem] p-6 text-left transition-all duration-300 group hover:-translate-y-2 flex flex-col justify-between shadow-[0_8px_32px_rgba(0,0,0,0.12)] hover:shadow-[0_15px_40px_rgba(52,211,153,0.15)]"
                 >
                   <div>
-                    <div className={`w-12 h-12 rounded-2xl ${sec.bgClass} flex items-center justify-center mb-4 group-hover:scale-110 transition-transform duration-300`}>
-                      <IconComponent className={`w-6 h-6 ${sec.textClass}`} />
+                    <div className={`w-14 h-14 rounded-2xl bg-white/10 border border-white/5 flex items-center justify-center mb-5 group-hover:scale-110 group-hover:-rotate-3 transition-transform duration-300 shadow-inner`}>
+                      <IconComponent className={`w-7 h-7 text-emerald-300 group-hover:text-white transition-colors`} />
                     </div>
-                    <h3 className="text-slate-800 font-extrabold text-sm mb-1.5 group-hover:text-[#0F6E56] transition-colors">{sec.name}</h3>
-                    <p className="text-slate-500 text-[11px] leading-relaxed font-semibold">{sec.desc}</p>
+                    <h3 className="text-white font-black text-sm mb-2 group-hover:text-emerald-300 transition-colors">{sec.name}</h3>
+                    <p className="text-emerald-100/60 text-[11px] leading-relaxed font-semibold">{sec.desc}</p>
                   </div>
-                  <div className="mt-4 flex items-center gap-1 text-[10px] font-black text-emerald-600 uppercase tracking-wider opacity-0 group-hover:opacity-100 transition-opacity">
-                    Explore <ArrowRight size={10} />
+                  <div className="mt-5 flex items-center gap-1.5 text-[10px] font-black text-emerald-400 uppercase tracking-widest opacity-0 group-hover:opacity-100 transition-opacity">
+                    Explore <ArrowRight size={12} />
                   </div>
                 </Link>
               );
