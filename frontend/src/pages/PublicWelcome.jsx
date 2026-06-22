@@ -6,10 +6,11 @@ import {
   Search, FileText, Heart, Filter, Sparkles, Check, Info, Trash2, Calendar,
   ArrowRight, Award, ShieldAlert, BadgePercent, TrendingUp, Zap, FlaskConical,
   ChevronLeft, ChevronRight, MessageSquare, Loader2, Send,
-  Baby, Droplets, Calculator, AlertCircle
+  Baby, Droplets, Calculator, AlertCircle, Package
 } from 'lucide-react';
 import Logo from '../components/Logo';
 import Loader from '../components/Loader';
+import PublicHomeHeader from '../components/PublicHomeHeader';
 import { useLanguage } from '../context/LanguageContext';
 import { generateAI } from '../utils/ai';
 import { QUESTION_FLOW, TEST_RECOMMENDATIONS } from '../utils/aiFlowData';
@@ -657,58 +658,7 @@ Question: ${userMsg}`;
     <div className="min-h-screen bg-bg relative font-sans text-slate-800 scroll-smooth">
       <GoogleBusinessSchema />
 
-      {/* Header */}
-      <header className="sticky top-0 w-full z-50 bg-white/90 backdrop-blur-md shadow-sm border-b border-gray-100 transition-all duration-300">
-        <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 h-20 flex items-center justify-between">
-          <div className="flex items-center gap-3 cursor-pointer" onClick={() => window.scrollTo({ top: 0, behavior: 'smooth' })}>
-            <Logo className="w-12 h-12 md:w-14 md:h-14 drop-shadow-md" />
-            <div>
-              <h1 className="text-2xl font-heading text-primary tracking-tight leading-none">
-                {t('logoTitle')}
-              </h1>
-              <p className="text-xs text-primary-light font-bold tracking-wide uppercase mt-1">{t('logoSub')}</p>
-            </div>
-          </div>
-          
-          <div className="flex items-center gap-3">
-            <div className="hidden md:flex items-center gap-8 mr-4">
-              <a href="#stats" onClick={(e) => { e.preventDefault(); scrollToSection('stats'); }} className="text-sm font-bold text-slate-600 hover:text-primary transition-colors">{t('whyUs')}</a>
-              <a href="#booking" onClick={(e) => { e.preventDefault(); scrollToSection('booking'); }} className="text-sm font-bold text-slate-600 hover:text-primary transition-colors">{t('packages')}</a>
-              <a href="#booking" onClick={(e) => { e.preventDefault(); scrollToSection('booking'); }} className="text-sm font-bold text-slate-600 hover:text-primary transition-colors">{t('testFinder')}</a>
-              <a href="#booking" onClick={(e) => { e.preventDefault(); scrollToSection('booking'); }} className="text-sm font-bold text-slate-600 hover:text-primary transition-colors">{t('bookOnline')}</a>
-              <a href="#faq" onClick={(e) => { e.preventDefault(); scrollToSection('faq'); }} className="text-sm font-bold text-slate-600 hover:text-primary transition-colors">{t('faq')}</a>
-              <a href="#contact" onClick={(e) => { e.preventDefault(); scrollToSection('contact'); }} className="text-sm font-bold text-slate-600 hover:text-primary transition-colors">{t('contact')}</a>
-            </div>
-            
-            <button 
-              onClick={toggleLanguage}
-              className="hidden md:flex items-center justify-center font-bold text-slate-600 bg-gray-100 hover:bg-gray-200 transition-colors px-3 py-2 rounded-full shadow-inner"
-              title="Switch Language"
-            >
-              {language === 'en' ? 'HI' : 'EN'}
-            </button>
-            <button 
-              onClick={(e) => { e.preventDefault(); scrollToSection('booking'); }}
-              className="relative flex items-center justify-center p-2 text-slate-600 hover:text-primary transition-colors hover:bg-slate-100 rounded-full"
-              title="Your Booking Cart"
-            >
-              <Heart className="w-6 h-6 text-red-500 fill-red-50" />
-              {selectedTests.length > 0 && (
-                <span className="absolute top-0 right-0 transform translate-x-1/4 -translate-y-1/4 bg-red-500 text-white text-[10px] font-bold px-1.5 py-0.5 rounded-full border-2 border-white">
-                  {selectedTests.length}
-                </span>
-              )}
-            </button>
-            <button 
-              onClick={() => navigate('/login')}
-              className="flex items-center gap-1.5 text-sm font-bold text-white bg-primary hover:bg-primary-light transition-all px-4 py-2 md:px-6 md:py-2.5 rounded-full shadow-lg shadow-primary/30 ring-2 ring-primary/40 ring-offset-2 ring-offset-white"
-            >
-              <UserCircle size={18} className="hidden sm:block" />
-              {t('staffLogin')}
-            </button>
-          </div>
-        </div>
-      </header>
+      <PublicHomeHeader cartCount={selectedTests.length} />
 
       <OfferBanner />
 
@@ -757,14 +707,14 @@ Question: ${userMsg}`;
               
               <div className="flex flex-col sm:flex-row items-center gap-4 justify-center lg:justify-start">
                 <button 
-                  onClick={() => scrollToSection('booking')} 
+                  onClick={() => navigate('/book-online')} 
                   className="w-full sm:w-auto bg-gradient-to-r from-[#BA7517] to-[#d68f23] hover:from-[#c97f1a] hover:to-[#e39c2f] text-white px-8 py-4 rounded-2xl font-bold text-lg transition-all duration-300 flex items-center justify-center gap-2 hover:shadow-2xl hover:shadow-[#BA7517]/30 hover:-translate-y-1 animate-pulse-glow-gold active:scale-[0.98] relative overflow-hidden group"
                 >
                   <Calendar size={20} className="group-hover:rotate-12 transition-transform duration-350" />
                   {t('bookHomeCollection')}
                 </button>
                 <button 
-                  onClick={() => scrollToSection('services')} 
+                  onClick={() => navigate('/contact')} 
                   className="w-full sm:w-auto bg-white/10 hover:bg-white/20 border border-white/20 hover:border-white/40 text-white px-8 py-4 rounded-2xl font-bold text-lg transition-all duration-300 flex items-center justify-center gap-2 backdrop-blur-md hover:shadow-xl hover:shadow-black/10 hover:-translate-y-1 active:scale-[0.98] shimmer-btn"
                 >
                   <FileText size={20} />
@@ -1431,11 +1381,11 @@ Question: ${userMsg}`;
           <div>
             <h4 className="font-bold text-white mb-4">{t('quickLinks')}</h4>
             <ul className="space-y-2 text-sm opacity-80">
-              <li><a href="#stats" onClick={(e) => { e.preventDefault(); scrollToSection('stats'); }} className="hover:text-white transition-colors">{t('whyUs')}</a></li>
-              <li><a href="#booking" onClick={(e) => { e.preventDefault(); scrollToSection('booking'); }} className="hover:text-white transition-colors">{t('packages')}</a></li>
-              <li><a href="#booking" onClick={(e) => { e.preventDefault(); scrollToSection('booking'); }} className="hover:text-white transition-colors">{t('testFinder')}</a></li>
-              <li><a href="#booking" onClick={(e) => { e.preventDefault(); scrollToSection('booking'); }} className="hover:text-white transition-colors">{t('bookOnline')}</a></li>
-              <li><a href="#faq" onClick={(e) => { e.preventDefault(); scrollToSection('faq'); }} className="hover:text-white transition-colors">{t('faq')}</a></li>
+              <li><Link to="/why-us" className="hover:text-white transition-colors">{t('whyUs')}</Link></li>
+              <li><Link to="/packages" className="hover:text-white transition-colors">{t('packages')}</Link></li>
+              <li><Link to="/test-finder" className="hover:text-white transition-colors">{t('testFinder')}</Link></li>
+              <li><Link to="/book-online" className="hover:text-white transition-colors">{t('bookOnline')}</Link></li>
+              <li><Link to="/faq" className="hover:text-white transition-colors">{t('faq')}</Link></li>
               <li><button onClick={() => navigate('/privacy-policy')} className="hover:text-white transition-colors">Privacy Policy</button></li>
               <li><button onClick={() => navigate('/terms')} className="hover:text-white transition-colors">Terms of Service</button></li>
               <li><button onClick={() => navigate('/login')} className="hover:text-white transition-colors">{t('patientPortal')}</button></li>

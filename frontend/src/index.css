@@ -330,6 +330,15 @@ body {
   }
 }
 
+/* Bounce subtle (for active tab icon) */
+@keyframes bounce-subtle {
+  0%, 100% { transform: translateY(0); }
+  50% { transform: translateY(-2px); }
+}
+.animate-bounce-subtle {
+  animation: bounce-subtle 1s ease-in-out infinite;
+}
+
 /* Glow effect for chat toggle button */
 .chat-toggle-glow {
   animation: toggleGlow 3s ease-in-out infinite;

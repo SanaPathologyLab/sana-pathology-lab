@@ -44,6 +44,12 @@ const LabTour = lazy(() => import('./pages/LabTour'));
 const HealthCalculators = lazy(() => import('./pages/HealthCalculators'));
 const CityPages = lazy(() => import('./pages/CityPages'));
 const PatientDashboard = lazy(() => import('./pages/PatientDashboard'));
+const WhyUs = lazy(() => import('./pages/WhyUs'));
+const PackagesPage = lazy(() => import('./pages/PackagesPage'));
+const TestFinderPage = lazy(() => import('./pages/TestFinderPage'));
+const BookOnlinePage = lazy(() => import('./pages/BookOnlinePage'));
+const FaqPage = lazy(() => import('./pages/FaqPage'));
+const ContactPage = lazy(() => import('./pages/ContactPage'));
 
 import Loader from './components/Loader';
 import { syncOfflineRequests } from './utils/offlineSync';
@@ -71,6 +77,12 @@ const AppContent = () => {
       <Routes>
         {/* Public Routes */}
         <Route path="/" element={<PublicWelcome />} />
+        <Route path="/why-us" element={<WhyUs />} />
+        <Route path="/packages" element={<PackagesPage />} />
+        <Route path="/test-finder" element={<TestFinderPage />} />
+        <Route path="/book-online" element={<BookOnlinePage />} />
+        <Route path="/faq" element={<FaqPage />} />
+        <Route path="/contact" element={<ContactPage />} />
         <Route path="/login" element={user ? <Navigate to="/dashboard" /> : <Login />} />
         <Route path="/book-appointment" element={<PublicAppointment />} />
         <Route path="/report-lookup" element={<ReportLookup />} />

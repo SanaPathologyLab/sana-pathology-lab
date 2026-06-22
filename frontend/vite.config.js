@@ -10,27 +10,27 @@ export default defineConfig({
     react(),
     VitePWA({
       registerType: 'autoUpdate',
-      includeAssets: ['favicon.ico', 'apple-touch-icon.png', 'masked-icon.svg'],
+      includeAssets: ['favicon.ico', 'apple-touch-icon.png', 'masked-icon.svg', 'pwa-icon.svg'],
       manifest: {
         name: 'Sana Pathology Lab',
         short_name: 'SanaLab',
-        description: 'Sana Pathology Laboratory App',
-        theme_color: '#00488d',
+        description: 'Accurate Diagnostics, Trusted by Thousands',
+        theme_color: '#0F6E56',
         background_color: '#ffffff',
         display: 'standalone',
         icons: [
           {
-            src: 'favicon.svg',
+            src: 'pwa-icon.svg',
             sizes: '192x192',
             type: 'image/svg+xml'
           },
           {
-            src: 'favicon.svg',
+            src: 'pwa-icon.svg',
             sizes: '512x512',
             type: 'image/svg+xml'
           },
           {
-            src: 'favicon.svg',
+            src: 'pwa-icon.svg',
             sizes: '512x512',
             type: 'image/svg+xml',
             purpose: 'any maskable'
