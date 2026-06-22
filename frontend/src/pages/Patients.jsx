@@ -192,6 +192,7 @@ const Patients = () => {
       }
     } catch (err) {
       console.error(err);
+      alert(`An error occurred while saving: ${err.message}`);
     } finally {
       setSubmitting(false);
     }
