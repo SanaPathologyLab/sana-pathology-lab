@@ -398,7 +398,7 @@ const formatMessage = (text) => {
 };
 
 function LiveChatWidget() {
-  const { language } = useLanguage();
+  const { language, setLanguage } = useLanguage();
   var isHindi = language === 'hi';
   const [isOpen, setIsOpen] = useState(false);
   const [messages, setMessages] = useState(() => {
@@ -432,6 +432,16 @@ function LiveChatWidget() {
 
   useEffect(() => { liveModeRef.current = isLiveMode; }, [isLiveMode]);
 
+  const isTypingRef = useRef(isTyping);
+  useEffect(() => { isTypingRef.current = isTyping; }, [isTyping]);
+
+  const isHindiRef = useRef(isHindi);
+  useEffect(() => { isHindiRef.current = isHindi; }, [isHindi]);
+
+  const isProcessingRef = useRef(false);
+  const botSpeakingRef = useRef(false);
+  const currentSpokenTextRef = useRef(null);
+
   const [bookingData, setBookingData] = useState(null);
   const [statusCheckState, setStatusCheckState] = useState(null);
   const [symptomState, setSymptomState] = useState(null);
@@ -447,23 +457,89 @@ function LiveChatWidget() {
     recognition.interimResults = false;
     recognition.maxAlternatives = 1;
 
+    const startMic = () => {
+      try {
+        recognition.lang = isHindiRef.current ? 'hi-IN' : 'en-US';
+        recognition.start();
+        setIsListening(true);
+      } catch (e) {
+        if (e.name === 'InvalidStateError') {
+          setIsListening(true);
+        } else {
+          console.error('Failed to start recognition:', e);
+        }
+      }
+    };
+
+    const restartIfNeeded = () => {
+      if (
+        liveModeRef.current &&
+        !isTypingRef.current &&
+        !isProcessingRef.current
+      ) {
+        setTimeout(() => {
+          if (
+            liveModeRef.current &&
+            !isTypingRef.current &&
+            !isProcessingRef.current
+          ) {
+            startMic();
+          }
+        }, 300);
+      }
+    };
+
     recognition.onresult = (event) => {
       const transcript = event.results[0][0].transcript;
       setIsListening(false);
+
+      if (liveModeRef.current && (botSpeakingRef.current || (window.speechSynthesis && window.speechSynthesis.speaking))) {
+        if (currentSpokenTextRef.current) {
+          const cleanSpoken = currentSpokenTextRef.current.toLowerCase().replace(/[^\w\s]/g, '').trim();
+          const cleanTranscript = transcript.toLowerCase().replace(/[^\w\s]/g, '').trim();
+          if (cleanTranscript.length > 0 && (cleanSpoken.includes(cleanTranscript) || cleanTranscript.includes(cleanSpoken))) {
+            console.log('Filtered out self-hearing transcript:', transcript);
+            isProcessingRef.current = false;
+            restartIfNeeded();
+            return;
+          }
+        }
+        if (window.speechSynthesis) {
+          window.speechSynthesis.cancel();
+        }
+        botSpeakingRef.current = false;
+      }
+
+      isProcessingRef.current = true;
       setInputValue(transcript);
       if (liveModeRef.current && handleSendRef.current) {
         setTimeout(() => { handleSendRef.current(transcript); }, 300);
       } else {
+        isProcessingRef.current = false;
         setTimeout(() => { inputRef.current?.focus(); }, 100);
       }
     };
-    recognition.onerror = () => { setIsListening(false); };
-    recognition.onend = () => { setIsListening(false); };
+
+    recognition.onerror = (event) => {
+      console.warn('Speech recognition error:', event.error);
+      setIsListening(false);
+      if (event.error === 'not-allowed' || event.error === 'service-not-allowed') {
+        setIsLiveMode(false);
+      } else {
+        restartIfNeeded();
+      }
+    };
+
+    recognition.onend = () => {
+      setIsListening(false);
+      restartIfNeeded();
+    };
+
     recognitionRef.current = recognition;
   }, []);
 
   const toggleListening = useCallback(() => {
-    if (!recognitionRef.current) return;
+    if (!recognitionRef.current || isLiveMode) return;
     if (isListening) {
       recognitionRef.current.abort();
       setIsListening(false);
@@ -474,28 +550,136 @@ function LiveChatWidget() {
       recognitionRef.current.start();
       setIsListening(true);
     } catch { setIsListening(false); }
-  }, [isListening, isHindi]);
+  }, [isListening, isHindi, isLiveMode]);
 
   const speakResponse = useCallback((text) => {
-    if (!speakerOn || !text || !window.speechSynthesis) return;
+    isProcessingRef.current = false; // Always reset immediately when we start speaking
+    if (!text || !window.speechSynthesis) {
+      if (liveModeRef.current && recognitionRef.current) {
+        try {
+          recognitionRef.current.lang = isHindiRef.current ? 'hi-IN' : 'en-US';
+          recognitionRef.current.start();
+          setIsListening(true);
+        } catch (e) {
+          if (e.name === 'InvalidStateError') {
+            setIsListening(true);
+          }
+        }
+      }
+      return;
+    }
     try {
       window.speechSynthesis.cancel();
+      botSpeakingRef.current = true;
+      
       const clean = text.replace(/[📋📅🔍🩺🏠💰⚠️🙏😊👋🩸🍬❤️🦋🫀🫘☀️📊🧪🦟🧫💊💼📍🕐👉🔬🌟]/g, '').replace(/\*\*/g, '').replace(/\n{2,}/g, '. ');
+      currentSpokenTextRef.current = clean;
+      
       const utterance = new SpeechSynthesisUtterance(clean);
-      utterance.lang = isHindi ? 'hi-IN' : 'en-US';
+      utterance.lang = isHindiRef.current ? 'hi-IN' : 'en-US';
       utterance.rate = 0.9;
       utterance.pitch = 1.1;
-      utterance.onend = () => {
+      
+      let recognitionRestarted = false;
+      const finishSpeaking = () => {
+        if (recognitionRestarted) return;
+        recognitionRestarted = true;
+        botSpeakingRef.current = false;
+        currentSpokenTextRef.current = null;
         if (liveModeRef.current && recognitionRef.current) {
           try {
+            recognitionRef.current.lang = isHindiRef.current ? 'hi-IN' : 'en-US';
             recognitionRef.current.start();
             setIsListening(true);
-          } catch (e) {}
+          } catch (e) {
+            if (e.name === 'InvalidStateError') {
+              setIsListening(true);
+            }
+          }
         }
       };
+
+      utterance.onend = finishSpeaking;
+      utterance.onerror = finishSpeaking;
+      
+      const wordCount = clean.split(/\s+/).length;
+      const estimatedDuration = Math.max(3000, wordCount * 600 + 2000);
+      setTimeout(finishSpeaking, estimatedDuration);
+
       window.speechSynthesis.speak(utterance);
-    } catch {}
-  }, [speakerOn, isHindi]);
+      
+      // Start listening immediately so user can interrupt
+      if (liveModeRef.current && recognitionRef.current) {
+        try {
+          recognitionRef.current.lang = isHindiRef.current ? 'hi-IN' : 'en-US';
+          recognitionRef.current.start();
+          setIsListening(true);
+        } catch (e) {
+          if (e.name === 'InvalidStateError') {
+            setIsListening(true);
+          }
+        }
+      }
+    } catch (err) {
+      botSpeakingRef.current = false;
+      currentSpokenTextRef.current = null;
+      if (liveModeRef.current && recognitionRef.current) {
+        try {
+          recognitionRef.current.lang = isHindiRef.current ? 'hi-IN' : 'en-US';
+          recognitionRef.current.start();
+          setIsListening(true);
+        } catch (e) {
+          if (e.name === 'InvalidStateError') {
+            setIsListening(true);
+          }
+        }
+      }
+    }
+  }, [isHindi]);
+
+  // Speak any new bot replies automatically
+  useEffect(() => {
+    if (messages.length === 0) return;
+    const lastMsg = messages[messages.length - 1];
+    if (lastMsg && lastMsg.sender === 'bot') {
+      if (liveModeRef.current) {
+        if (speakerOn && window.speechSynthesis) {
+          speakResponse(lastMsg.text);
+        } else {
+          isProcessingRef.current = false;
+          isTypingRef.current = false;
+          setIsTyping(false);
+          if (recognitionRef.current) {
+            try {
+              recognitionRef.current.lang = isHindiRef.current ? 'hi-IN' : 'en-US';
+              recognitionRef.current.start();
+              setIsListening(true);
+            } catch (e) {
+              if (e.name === 'InvalidStateError') {
+                setIsListening(true);
+              }
+            }
+          }
+        }
+      } else {
+        if (speakerOn) {
+          speakResponse(lastMsg.text);
+        }
+      }
+    }
+  }, [messages, speakerOn, speakResponse]);
+
+  // Cleanup speech resources when widget is closed
+  useEffect(() => {
+    if (!isOpen) {
+      setIsLiveMode(false);
+      try {
+        recognitionRef.current?.abort();
+        setIsListening(false);
+        window.speechSynthesis.cancel();
+      } catch (e) {}
+    }
+  }, [isOpen]);
 
   const [sessionState, setSessionState] = useState({
     patientName: null,
@@ -1096,7 +1280,23 @@ function LiveChatWidget() {
 
   const handleSend = useCallback(async (textOverride) => {
     const text = (typeof textOverride === 'string' ? textOverride : inputValue).trim();
-    if (!text) return;
+    if (!text) {
+      if (liveModeRef.current) {
+        isProcessingRef.current = false;
+        if (recognitionRef.current) {
+          try {
+            recognitionRef.current.start();
+            setIsListening(true);
+          } catch (e) {
+            if (e.name === 'InvalidStateError') setIsListening(true);
+          }
+        }
+      }
+      return;
+    }
+    if (liveModeRef.current) {
+      isProcessingRef.current = true;
+    }
     const userMsg = {
       id: Date.now().toString(),
       text,
@@ -1106,12 +1306,123 @@ function LiveChatWidget() {
     setMessages((prev) => [...prev, userMsg]);
     setInputValue('');
 
+    const lower = text.toLowerCase().trim();
+    let isHindiRequest = /\b(hindi|हिंदी|हिन्दी)\b/i.test(lower);
+    let isEnglishRequest = /\b(english|अंग्रेजी|इंग्लिश)\b/i.test(lower);
+
+    if (bookingData && bookingData.step === 'name') {
+      if (lower === 'hindi' || lower === 'english' || lower === 'हिंदी' || lower === 'हिन्दी' || lower === 'अंग्रेजी' || lower === 'इंग्लिश') {
+        isHindiRequest = false;
+        isEnglishRequest = false;
+      }
+    }
+
+    if (isHindiRequest && !isHindi) {
+      setLanguage('hi');
+      isHindi = true;
+      isHindiRef.current = true;
+
+      const botMsg = {
+        id: Date.now().toString(),
+        text: '👋 Haan ji! Ab main Hindi mein baat karunga. Aap kya karwana chahte hain?',
+        sender: 'bot',
+        timestamp: new Date()
+      };
+
+      if (bookingData) {
+        let prependedMsg = '👋 Haan ji! Ab main Hindi mein baat karunga.\n\n';
+        let stepText = '';
+        switch (bookingData.step) {
+          case 'test':
+            stepText = `📌 *Step 1:* Kaun sa test ya package chahiye? (Jaise: CBC, Lipid Profile, Thyroid, Full Body Checkup)`;
+            break;
+          case 'name':
+            stepText = `📌 *Step 2:* Patient ka poora naam batayein? (Isi mobile number par report aayegi)`;
+            break;
+          case 'mobile':
+            stepText = `📌 *Step 3:* Mobile number batayein (10 digits)?`;
+            break;
+          case 'gender':
+            stepText = `📌 *Step 4:* Gender batayein? (Male / Female / Other)`;
+            break;
+          case 'date':
+            stepText = `📌 *Step 5:* Preferred date batayein (YYYY-MM-DD) ya select karein:`;
+            break;
+          case 'time':
+            stepText = `📌 *Step 6:* Preferred time batayein (jaise: 9:00 AM, 2:30 PM):`;
+            break;
+          case 'address':
+            stepText = `📌 *Step 7:* Ghar se collection chahiye ya seedha lab aayenge?\n🏠 Ghar se -> Address daalein (gali, mohalla, landmark ke saath)\n🏫 Lab visit -> "Lab Visit" likhein`;
+            break;
+          case 'confirm':
+            const mode = /lab visit|lab|direct/i.test(bookingData.address || '') ? '🏫 Lab Visit' : '🏠 Home Collection';
+            stepText = `✅ *Booking Details:*\n🧪 Test: ${bookingData.test}\n👤 Naam: ${bookingData.name}\n📞 Mobile: ${bookingData.mobile}\n🚻 Gender: ${bookingData.gender === 'MALE' ? 'पुरुष' : bookingData.gender === 'FEMALE' ? 'महिला' : 'अन्य'}\n📅 Date/Time: ${bookingData.preferredDate} ${bookingData.preferredTime}\n📍 Mode: ${mode}\n${bookingData.address && !/lab visit|lab|direct/i.test(bookingData.address) ? `\🏠 Address: ${bookingData.address}` : ''}\n\nHamari team aapko 30 minute pehle call karegi. Report 6–12 ghante mein WhatsApp par milegi. 📱\n\nKya yeh sab sahi hai? (Haan / Nahi)`;
+            break;
+          default:
+            stepText = 'Aap kya karwana chahte hain?';
+        }
+        botMsg.text = prependedMsg + stepText;
+      }
+
+      setMessages((prev) => [...prev, botMsg]);
+      return;
+    }
+
+    if (isEnglishRequest && isHindi) {
+      setLanguage('en');
+      isHindi = false;
+      isHindiRef.current = false;
+
+      const botMsg = {
+        id: Date.now().toString(),
+        text: "👋 Sure! I will speak in English now. How can I assist you?",
+        sender: 'bot',
+        timestamp: new Date()
+      };
+
+      if (bookingData) {
+        let prependedMsg = "👋 Sure! I will speak in English now.\n\n";
+        let stepText = '';
+        switch (bookingData.step) {
+          case 'test':
+            stepText = `📌 *Step 1:* Which test or package do you need? (e.g., CBC, Lipid Profile, Thyroid, Full Body Checkup)`;
+            break;
+          case 'name':
+            stepText = `📌 *Step 2:* Please tell me the patient's full name? (Report will be sent on this mobile)`;
+            break;
+          case 'mobile':
+            stepText = `📌 *Step 3:* Please enter your 10-digit mobile number:`;
+            break;
+          case 'gender':
+            stepText = `📌 *Step 4:* Choose Gender (Male / Female / Other):`;
+            break;
+          case 'date':
+            stepText = `📌 *Step 5:* Preferred date (YYYY-MM-DD) or choose below:`;
+            break;
+          case 'time':
+            stepText = `📌 *Step 6:* Please tell me preferred time (e.g., 9:00 AM, 2:30 PM):`;
+            break;
+          case 'address':
+            stepText = `📌 *Step 7:* Home collection or lab visit?\n🏠 Home -> Enter your address (street, area, landmark)\n🏫 Lab visit -> Type "Lab Visit"`;
+            break;
+          case 'confirm':
+            const mode = /lab visit|lab|direct/i.test(bookingData.address || '') ? '🏫 Lab Visit' : '🏠 Home Collection';
+            stepText = `✅ *Booking Summary:*\n🧪 Test: ${bookingData.test}\n👤 Name: ${bookingData.name}\n📞 Mobile: ${bookingData.mobile}\n🚻 Gender: ${bookingData.gender}\n📅 Date/Time: ${bookingData.preferredDate} ${bookingData.preferredTime}\n📍 Mode: ${mode}\n${bookingData.address && !/lab visit|lab|direct/i.test(bookingData.address) ? `🏠 Address: ${bookingData.address}` : ''}\n\nOur team will call you 30 minutes before. Report will be on WhatsApp in 6–12 hours. 📱\n\nIs everything correct? (Yes / No)`;
+            break;
+          default:
+            stepText = 'How can I assist you?';
+        }
+        botMsg.text = prependedMsg + stepText;
+      }
+
+      setMessages((prev) => [...prev, botMsg]);
+      return;
+    }
+
     if (bookingData) {
       await handleBookingStep(text);
       return;
     }
-
-    const lower = text.toLowerCase();
 
     const isHealthTip = /\b(tip|health|suggest|advice|recommend|salah|suggestion|tips|healthy)\b/i.test(lower) && !lower.includes('test') && !lower.includes('book');
     if (isHealthTip) {
@@ -1451,7 +1762,6 @@ function LiveChatWidget() {
         timestamp: new Date(),
       };
       setMessages((prev) => [...prev, botMsg]);
-      speakResponse(result.response);
     } catch (err) {
       setIsTyping(false);
       const defaultMsg = isHindi ? GENERAL_RESPONSES.default.hi : GENERAL_RESPONSES.default.en;
@@ -1462,9 +1772,8 @@ function LiveChatWidget() {
         timestamp: new Date(),
       };
       setMessages((prev) => [...prev, botMsg]);
-      speakResponse(defaultMsg);
     }
-  }, [inputValue, getBotReply, isHindi, bookingData, handleBookingStep, startBookingFlow, handleStatusCheck, sendChatMessage, speakResponse]);
+  }, [inputValue, getBotReply, isHindi, bookingData, handleBookingStep, startBookingFlow, handleStatusCheck, sendChatMessage, setLanguage]);
 
   useEffect(() => {
     handleSendRef.current = handleSend;
@@ -1473,6 +1782,9 @@ function LiveChatWidget() {
 
   const handleQuickAction = useCallback(
     async (key) => {
+      if (liveModeRef.current) {
+        isProcessingRef.current = true;
+      }
       const prompts = {
         price: { en: 'Show me test prices', hi: 'Test prices dikhao' },
         book: { en: 'I want to book a test', hi: 'Mujhe test book karna hai' },
@@ -1490,15 +1802,13 @@ function LiveChatWidget() {
         setIsTyping(false);
         const botMsg = { id: Date.now().toString(), text: result.response, sender: 'bot', timestamp: new Date() };
         setMessages((prev) => [...prev, botMsg]);
-        speakResponse(result.response);
       } catch {
         setIsTyping(false);
         const fallback = isHindi ? GENERAL_RESPONSES.default.hi : GENERAL_RESPONSES.default.en;
         setMessages((prev) => [...prev, { id: Date.now().toString(), text: fallback, sender: 'bot', timestamp: new Date() }]);
-        speakResponse(fallback);
       }
     },
-    [isHindi, speakResponse]
+    [isHindi]
   );
 
   const handleKeyDown = (e) => {
