@@ -16,7 +16,7 @@ import {
   KeyboardAvoidingView,
   Platform,
 } from 'react-native';
-import { publicApi } from '../services/api';
+import { publicApi, aiApi } from '../services/api';
 import { QUESTION_FLOW, TEST_RECOMMENDATIONS } from '../utils/aiFlowData';
 
 const { width: SCREEN_WIDTH } = Dimensions.get('window');
@@ -171,6 +171,9 @@ const PublicWelcomeScreen = ({ navigation }) => {
   const [chatMessages, setChatMessages] = useState([]);
   const [chatInput, setChatInput] = useState('');
   const [aiChatLoading, setAiChatLoading] = useState(false);
+  const [chatSessionId, setChatSessionId] = useState(null);
+  const [chatActions, setChatActions] = useState([]);
+  const [chatIntent, setChatIntent] = useState(null);
 
   useEffect(() => {
     fetchTests();
@@ -468,6 +471,9 @@ const PublicWelcomeScreen = ({ navigation }) => {
     setSelectedAiTests({});
     setChatMessages([]);
     setChatInput('');
+    setChatSessionId(null);
+    setChatActions([]);
+    setChatIntent(null);
   };
 
   const handleSendChatMessage = async () => {
@@ -477,120 +483,57 @@ const PublicWelcomeScreen = ({ navigation }) => {
     setChatInput('');
     setAiChatLoading(true);
 
-    // ── STATUS / TRACK LOOKUP (intercept before AI) ──
-    const hasRefId = /\bSPL-APT-\d{6}\b/i.test(userMsg);
-    const hasReportNum = /\bRPT-\d{6}\b/i.test(userMsg);
-    const isStatusIntent = /\b(status|stetus|track|progress|haal sthiti|स्थिति|ट्रैक|स्टेटस|स्टेट्स)\b/i.test(userMsg);
-
-    if (hasRefId || hasReportNum || isStatusIntent) {
-      try {
-        let statusText = '';
-
-        if (hasRefId) {
-          const refMatch = userMsg.match(/\bSPL-APT-\d{6}\b/i)[0].toUpperCase();
-          const res = await fetch(`${API_BASE}/public/appointment-status?refId=${encodeURIComponent(refMatch)}`);
-          const data = res.ok ? await res.json() : null;
-          const apt = data?.appointments?.[0];
-          if (apt) {
-            statusText = modalLanguage === 'hi'
-              ? `📋 *अपॉइंटमेंट स्थिति*\n\n📌 सन्दर्भ ID: ${apt.refId}\n👤 मरीज: ${apt.patientName}\n📞 मोबाइल: ${apt.mobile}\n📅 तारीख: ${new Date(apt.date).toLocaleDateString()} ${apt.time}\n📍 स्थिति: ${apt.statusLabel}`
-              : `📋 *Appointment Status*\n\n📌 Ref ID: ${apt.refId}\n👤 Patient: ${apt.patientName}\n📞 Mobile: ${apt.mobile}\n📅 Date: ${new Date(apt.date).toLocaleDateString()} ${apt.time}\n📍 Status: ${apt.statusLabel}`;
-          } else {
-            statusText = modalLanguage === 'hi'
-              ? '❌ इस सन्दर्भ ID के साथ कोई अपॉइंटमेंट नहीं मिला।'
-              : '❌ No appointment found with this reference ID.';
-          }
-        } else if (hasReportNum) {
-          const rptMatch = userMsg.match(/\bRPT-\d{6}\b/i)[0].toUpperCase();
-          const res = await fetch(`${API_BASE}/public/report-status?reportNumber=${encodeURIComponent(rptMatch)}`);
-          const data = res.ok ? await res.json() : null;
-          const rpt = data?.reports?.[0];
-          if (rpt) {
-            statusText = modalLanguage === 'hi'
-              ? `📄 *रिपोर्ट स्थिति*\n\n🔖 रिपोर्ट #: ${rpt.reportNumber}\n👤 मरीज: ${rpt.patientName}\n📅 तारीख: ${new Date(rpt.reportDate).toLocaleDateString()}\n📋 स्थिति: ${rpt.statusLabel}`
-              : `📄 *Report Status*\n\n🔖 Report #: ${rpt.reportNumber}\n👤 Patient: ${rpt.patientName}\n📅 Date: ${new Date(rpt.reportDate).toLocaleDateString()}\n📋 Status: ${rpt.statusLabel}`;
-          } else {
-            statusText = modalLanguage === 'hi'
-              ? '❌ इस रिपोर्ट नंबर के साथ कोई रिपोर्ट नहीं मिली।'
-              : '❌ No report found with this report number.';
-          }
-        } else {
-          const mobileMatch = userMsg.match(/\b(\d{10})\b/);
-          if (mobileMatch) {
-            const mobile = mobileMatch[1];
-            const res = await fetch(`${API_BASE}/public/appointment-status?mobile=${encodeURIComponent(mobile)}`);
-            const data = res.ok ? await res.json() : null;
-            if (data?.appointments?.length > 0) {
-              const items = data.appointments.map((apt, i) =>
-                `${i + 1}. 📌 ${apt.refId} | 📅 ${new Date(apt.date).toLocaleDateString()} ${apt.time} | ${apt.statusLabel}`
-              ).join('\n');
-              statusText = modalLanguage === 'hi'
-                ? `📋 *${mobile} के लिए अपॉइंटमेंट स्थिति*\n\n${data.appointments.length} अपॉइंटमेंट मिले:\n\n${items}`
-                : `📋 *Appointment Status for ${mobile}*\n\nFound ${data.appointments.length} appointment(s):\n\n${items}`;
-            } else {
-              const res2 = await fetch(`${API_BASE}/public/report-status?mobile=${encodeURIComponent(mobile)}`);
-              const data2 = res2.ok ? await res2.json() : null;
-              if (data2?.reports?.length > 0) {
-                const items = data2.reports.map((r, i) =>
-                  `${i + 1}. 🔖 ${r.reportNumber} | 📅 ${new Date(r.reportDate).toLocaleDateString()} | ${r.statusLabel}`
-                ).join('\n');
-                statusText = modalLanguage === 'hi'
-                  ? `📄 *${mobile} के लिए रिपोर्ट स्थिति*\n\n${data2.reports.length} रिपोर्ट मिली:\n\n${items}`
-                  : `📄 *Report Status for ${mobile}*\n\nFound ${data2.reports.length} report(s):\n\n${items}`;
-              } else {
-                statusText = modalLanguage === 'hi'
-                  ? '❌ इस मोबाइल नंबर के साथ कोई रिकॉर्ड नहीं मिला।'
-                  : '❌ No records found with this mobile number.';
-              }
-            }
-          } else {
-            statusText = modalLanguage === 'hi'
-              ? `मैं आपके अपॉइंटमेंट या रिपोर्ट की स्थिति जांचने में मदद कर सकता हूँ। कृपया अपना सन्दर्भ ID (जैसे: SPL-APT-XXXXXX) या रजिस्टर्ड मोबाइल नंबर दें।`
-              : `I can check your appointment or report status. Please provide your reference ID (e.g., SPL-APT-XXXXXX) or registered mobile number.`;
-          }
-        }
-
-        setAiChatLoading(false);
-        setChatMessages(prev => [...prev, { role: 'assistant', text: statusText }]);
-        return;
-      } catch (err) {
-        console.error('Status lookup error:', err);
-        // Fall through to AI if API fails
-      }
-    }
-
     try {
-      const lang = modalLanguage === 'hi' ? 'Hindi (हिंदी)' : 'English';
-      const prompt = `You are Sana AI, a helpful lab assistant for Sana Pathology Lab. Answer the following question in ${lang}. Be friendly, concise, and informative.
+      const patientInfo = {};
+      if (patientName) patientInfo.name = patientName;
+      if (patientAge) patientInfo.age = patientAge;
+      if (patientGender) patientInfo.gender = patientGender;
 
-If the question is about lab tests, provide relevant information about what the test is, how to prepare, sample type, and what it checks. If it's a general health or medical question, provide accurate helpful information.
-If the user asks about appointment status or report status, ask them to provide their reference ID (e.g., SPL-APT-XXXXXX) or registered mobile number so the system can check.
-You can help with bookings, test info, home collection, lab timings, payment options, and report explanations.
-If you are asked about something outside of lab tests and health, politely redirect to lab-related topics.
+      const data = await aiApi.chat(
+        userMsg,
+        chatSessionId,
+        modalLanguage,
+        Object.keys(patientInfo).length > 0 ? patientInfo : null
+      );
 
-Question: ${userMsg}`;
+      const text = data.response || (modalLanguage === 'hi'
+        ? 'क्षमा करें, कोई उत्तर नहीं मिला।'
+        : 'Sorry, no response received.');
 
-      const response = await fetch(`${API_BASE}/public/ai-generate`, {
-        method: 'POST',
-        headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({ prompt }),
-      });
-
-      if (!response.ok) {
-        throw new Error(`HTTP ${response.status}`);
+      if (data.sessionId && data.sessionId !== chatSessionId) {
+        setChatSessionId(data.sessionId);
       }
 
-      const text = await response.text();
-      setChatMessages(prev => [...prev, { role: 'assistant', text: text }]);
+      if (data.intent) setChatIntent(data.intent);
+      if (data.actions) setChatActions(data.actions);
+
+      setChatMessages(prev => [...prev, { role: 'assistant', text, actions: data.actions || [], intent: data.intent }]);
     } catch (err) {
-      console.error(err);
+      console.error('AI chat error:', err);
+      // Fallback to old AI proxy
+      try {
+        const lang = modalLanguage === 'hi' ? 'Hindi' : 'English';
+        const prompt = `You are Sana AI, a helpful lab assistant for Sana Pathology Lab. Answer the following question in ${lang}. Be friendly, concise, and informative. Question: ${userMsg}`;
+        const response = await fetch(`${API_BASE}/public/ai-generate`, {
+          method: 'POST',
+          headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify({ prompt }),
+        });
+        if (response.ok) {
+          const text = await response.text();
+          setChatMessages(prev => [...prev, { role: 'assistant', text, actions: [], intent: 'general' }]);
+          return;
+        }
+      } catch (e2) {}
+
       setChatMessages(prev => [
         ...prev,
         {
           role: 'assistant',
           text: modalLanguage === 'hi'
-            ? 'क्षमा करें, कोई त्रुटि हुई। कृपया पुनः प्रयास करें।'
-            : 'Sorry, I encountered an error. Please try again.',
+            ? 'क्षमा करें, कोई त्रुटि हुई। कृपया +91 6396786939 पर WhatsApp करें।'
+            : 'Sorry, an error occurred. Please WhatsApp +91 6396786939.',
+          actions: [{ type: 'whatsapp', label: 'WhatsApp', url: 'https://wa.me/916396786939' }],
         },
       ]);
     } finally {
@@ -600,11 +543,14 @@ Question: ${userMsg}`;
 
   const handleStartChat = () => {
     setAiStep('chat');
+    setChatSessionId(null);
+    setChatActions([]);
+    setChatIntent(null);
     setChatMessages([{
       role: 'assistant',
       text: modalLanguage === 'hi'
-        ? 'नमस्ते! मैं सना एआई हूँ। आप कोई भी प्रश्न पूछ सकते हैं - टेस्ट के बारे में, स्वास्थ्य संबंधी जानकारी, अपॉइंटमेंट या रिपोर्ट की स्थिति, या हमारी लैब सेवाओं के बारे में।'
-        : 'Hello! I am Sana AI. You can ask me any question — about lab tests, health information, appointment or report status, or our lab services.'
+        ? 'नमस्ते! मैं साना एआई हूँ, आपका लैब सहायक। बताइए — कीमत, बुकिंग, रिपोर्ट, या कोई सवाल? मैं यहाँ हूँ मदद के लिए।'
+        : 'Hello! I am Sana AI, your lab assistant. Tell me — prices, booking, reports, or any questions? I\'m here to help.'
     }]);
   };
 
@@ -1145,6 +1091,29 @@ Question: ${userMsg}`;
                     <Text style={[S.bubbleText, isUser ? S.bubbleTextUser : S.bubbleTextAssistant]}>
                       {msg.text}
                     </Text>
+                    {!isUser && msg.actions && msg.actions.length > 0 && (
+                      <View style={S.actionButtonsRow}>
+                        {msg.actions.map((action, ai) => (
+                          <TouchableOpacity
+                            key={ai}
+                            style={S.actionButton}
+                            onPress={() => {
+                              if (action.type === 'whatsapp') {
+                                Linking.openURL(action.url);
+                              } else if (action.type === 'deeplink') {
+                                const { navigation } = require('@react-navigation/native');
+                                if (action.url.includes('book')) navigation?.navigate('PublicAppointment');
+                                else if (action.url.includes('report')) navigation?.navigate('ReportLookup');
+                              } else if (action.type === 'call') {
+                                Linking.openURL(action.url);
+                              }
+                            }}
+                          >
+                            <Text style={S.actionButtonLabel}>{action.label}</Text>
+                          </TouchableOpacity>
+                        ))}
+                      </View>
+                    )}
                   </View>
                 </View>
               );
@@ -3447,6 +3416,28 @@ const S = StyleSheet.create({
   },
   bubbleTextAssistant: {
     color: SLATE_700,
+  },
+  actionButtonsRow: {
+    flexDirection: 'row',
+    flexWrap: 'wrap',
+    gap: 6,
+    marginTop: 8,
+    paddingTop: 8,
+    borderTopWidth: 1,
+    borderTopColor: SLATE_200,
+  },
+  actionButton: {
+    paddingHorizontal: 12,
+    paddingVertical: 6,
+    borderRadius: 20,
+    backgroundColor: WHITE,
+    borderWidth: 1,
+    borderColor: '#4f46e5',
+  },
+  actionButtonLabel: {
+    fontSize: 11,
+    fontWeight: '700',
+    color: '#4f46e5',
   },
   loadingRow: {
     flexDirection: 'row',

@@ -45,6 +45,7 @@ const appointmentRoutes = require('./src/routes/appointmentRoutes');
 const inventoryRoutes = require('./src/routes/inventoryRoutes');
 const staffRoutes = require('./src/routes/staffRoutes');
 const packageRoutes = require('./src/routes/packageRoutes');
+const aiRoutes = require('./src/routes/aiRoutes');
 const { getActivityLog } = require('./src/controllers/packageController');
 
 app.use('/api/auth', authRoutes);
@@ -58,6 +59,7 @@ app.use('/api/appointments', appointmentRoutes);
 app.use('/api/inventory', inventoryRoutes);
 app.use('/api/staff', staffRoutes);
 app.use('/api/packages', packageRoutes);
+app.use('/api/ai', aiRoutes);
 app.get('/api/activity-log', verifyToken, getActivityLog);
 
 // ─── PUBLIC: AI Proxy (calls Groq or Pollinations AI securely) ───

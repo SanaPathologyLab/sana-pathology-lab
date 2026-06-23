@@ -66,3 +66,26 @@ export const publicApi = {
     return handleResponse(res);
   },
 };
+
+export const aiApi = {
+  chat: async (message, sessionId = null, language = null, patientInfo = null) => {
+    const res = await fetch(`${API_BASE}/ai/chat`, {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({ message, sessionId, language, patientInfo }),
+    });
+    return handleResponse(res);
+  },
+  reset: async (sessionId) => {
+    const res = await fetch(`${API_BASE}/ai/reset`, {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({ sessionId }),
+    });
+    return handleResponse(res);
+  },
+  getStatus: async () => {
+    const res = await fetch(`${API_BASE}/ai/status`);
+    return handleResponse(res);
+  },
+};

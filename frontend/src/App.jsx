@@ -129,7 +129,7 @@ const AppContent = () => {
         <Route path="/staff" element={<ProtectedRoute><Staff /></ProtectedRoute>} />
         <Route path="/settings" element={<ProtectedRoute><Settings /></ProtectedRoute>} />
         <Route path="/activity-log" element={<ProtectedRoute><ActivityLog /></ProtectedRoute>} />
-        <Route path="/packages" element={<ProtectedRoute><Packages /></ProtectedRoute>} />
+        <Route path="/dashboard/packages" element={<ProtectedRoute><Packages /></ProtectedRoute>} />
         <Route path="/widal" element={<ProtectedRoute><WidalTest /></ProtectedRoute>} />
 
         {/* Catch-all redirect to root */}

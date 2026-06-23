@@ -16,12 +16,33 @@ const NAV_TABS = [
   { id: 'contact', labelKey: 'contact', icon: MapPin, path: '/contact' },
 ];
 
-const PublicHomeHeader = ({ cartCount = 0 }) => {
+const PublicHomeHeader = ({ cartCount: propCartCount }) => {
   const navigate = useNavigate();
   const location = useLocation();
   const { t, language, toggleLanguage } = useLanguage();
   const [scrolled, setScrolled] = useState(false);
   const [mobileOpen, setMobileOpen] = useState(false);
+  const [cartCountState, setCartCountState] = useState(0);
+
+  useEffect(() => {
+    const updateCartCount = () => {
+      try {
+        const cart = JSON.parse(localStorage.getItem('sana_cart')) || [];
+        setCartCountState(cart.length);
+      } catch (e) {
+        setCartCountState(0);
+      }
+    };
+    updateCartCount();
+    window.addEventListener('storage', updateCartCount);
+    window.addEventListener('cart-updated', updateCartCount);
+    return () => {
+      window.removeEventListener('storage', updateCartCount);
+      window.removeEventListener('cart-updated', updateCartCount);
+    };
+  }, [location]);
+
+  const cartCount = propCartCount !== undefined ? propCartCount : cartCountState;
 
   useEffect(() => {
     const handleScroll = () => setScrolled(window.scrollY > 20);

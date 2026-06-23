@@ -6,14 +6,15 @@ import {
   Search, FileText, Heart, Filter, Sparkles, Check, Info, Trash2, Calendar,
   ArrowRight, Award, ShieldAlert, BadgePercent, TrendingUp, Zap, FlaskConical,
   ChevronLeft, ChevronRight, MessageSquare, Loader2, Send,
-  Baby, Droplets, Calculator, AlertCircle, Package
+  Baby, Droplets, Calculator, AlertCircle, Package, ShoppingCart
 } from 'lucide-react';
 import Logo from '../components/Logo';
 import Loader from '../components/Loader';
 import PublicHomeHeader from '../components/PublicHomeHeader';
 import { useLanguage } from '../context/LanguageContext';
-import { generateAI } from '../utils/ai';
+import { generateAI, searchTests } from '../utils/ai';
 import { QUESTION_FLOW, TEST_RECOMMENDATIONS } from '../utils/aiFlowData';
+import { AI_KNOWLEDGE_BASE, CATALOGUE_MAP } from '../utils/aiKnowledge';
 import { TESTS_DATA, HEALTH_PACKAGES_DATA as HEALTH_PACKAGES } from '../data/testsData';
 
 import GoogleBusinessSchema from '../components/GoogleBusinessSchema';
@@ -36,94 +37,6 @@ import BookingWizard from '../components/BookingWizard';
 import EmergencyWidget from '../components/EmergencyWidget';
 
 const API = import.meta.env.VITE_API_URL || 'http://localhost:5000/api';
-
-const AI_KNOWLEDGE_BASE = `
-# Laboratory Patient Test Recommendation Guidelines
-
-## AVAILABLE TESTS CATALOGUE:
-- Thyroid Function Test (T3, T4, TSH) [Code: TFT, Price: ₹450]
-- Thyroid Profile (T3, T4, TSH) [Code: TFT-01, Price: ₹500]
-- HbA1c (Glycosylated Haemoglobin) [Code: HBA1C, Price: ₹400]
-- Random Blood Sugar (RBS) [Code: GLU-01, Price: ₹100]
-- Complete Blood Count (CBC) [Code: CBC, Price: ₹200]
-- Hemoglobin (Hb) [Code: HB-01, Price: ₹100]
-- ESR (Erythrocyte Sedimentation Rate) [Code: ESR-01, Price: ₹150]
-- Prothrombin Time (PT) [Code: PT-01, Price: ₹250]
-- TLC (Total Leucocytes Count) [Code: 016, Price: ₹50]
-- Platelets Count [Code: 015, Price: ₹100]
-- Blood Group ABO & Rh Factor [Code: BG, Price: ₹50]
-- Liver Function Test (LFT) [Code: LFT, Price: ₹500]
-- SGOT (AST) [Code: SGOT, Price: ₹100]
-- SGPT (ALT) [Code: SGPT, Price: ₹100]
-- SGOT-SGPT (Combined) [Code: SGOT-SGPT, Price: ₹250]
-- Total Bilirubin [Code: BILIRUBIN-TOTAL-01, Price: ₹150]
-- Kidney Function Test (KFT) [Code: KFT, Price: ₹500]
-- Serum Creatinine [Code: CREAT-01, Price: ₹150]
-- Blood Urea [Code: UREA-01, Price: ₹150]
-- Serum Uric Acid [Code: URIC_ACID, Price: ₹100]
-- Serum Calcium [Code: CALCIUM-01, Price: ₹200]
-- Lipid Profile [Code: LIPID, Price: ₹650]
-- CRP – C-Reactive Protein (Quantitative) [Code: CRP-QUANT-01, Price: ₹350]
-- CRP – C-Reactive Protein [Code: CRP-01, Price: ₹250]
-- Urine Examination (Routine & Microscopy) [Code: URINE, Price: ₹150]
-- Rheumatoid Factor [Code: RF, Price: ₹350]
-- Semen Analysis [Code: SEMEN-01, Price: ₹350]
-- Ante-Natal Care (ANC) Profile [Code: ANC-01, Price: ₹1200]
-- Malaria (MP) ELISA [Code: MP, Price: ₹100]
-- Malaria Parasite Identification (Microscopy) [Code: MP-MICRO, Price: ₹150]
-- Dengue Profile (IgG, IgM, NS1) [Code: DENGUE-01, Price: ₹1200]
-- Widal Test [Code: WIDAL1, Price: ₹50]
-- Widal Test (Rapid Slide Method) [Code: WIDAL, Price: ₹50]
-- Typhidot (IgG & IgM) [Code: TYPHIDOT-01, Price: ₹100]
-- Mantoux Test (Tuberculin Skin Test) [Code: MANTOUX-01, Price: ₹250]
-
-## DECISION RULES & MAPPING:
-1. **Fever**:
-   - Always include Complete Blood Count (CBC) (₹200) as the base test for any fever.
-   - If fever < 3 days: recommend CBC, Malaria Parasite (Microscopy) [MP-MICRO] or Malaria ELISA [MP], Dengue Profile [DENGUE-01].
-   - If fever > 7 days: recommend CBC, Widal Test [WIDAL1], Typhidot [TYPHIDOT-01], Malaria (MP ELISA + Microscopy) [MP + MP-MICRO].
-   - Fever with joint pain & rash: recommend Dengue Profile [DENGUE-01], CBC, Platelets Count [015].
-   - Fever with chills & shivering: recommend Malaria Microscopy [MP-MICRO], Malaria ELISA [MP], CBC.
-2. **Diabetes**:
-   - If screening: Random Blood Sugar (RBS) [GLU-01], HbA1c [HBA1C].
-   - If diabetic monitoring: HbA1c [HBA1C], RBS [GLU-01], Urine Examination [URINE] (check protein).
-   - If diabetic with leg pain/swelling/wound: HbA1c [HBA1C], KFT, CBC.
-3. **Thyroid**:
-   - If suspected hypothyroidism (weight gain, fatigue, cold): Thyroid Function Test [TFT].
-   - If suspected hyperthyroidism (weight loss, anxiety, palpitations): Thyroid Profile [TFT-01].
-   - Monitoring: TFT [TFT].
-4. **Heart / BP**:
-   - Risk Screening: Lipid Profile [LIPID], RBS [GLU-01].
-   - Chest pain concern: CBC, SGOT (AST) [SGOT], LFT, Lipid Profile [LIPID].
-5. **Liver Problems**:
-   - Jaundice suspected: LFT, Total Bilirubin [BILIRUBIN-TOTAL-01], SGOT-SGPT [SGOT-SGPT], CBC.
-   - Fatty Liver/Alcohol: SGOT-SGPT [SGOT-SGPT], LFT, Lipid Profile [LIPID].
-6. **Kidney Problems**:
-   - UTI/burning urination: Urine Examination [URINE], CBC.
-   - Kidney check/CKD: KFT, Serum Creatinine [CREAT-01], Blood Urea [UREA-01], Urine Examination [URINE] (protein).
-7. **Joint Pain / Arthritis**:
-   - Rheumatoid Arthritis: Rheumatoid Factor (RF) [RF], CRP Quantitative [CRP-QUANT-01], ESR [ESR-01].
-   - Gout: Uric Acid [URIC_ACID], KFT, CBC.
-8. **Pregnancy / Antenatal**:
-   - Pregnant checkup: ANC Profile [ANC-01] (covers 13 parameters, ₹1200), Blood Group [BG], Hemoglobin [HB-01], Urine Examination [URINE], RBS/HbA1c.
-9. **Weakness / Anemia**:
-   - CBC, Hemoglobin [HB-01].
-10. **Tuberculosis (TB) Suspected**:
-    - Cough >2-3 weeks: Mantoux Test [MANTOUX-01], CBC, ESR [ESR-01]. Order LFT [LFT] as baseline before starting TB medication.
-11. **Male Infertility**:
-    - Semen Analysis [SEMEN-01].
-
-## CRITICAL RULES FOR RECOMENDATION:
-- If patient has ANY fever, always include CBC [CBC] as base test.
-- Fever < 5 days -> Dengue Profile [DENGUE-01].
-- Do NOT recommend Widal [WIDAL1] if fever is < 7 days. Recommend Typhidot [TYPHIDOT-01] instead.
-- For Diabetes, always pair RBS [GLU-01] with HbA1c [HBA1C].
-- For pregnant women, always suggest ANC Profile [ANC-01].
-- Joint Pain: big toe/sudden = Gout (Uric Acid [URIC_ACID] first). Finger joints/morning stiffness = RA (RF [RF] first).
-- Unexplained weight change, fatigue, hair loss, or irregular periods -> include TFT [TFT].
-- Suspected TB: order LFT [LFT] as baseline first.
-- Do NOT recommend sub-tests separately if parent panel (e.g. LFT, KFT, CBC, TFT, Lipid Profile, ANC Profile) is recommended.
-`;
 
 const DEFAULT_TESTS = TESTS_DATA;
 
@@ -380,24 +293,48 @@ const PublicWelcome = () => {
     setChatInput('');
   };
 
-  const handleSendChatMessage = async () => {
-    if (!chatInput.trim() || aiChatLoading) return;
-    const userMsg = chatInput.trim();
+  const handleSendChatMessage = async (quickMsg) => {
+    const userMsg = (quickMsg || chatInput || '').trim();
+    if (!userMsg || aiChatLoading) return;
     setChatMessages(prev => [...prev, { role: 'user', text: userMsg }]);
     setChatInput('');
     setAiChatLoading(true);
     try {
       const lang = language === 'hi' ? 'Hindi (हिंदी)' : 'English';
-      const prompt = `You are Sana AI, a helpful lab assistant for Sana Pathology Lab. Answer the following question in ${lang}. Be friendly, concise, and informative.
 
-If the question is about lab tests, provide relevant information about what the test is, how to prepare, sample type, and what it checks. If it's a general health or medical question, provide accurate helpful information. If you are asked about something outside of lab tests and health, politely redirect to lab-related topics.
+      const recentHistory = chatMessages.slice(-6).map(m =>
+        `${m.role === 'user' ? 'Patient' : 'Sana AI'}: ${m.text}`
+      ).join('\n');
 
-Question: ${userMsg}`;
+      const conversationBlock = recentHistory ? `\n## CONVERSATION HISTORY:\n${recentHistory}\n` : '';
+
+      const foundTests = searchTests(userMsg);
+      let searchBlock = '';
+      if (foundTests.length > 0) {
+        searchBlock = '\n## MATCHING TESTS FOUND:\n' + foundTests.map(t =>
+          `- ${t.name} [Code: ${t.code}, Price: ₹${t.price}]`
+        ).join('\n');
+      }
+
+      const prompt = `${AI_KNOWLEDGE_BASE}
+${conversationBlock}
+${searchBlock}
+
+## INSTRUCTION:
+You are Sana AI, a helpful lab assistant for Sana Pathology Lab. Answer the following question in ${lang}. Be friendly, concise, and informative.
+
+Use the knowledge base above to answer accurately. If the user asks about test prices, symptoms, preparation, or lab services, refer to the data provided.
+
+If you cannot find the answer in the knowledge base, say: "Iske baare mein mujhe accurate jaankari nahi hai. Aap directly humse baat kar sakte hain: WhatsApp: wa.me/916396786939, Call: +91 6396786939"
+
+Question: ${userMsg}
+
+(Answer in ${lang} only. Keep response under 150 words. End with a relevant follow-up question or offer to help book the test.)`;
 
       const response = await generateAI(prompt);
       setChatMessages(prev => [...prev, { role: 'assistant', text: response }]);
     } catch (err) {
-      setChatMessages(prev => [...prev, { role: 'assistant', text: language === 'hi' ? 'क्षमा करें, कोई त्रुटि हुई। कृपया पुनः प्रयास करें।' : 'Sorry, I encountered an error. Please try again.' }]);
+      setChatMessages(prev => [...prev, { role: 'assistant', text: language === 'hi' ? 'क्षमा करें, कोई त्रुटि हुई। कृपया पुनः प्रयास करें या हमें कॉल करें: +91 6396786939' : 'Sorry, I encountered an error. Please try again or call us: +91 6396786939' }]);
     } finally {
       setAiChatLoading(false);
     }
@@ -1850,7 +1787,22 @@ Question: ${userMsg}`;
                         </p>
                       </div>
                     )}
-                    {chatMessages.map((msg, idx) => (
+                    {chatMessages.map((msg, idx) => {
+                      const detectedTests = msg.role === 'assistant' && !aiChatLoading
+                        ? (() => {
+                            const text = msg.text;
+                            const found = [];
+                            for (const [code, item] of Object.entries(CATALOGUE_MAP)) {
+                              const regex = new RegExp(`\\b${code}\\b`, 'i');
+                              if (regex.test(text) && !found.some(f => f.testCode === code)) {
+                                found.push(item);
+                                if (found.length >= 3) break;
+                              }
+                            }
+                            return found;
+                          })()
+                        : [];
+                      return (
                       <div key={idx} className={`flex ${msg.role === 'user' ? 'justify-end' : 'justify-start'}`}>
                         <div className={`max-w-[85%] p-3.5 rounded-2xl text-sm leading-relaxed ${
                           msg.role === 'user'
@@ -1863,9 +1815,44 @@ Question: ${userMsg}`;
                             </span>
                           )}
                           <p className="font-semibold whitespace-pre-wrap">{msg.text}</p>
+                          {detectedTests.length > 0 && (
+                            <div className="flex flex-wrap gap-1.5 mt-2 pt-2 border-t border-slate-200/60">
+                              {detectedTests.map(test => {
+                                const alreadyInCart = selectedTests.some(t => t.testCode === test.testCode);
+                                return (
+                                  <button
+                                    key={test.testCode}
+                                    onClick={() => {
+                                      if (!alreadyInCart) {
+                                        setSelectedTests(prev => [...prev, {
+                                          name: test.name,
+                                          price: test.price,
+                                          testCode: test.testCode,
+                                          isPackage: test.isPackage || false
+                                        }]);
+                                      } else {
+                                        setSelectedTests(prev => prev.filter(t => t.testCode !== test.testCode));
+                                      }
+                                    }}
+                                    className={`text-[11px] font-bold px-2.5 py-1 rounded-lg flex items-center gap-1 transition-all ${
+                                      alreadyInCart
+                                        ? 'bg-green-100 text-green-700 border border-green-200'
+                                        : 'bg-indigo-100 text-indigo-700 border border-indigo-200 hover:bg-indigo-200'
+                                    }`}
+                                  >
+                                    <ShoppingCart className="w-3 h-3" />
+                                    {alreadyInCart
+                                      ? (language === 'hi' ? '✓ जुड़ गया' : '✓ Added')
+                                      : `${test.name} (₹${test.price})`}
+                                  </button>
+                                );
+                              })}
+                            </div>
+                          )}
                         </div>
                       </div>
-                    ))}
+                      );
+                    })}
                     {aiChatLoading && (
                       <div className="flex justify-start">
                         <div className="bg-slate-50 border border-slate-200 rounded-2xl p-4 shadow-sm">
@@ -1880,6 +1867,27 @@ Question: ${userMsg}`;
                     )}
                   </div>
 
+                  {/* Quick Action Buttons */}
+                  <div className="flex flex-wrap gap-1.5 pb-2">
+                    {[
+                      { labelEn: '💰 Test Prices', labelHi: '💰 टेस्ट के दाम', msg: 'What are your test prices?' },
+                      { labelEn: '🏠 Home Collection', labelHi: '🏠 होम कलेक्शन', msg: 'Tell me about home collection' },
+                      { labelEn: '🕐 Timings', labelHi: '🕐 समय', msg: 'What are your lab timings?' },
+                      { labelEn: '🩸 CBC Test', labelHi: '🩸 CBC टेस्ट', msg: 'Tell me about CBC test' },
+                      { labelEn: '📦 Packages', labelHi: '📦 पैकेज', msg: 'What health packages do you offer?' },
+                      { labelEn: '🍽️ Fasting Rules', labelHi: '🍽️ उपवास नियम', msg: 'Which tests need fasting?' },
+                    ].map((btn, i) => (
+                      <button
+                        key={i}
+                        onClick={() => handleSendChatMessage(btn.msg)}
+                        disabled={aiChatLoading}
+                        className="text-[11px] font-bold px-2.5 py-1.5 rounded-xl bg-slate-50 hover:bg-indigo-50 hover:text-indigo-700 border border-slate-200 hover:border-indigo-200 text-slate-600 transition-all whitespace-nowrap disabled:opacity-50"
+                      >
+                        {language === 'hi' ? btn.labelHi : btn.labelEn}
+                      </button>
+                    ))}
+                  </div>
+
                   {/* Chat Input */}
                   <div className="flex gap-2 pt-2 border-t border-slate-100">
                     <input
@@ -1891,7 +1899,7 @@ Question: ${userMsg}`;
                       className="flex-1 border-2 border-slate-100 hover:border-slate-200 rounded-2xl px-4 py-3 text-sm font-semibold focus:outline-none focus:border-indigo-500 focus:ring-4 focus:ring-indigo-500/10 bg-slate-50/30 transition-all"
                     />
                     <button
-                      onClick={handleSendChatMessage}
+                      onClick={() => handleSendChatMessage()}
                       disabled={!chatInput.trim() || aiChatLoading}
                       className="px-5 py-3 bg-gradient-to-r from-indigo-600 to-purple-600 hover:from-indigo-700 hover:to-purple-700 disabled:opacity-50 text-white rounded-2xl text-sm font-bold shadow-lg shadow-indigo-600/30 transition-all hover:scale-[1.02] active:scale-[0.98] flex items-center gap-2"
                     >

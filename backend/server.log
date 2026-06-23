@@ -1,0 +1,4 @@
+◇ injected env (7) from .env // tip: ◈ encrypted .env [www.dotenvx.com]
+Server running on port 5000
+Widal test already exists, skipping seed.
+Starting Telegram Bot updates polling loop...

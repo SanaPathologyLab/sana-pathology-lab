@@ -1,8 +1,8 @@
 import React, { useState, useRef, useEffect, useCallback } from 'react';
-import { X, Send, User, Phone, MapPin, Clock, CreditCard, Calendar, FlaskConical, Heart, Activity, Search } from 'lucide-react';
+import { X, Send, Mic, MicOff, Volume2, VolumeX, User, Phone, MapPin, Clock, CreditCard, Calendar, FlaskConical, Heart, Activity, Search, Radio } from 'lucide-react';
 import AssistantAvatar from './AssistantAvatar';
 import { useLanguage } from '../context/LanguageContext';
-import { generateAI, searchTests } from '../utils/ai';
+import { sendChatMessage, searchTests } from '../utils/ai';
 import { AI_KNOWLEDGE_BASE, CATALOGUE_MAP } from '../utils/aiKnowledge';
 
 const GENERAL_RESPONSES = {
@@ -43,8 +43,8 @@ const GENERAL_RESPONSES = {
     hi: 'मैं ये सब कर सकता हूँ:\n\n📋 *टेस्ट की कीमतें* — 50+ टेस्ट की कीमतें बता सकता हूँ\n📅 *टेस्ट बुक करें* — अपॉइंटमेंट बुक करने में मदद करता हूँ\n🔍 *रिपोर्ट ट्रैक करें* — रिपोर्ट और अपॉइंटमेंट स्टेटस चेक कर सकता हूँ\n🩺 *लक्षण सलाह* — लक्षणों से related टेस्ट सुझाता हूँ\n🏠 *होम कलेक्शन* — फ्री होम कलेक्शन की जानकारी दे सकता हूँ\n💰 *भुगतान* — पेमेंट ऑप्शन बता सकता हूँ\n\nबताओ क्या चाहिए!'
   },
   default: {
-    en: 'Iske baare mein main 100% sure nahi hoon. Aap directly humse baat kar sakte hain:\n📱 WhatsApp: wa.me/916396786939\n📞 Call: +91 6396786939\n\nHamari team aapki poori madad karegi! 😊',
-    hi: 'इसके बारे में मैं 100% sure नहीं हूँ। आप सीधे हमसे बात कर सकते हैं:\n📱 WhatsApp: wa.me/916396786939\n📞 Call: +91 6396786939\n\nहमारी टीम आपकी पूरी मदद करेगी! 😊'
+    en: 'Main samajh gaya! 🎯 Main ye sab help kar sakta hoon:\n\n📋 *Test Prices* — Prices bata sakta hoon\n📅 *Book Tests* — Appointment book karna\n🔍 *Track Reports* — Report status check\n🩺 *Symptom Advice* — Tests suggest karna\n🏠 *Home Collection* — Free collection info\n💰 *Payment & Discounts* — Payment options & coupons\n\nKya chahiye aapko? Bataayein! 😊',
+    hi: 'मैं समझ गया! 🎯 मैं ये सब help कर सकता हूँ:\n\n📋 *टेस्ट की कीमतें* — Prices बता सकता हूँ\n📅 *टेस्ट बुक करें* — Appointment book करना\n🔍 *रिपोर्ट ट्रैक करें* — Report status check\n🩺 *लक्षण सलाह* — Tests suggest करना\n🏠 *होम कलेक्शन* — Free collection info\n💰 *भुगतान और छूट* — Payment options & coupons\n\nक्या चाहिए आपको? बताइए! 😊'
   },
   complaint: {
     en: 'Yeh sunkar achha nahi laga. Main aapki madad kar sakta hoon. Kripya apni problem ke baare mein bataayein — main sahi test suggest karoonga ya aapko booking mein help karoonga.',
@@ -57,8 +57,8 @@ const GENERAL_RESPONSES = {
 };
 
 const FAQ_RESPONSES = {
-  price: 'Yahan hamare popular tests ki prices hain:\n\n🩸 CBC – ₹200\n🍬 Blood Sugar (Fasting) – ₹80\n❤️ Lipid Profile – ₹650\n🦋 Thyroid (T3/T4/TSH) – ₹450\n🫀 Liver Function (LFT) – ₹500\n🫘 Kidney Function (KFT) – ₹500\n☀️ Vitamin D – ₹800\n📊 HbA1c – ₹400\n🧪 Urine Routine – ₹150\n🦟 Dengue NS1 – ₹600\n🧫 Widal Test – ₹50\n💊 Vitamin B12 – ₹700\n\n💼 Popular Packages bhi available hain — koi specific test ya package chahiye?',
-  priceHi: 'यहाँ हमारे popular tests की prices हैं:\n\n🩸 CBC – ₹200\n🍬 Blood Sugar (Fasting) – ₹80\n❤️ Lipid Profile – ₹650\n🦋 Thyroid (T3/T4/TSH) – ₹450\n🫀 Liver Function (LFT) – ₹500\n🫘 Kidney Function (KFT) – ₹500\n☀️ Vitamin D – ₹800\n📊 HbA1c – ₹400\n🧪 Urine Routine – ₹150\n🦟 Dengue NS1 – ₹600\n🧫 Widal Test – ₹50\n💊 Vitamin B12 – ₹700\n\n💼 Popular Packages bhi available hain — koi specific test ya package chahiye?',
+  price: 'Yahan hamare popular tests ki prices hain:\n\n🩸 CBC – ₹200\n🍬 Blood Sugar (Fasting) – ₹80\n❤️ Lipid Profile – ₹600\n🦋 Thyroid (T3/T4/TSH) – ₹450\n🫀 Liver Function (LFT) – ₹500\n🫘 Kidney Function (KFT) – ₹500\n☀️ Vitamin D – ₹800\n📊 HbA1c – ₹400\n🧪 Urine Routine – ₹100\n🦟 Dengue NS1 – ₹500\n🧫 Widal Test – ₹150\n💊 Vitamin B12 – ₹700\n\n💼 Popular Packages bhi available hain — koi specific test ya package chahiye?',
+  priceHi: 'यहाँ हमारे popular tests की prices हैं:\n\n🩸 CBC – ₹200\n🍬 Blood Sugar (Fasting) – ₹80\n❤️ Lipid Profile – ₹600\n🦋 Thyroid (T3/T4/TSH) – ₹450\n🫀 Liver Function (LFT) – ₹500\n🫘 Kidney Function (KFT) – ₹500\n☀️ Vitamin D – ₹800\n📊 HbA1c – ₹400\n🧪 Urine Routine – ₹100\n🦟 Dengue NS1 – ₹500\n🧫 Widal Test – ₹150\n💊 Vitamin B12 – ₹700\n\n💼 Popular Packages bhi available hain — koi specific test ya package chahiye?',
   timing: '🕐 Timings:\nMon–Sat: 7:00 AM – 8:00 PM\nSunday: 8:00 AM – 1:00 PM\n\nReports: Routine tests ki report 6–12 ghante mein WhatsApp par mil jaati hai.',
   timingHi: '🕐 समय:\nसोम–शनि: सुबह 7:00 – रात 8:00\nरविवार: सुबह 8:00 – दोपहर 1:00\n\nरिपोर्ट: Routine tests की report 6–12 घंटे में WhatsApp पर मिल जाती है।',
   preparation: '🥤 Fasting requirement:\n• FBS (Blood Sugar Fasting) – 8–10 hrs\n• Lipid Profile – 10–12 hrs\n• Thyroid Profile – No fasting needed (morning sample preferred)\n• Full Body Packages – As per components\n\n✅ All other tests (CBC, LFT, KFT, Dengue, Widal, Urine, Vitamin D, HbA1c) – NO fasting needed.\nWater is allowed during fasting.',
@@ -399,6 +399,7 @@ const formatMessage = (text) => {
 
 function LiveChatWidget() {
   const { language } = useLanguage();
+  var isHindi = language === 'hi';
   const [isOpen, setIsOpen] = useState(false);
   const [messages, setMessages] = useState(() => {
     try {
@@ -420,9 +421,81 @@ function LiveChatWidget() {
   const chatPanelRef = useRef(null);
   const tipShownRef = useRef(false);
 
+  const [isListening, setIsListening] = useState(false);
+  const [voiceSupported, setVoiceSupported] = useState(true);
+  const [speakerOn, setSpeakerOn] = useState(true);
+  const recognitionRef = useRef(null);
+
+  const [isLiveMode, setIsLiveMode] = useState(false);
+  const liveModeRef = useRef(isLiveMode);
+  const handleSendRef = useRef(null);
+
+  useEffect(() => { liveModeRef.current = isLiveMode; }, [isLiveMode]);
+
   const [bookingData, setBookingData] = useState(null);
   const [statusCheckState, setStatusCheckState] = useState(null);
   const [symptomState, setSymptomState] = useState(null);
+
+  useEffect(() => {
+    const SpeechRecognition = window.SpeechRecognition || window.webkitSpeechRecognition;
+    if (!SpeechRecognition) {
+      setVoiceSupported(false);
+      return;
+    }
+    const recognition = new SpeechRecognition();
+    recognition.continuous = false;
+    recognition.interimResults = false;
+    recognition.maxAlternatives = 1;
+
+    recognition.onresult = (event) => {
+      const transcript = event.results[0][0].transcript;
+      setIsListening(false);
+      setInputValue(transcript);
+      if (liveModeRef.current && handleSendRef.current) {
+        setTimeout(() => { handleSendRef.current(transcript); }, 300);
+      } else {
+        setTimeout(() => { inputRef.current?.focus(); }, 100);
+      }
+    };
+    recognition.onerror = () => { setIsListening(false); };
+    recognition.onend = () => { setIsListening(false); };
+    recognitionRef.current = recognition;
+  }, []);
+
+  const toggleListening = useCallback(() => {
+    if (!recognitionRef.current) return;
+    if (isListening) {
+      recognitionRef.current.abort();
+      setIsListening(false);
+      return;
+    }
+    try {
+      recognitionRef.current.lang = isHindi ? 'hi-IN' : 'en-US';
+      recognitionRef.current.start();
+      setIsListening(true);
+    } catch { setIsListening(false); }
+  }, [isListening, isHindi]);
+
+  const speakResponse = useCallback((text) => {
+    if (!speakerOn || !text || !window.speechSynthesis) return;
+    try {
+      window.speechSynthesis.cancel();
+      const clean = text.replace(/[📋📅🔍🩺🏠💰⚠️🙏😊👋🩸🍬❤️🦋🫀🫘☀️📊🧪🦟🧫💊💼📍🕐👉🔬🌟]/g, '').replace(/\*\*/g, '').replace(/\n{2,}/g, '. ');
+      const utterance = new SpeechSynthesisUtterance(clean);
+      utterance.lang = isHindi ? 'hi-IN' : 'en-US';
+      utterance.rate = 0.9;
+      utterance.pitch = 1.1;
+      utterance.onend = () => {
+        if (liveModeRef.current && recognitionRef.current) {
+          try {
+            recognitionRef.current.start();
+            setIsListening(true);
+          } catch (e) {}
+        }
+      };
+      window.speechSynthesis.speak(utterance);
+    } catch {}
+  }, [speakerOn, isHindi]);
 
   const [sessionState, setSessionState] = useState({
     patientName: null,
@@ -436,8 +509,6 @@ function LiveChatWidget() {
     symptomsDiscussed: []
   });
   const [familyBooking, setFamilyBooking] = useState(null);
-
-  const isHindi = language === 'hi';
 
   const handleStatusCheck = useCallback(async (text) => {
     const lower = text.toLowerCase();
@@ -1023,8 +1094,8 @@ function LiveChatWidget() {
     return `${icon} *${testName}*: ${value} ${unit}\n📊 *Status*: ${statusText}\n📖 *Matlab*: ${explanation}`;
   };
 
-  const handleSend = useCallback(async () => {
-    const text = inputValue.trim();
+  const handleSend = useCallback(async (textOverride) => {
+    const text = (typeof textOverride === 'string' ? textOverride : inputValue).trim();
     if (!text) return;
     const userMsg = {
       id: Date.now().toString(),
@@ -1314,8 +1385,8 @@ function LiveChatWidget() {
     // ===== UPGRADE 8: Diabetes Management Assistant =====
     if (/\b(diabetes|diabetic|sugar|shugar|shakar|insulin|metformin|मधुमेह|डायबिटीज|शुगर|इंसुलिन)\b/i.test(lower) && !/\b(book|price|कीमत|बुक)\b/i.test(lower)) {
       const msg = isHindi
-        ? `🍬 *Diabetes monitoring ke liye Sana Pathology mein yeh tests available hain:*\n\n📊 HbA1c (3-monthly) — ₹400\n🍬 Fasting Blood Sugar — ₹80\n🍬 Post-Meal Sugar (PP) — ₹80\n🫘 Kidney Function (KFT) — ₹500\n👁️ Urine Routine — ₹150 (protein check)\n❤️ Lipid Profile — ₹650 (heart risk)\n\n🎯 Diabetes Combo (HbA1c + FBS + KFT + Lipid) — ₹1500 approx. Ek saath book karein aur ₹200 bachayein!\n\nKya aap book karna chahenge?`
-        : `🍬 *Tests available for diabetes monitoring at Sana Pathology:*\n\n📊 HbA1c (3-monthly) — ₹400\n🍬 Fasting Blood Sugar — ₹80\n🍬 Post-Meal Sugar (PP) — ₹80\n🫘 Kidney Function (KFT) — ₹500\n👁️ Urine Routine — ₹150 (protein check)\n❤️ Lipid Profile — ₹650 (heart risk)\n\n🎯 Diabetes Combo (HbA1c + FBS + KFT + Lipid) — ₹1500 approx. Book together and save ₹200!\n\nWould you like to book?`;
+        ? `🍬 *Diabetes monitoring ke liye Sana Pathology mein yeh tests available hain:*\n\n📊 HbA1c (3-monthly) — ₹400\n🍬 Fasting Blood Sugar — ₹80\n🍬 Post-Meal Sugar (PP) — ₹80\n🫘 Kidney Function (KFT) — ₹500\n👁️ Urine Routine — ₹100 (protein check)\n❤️ Lipid Profile — ₹600 (heart risk)\n\n🎯 Diabetes Combo (HbA1c + FBS + KFT + Lipid) — ₹1400 approx. Ek saath book karein aur ₹200 bachayein!\n\nKya aap book karna chahenge?`
+        : `🍬 *Tests available for diabetes monitoring at Sana Pathology:*\n\n📊 HbA1c (3-monthly) — ₹400\n🍬 Fasting Blood Sugar — ₹80\n🍬 Post-Meal Sugar (PP) — ₹80\n🫘 Kidney Function (KFT) — ₹500\n👁️ Urine Routine — ₹100 (protein check)\n❤️ Lipid Profile — ₹600 (heart risk)\n\n🎯 Diabetes Combo (HbA1c + FBS + KFT + Lipid) — ₹1400 approx. Book together and save ₹200!\n\nWould you like to book?`;
       setMessages(prev => [...prev, { id: Date.now().toString(), text: msg, sender: 'bot', timestamp: new Date() }]);
       return;
     }
@@ -1368,32 +1439,19 @@ function LiveChatWidget() {
       return;
     }
 
-    // Unrecognised → try AI API
+    // Unrecognised → try Backend AI (Claude-powered)
     setIsTyping(true);
     try {
-      const langPrompt = isHindi ? "Hindi (हिंदी)" : "English";
-      const prompt = `You are Sana AI, a helpful, professional laboratory assistant for Sana Pathology Lab.
-
-IMPORTANT RULES:
-1. Answer concisely and accurately in ${langPrompt}.
-2. If the user describes symptoms, recommend relevant tests with [Code: TEST_CODE] format and prices.
-3. Be bilingual - respond in the same language the user used.
-4. Always be friendly, professional, and helpful.
-5. If unsure, direct to WhatsApp or phone.
-
-KNOWLEDGE BASE:
-${AI_KNOWLEDGE_BASE}
-
-User Query: ${text}`;
-      const aiResponse = await generateAI(prompt);
+      const result = await sendChatMessage(text, isHindi ? 'hi' : 'en');
       setIsTyping(false);
       const botMsg = {
         id: Date.now().toString(),
-        text: aiResponse,
+        text: result.response,
         sender: 'bot',
         timestamp: new Date(),
       };
       setMessages((prev) => [...prev, botMsg]);
+      speakResponse(result.response);
     } catch (err) {
       setIsTyping(false);
       const defaultMsg = isHindi ? GENERAL_RESPONSES.default.hi : GENERAL_RESPONSES.default.en;
@@ -1404,51 +1462,43 @@ User Query: ${text}`;
         timestamp: new Date(),
       };
       setMessages((prev) => [...prev, botMsg]);
+      speakResponse(defaultMsg);
     }
-  }, [inputValue, getBotReply, isHindi, bookingData, handleBookingStep, startBookingFlow, handleStatusCheck, generateAI]);
+  }, [inputValue, getBotReply, isHindi, bookingData, handleBookingStep, startBookingFlow, handleStatusCheck, sendChatMessage, speakResponse]);
 
+  useEffect(() => {
+    handleSendRef.current = handleSend;
+  }, [handleSend]);
 
-  const actionReplies = {
-    price: {
-      en: 'Yahan hamare popular tests ki prices hain:\n\n🩸 CBC – ₹200\n🍬 Blood Sugar (Fasting) – ₹80\n❤️ Lipid Profile – ₹650\n🦋 Thyroid (T3/T4/TSH) – ₹450\n🫀 Liver Function (LFT) – ₹500\n🫘 Kidney Function (KFT) – ₹500\n☀️ Vitamin D – ₹800\n📊 HbA1c – ₹400\n🧪 Urine Routine – ₹150\n🦟 Dengue NS1 – ₹600\n🧫 Widal Test – ₹50\n💊 Vitamin B12 – ₹700\n\n💼 Popular Packages bhi available hain — koi specific test ya package chahiye?',
-      hi: 'यहाँ हमारे popular tests की prices हैं:\n\n🩸 CBC – ₹200\n🍬 Blood Sugar (Fasting) – ₹80\n❤️ Lipid Profile – ₹650\n🦋 Thyroid (T3/T4/TSH) – ₹450\n🫀 Liver Function (LFT) – ₹500\n🫘 Kidney Function (KFT) – ₹500\n☀️ Vitamin D – ₹800\n📊 HbA1c – ₹400\n🧪 Urine Routine – ₹150\n🦟 Dengue NS1 – ₹600\n🧫 Widal Test – ₹50\n💊 Vitamin B12 – ₹700\n\n💼 Popular Packages bhi available hain — koi specific test ya package chahiye?'
-    },
-    track: {
-      en: 'Apni report track karne ke 3 tarike hain:\n\n🌐 Website: sanapathologylab.github.io\n→ "Track Reports" section mein mobile number daalo\n\n📱 WhatsApp: wa.me/916396786939\n→ Apna Report Number bhejo\n\n📞 Call: +91 6396786939\n\nAapka report number ya registered mobile number kya hai?',
-      hi: 'अपनी report track करने के 3 तरीके हैं:\n\n🌐 Website: sanapathologylab.github.io\n→ "Track Reports" section में mobile number डालो\n\n📱 WhatsApp: wa.me/916396786939\n→ अपना Report Number भेजो\n\n📞 Call: +91 6396786939\n\nआपका report number या registered mobile number क्या है?'
-    },
-    contact: {
-      en: 'Hum se contact karein:\n\n📞 Call/WhatsApp: +91 6396786939\n📞 Alternate: +91 6397240575\n📧 Email: support@sanapathology.com\n📍 Address: Datawali Road, Near Aara Machine, Hayat Nagar, Sambhal-244303\n\n🕐 Timings:\nMon–Sat: 7:00 AM – 8:00 PM\nSunday: 8:00 AM – 1:00 PM\n\nAbhi WhatsApp par baat karein 👉 wa.me/916396786939',
-      hi: 'हमसे contact करें:\n\n📞 Call/WhatsApp: +91 6396786939\n📞 Alternate: +91 6397240575\n📧 Email: support@sanapathology.com\n📍 Address: Datawali Road, Near Aara Machine, Hayat Nagar, Sambhal-244303\n\n🕐 Timings:\nMon–Sat: 7:00 AM – 8:00 PM\nSunday: 8:00 AM – 1:00 PM\n\nअभी WhatsApp पर बात करें 👉 wa.me/916396786939'
-    },
-    health: {
-      en: 'Main aapko symptom ke hisaab se sahi test suggest kar sakta hoon.\n\nBatayein aapko kya problem ho rahi hai? Jaise:\n😴 Thakan / weakness\n🌡️ Bukhar (fever)\n💧 Baar baar peshab aana\n🦱 Baal jharna\n🦴 Joint pain\n💛 Aankhon ya skin ka peela hona\n❤️ Chest pain\n🤰 Pregnancy checkup\n📋 General health checkup\n\nAapki problem batayein, main sahi test suggest karoonga.',
-      hi: 'मैं आपको symptom के हिसाब से सही test suggest कर सकता हूँ।\n\nबताइए आपको क्या problem हो रही है? जैसे:\n😴 थकान / weakness\n🌡️ बुखार (fever)\n💧 बार बार पेशाब आना\n🦱 बाल झड़ना\n🦴 Joint pain\n💛 आँखों या skin का पीला होना\n❤️ Chest pain\n🤰 Pregnancy checkup\n📋 General health checkup\n\nआपकी problem बताइए, main सही test suggest करूंगा।'
-    }
-  };
 
   const handleQuickAction = useCallback(
     async (key) => {
-      if (key === 'book') {
-        const userMsg = { id: Date.now().toString(), text: isHindi ? '📅 टेस्ट बुक करें' : '📅 Book Test', sender: 'user', timestamp: new Date() };
-        setMessages((prev) => [...prev, userMsg]);
-        const reply = isHindi
-          ? 'Bilkul! Booking ke liye yeh details chahiye:\n\n1️⃣ Patient ka naam\n2️⃣ Mobile number\n3️⃣ Kaun sa test chahiye?\n4️⃣ Date aur time (preferred)\n5️⃣ Ghar se collection chahiye ya lab visit?\n\nGhar se collection bilkul FREE hai! 🏠\nBataiye, main aapki booking confirm karta hoon.'
-          : 'Bilkul! Booking ke liye yeh details chahiye:\n\n1️⃣ Patient ka naam\n2️⃣ Mobile number\n3️⃣ Kaun sa test chahiye?\n4️⃣ Date aur time (preferred)\n5️⃣ Ghar se collection chahiye ya lab visit?\n\nGhar se collection bilkul FREE hai! 🏠\nBataiye, main aapki booking confirm karta hoon.';
-        setMessages((prev) => [...prev, { id: Date.now().toString(), text: reply, sender: 'bot', timestamp: new Date() }]);
-        return;
-      }
-      const actionReply = actionReplies[key];
-      if (actionReply) {
-        const label = { price: '📋 Test Prices', track: '🔍 Track Report', contact: '📞 Contact Lab', health: '🩺 Health Advice' };
-        const userMsg = { id: Date.now().toString(), text: isHindi ? 'स्वास्थ्य सलाह' : label[key] || 'Action', sender: 'user', timestamp: new Date() };
-        setMessages((prev) => [...prev, userMsg]);
-        setTimeout(() => {
-          setMessages((prev) => [...prev, { id: Date.now().toString(), text: isHindi ? actionReply.hi : actionReply.en, sender: 'bot', timestamp: new Date() }]);
-        }, 400);
+      const prompts = {
+        price: { en: 'Show me test prices', hi: 'Test prices dikhao' },
+        book: { en: 'I want to book a test', hi: 'Mujhe test book karna hai' },
+        track: { en: 'I want to track my report', hi: 'Mujhe apni report track karni hai' },
+        contact: { en: 'Show me lab contact info', hi: 'Lab ka contact info dikhao' },
+        health: { en: 'I need health advice for my symptoms', hi: 'Mujhe symptoms ke liye health advice chahiye' }
+      };
+      const p = prompts[key] || { en: 'Help me', hi: 'Meri madad karein' };
+      const userText = isHindi ? p.hi : p.en;
+      const userMsg = { id: Date.now().toString(), text: userText, sender: 'user', timestamp: new Date() };
+      setMessages((prev) => [...prev, userMsg]);
+      setIsTyping(true);
+      try {
+        const result = await sendChatMessage(userText, isHindi ? 'hi' : 'en');
+        setIsTyping(false);
+        const botMsg = { id: Date.now().toString(), text: result.response, sender: 'bot', timestamp: new Date() };
+        setMessages((prev) => [...prev, botMsg]);
+        speakResponse(result.response);
+      } catch {
+        setIsTyping(false);
+        const fallback = isHindi ? GENERAL_RESPONSES.default.hi : GENERAL_RESPONSES.default.en;
+        setMessages((prev) => [...prev, { id: Date.now().toString(), text: fallback, sender: 'bot', timestamp: new Date() }]);
+        speakResponse(fallback);
       }
     },
-    [isHindi]
+    [isHindi, speakResponse]
   );
 
   const handleKeyDown = (e) => {
@@ -1647,10 +1697,52 @@ User Query: ${text}`;
                 value={inputValue}
                 onChange={(e) => setInputValue(e.target.value)}
                 onKeyDown={handleKeyDown}
-                placeholder={isHindi ? 'अपना संदेश यहाँ लिखें...' : 'Type your message here...'}
-                className="w-full px-4 py-2.5 bg-gray-100 rounded-full text-sm outline-none focus:ring-2 focus:ring-[#00488d]/30 focus:bg-white transition-all placeholder:text-gray-400 pr-10"
+                placeholder={isHindi ? 'बोलें या लिखें...' : 'Speak or type...'}
+                className="w-full px-4 py-2.5 bg-gray-100 rounded-full text-sm outline-none focus:ring-2 focus:ring-[#00488d]/30 focus:bg-white transition-all placeholder:text-gray-400 pl-[5.5rem] pr-10"
               />
-              <span className="absolute right-3 top-1/2 -translate-y-1/2 text-gray-300 pointer-events-none text-lg">💬</span>
+              {voiceSupported && (
+                <>
+                  <button
+                    onClick={toggleListening}
+                    className={`absolute left-2 top-1/2 -translate-y-1/2 p-1 rounded-full transition-all ${
+                      isListening && !isLiveMode ? 'text-red-500 animate-pulse scale-110' : 'text-gray-400 hover:text-[#00488d]'
+                    }`}
+                    aria-label={isListening ? 'Stop recording' : 'Start voice input'}
+                    title={isListening ? (isHindi ? 'रिकॉर्डिंग बंद करें' : 'Stop recording') : (isHindi ? 'बोलें' : 'Speak')}
+                  >
+                    {isListening && !isLiveMode ? <MicOff className="w-4 h-4" /> : <Mic className="w-4 h-4" />}
+                  </button>
+                  <button
+                    onClick={() => {
+                      const newLiveMode = !isLiveMode;
+                      setIsLiveMode(newLiveMode);
+                      if (newLiveMode) {
+                        setSpeakerOn(true);
+                        try { recognitionRef.current?.start(); setIsListening(true); } catch {}
+                      } else {
+                        try { recognitionRef.current?.abort(); setIsListening(false); window.speechSynthesis.cancel(); } catch {}
+                      }
+                    }}
+                    className={`absolute left-8 top-1/2 -translate-y-1/2 flex items-center gap-1 px-2 py-1 rounded-full transition-all text-[10px] font-bold ${
+                      isLiveMode ? 'bg-red-100 text-red-600 animate-pulse shadow-sm' : 'bg-gray-100 text-gray-500 hover:bg-blue-50 hover:text-[#00488d]'
+                    }`}
+                    title={isHindi ? 'लगातार बात करें (Live)' : 'Continuous Live Talk'}
+                  >
+                    <Radio className="w-3 h-3" />
+                    <span>Live</span>
+                  </button>
+                </>
+              )}
+              <button
+                onClick={() => setSpeakerOn(!speakerOn)}
+                className={`absolute right-2 top-1/2 -translate-y-1/2 p-1 rounded-full transition-all ${
+                  speakerOn ? 'text-gray-400 hover:text-[#00488d]' : 'text-gray-300 hover:text-gray-500'
+                }`}
+                aria-label={speakerOn ? 'Mute voice' : 'Enable voice'}
+                title={speakerOn ? (isHindi ? 'आवाज़ बंद करें' : 'Mute') : (isHindi ? 'आवाज़ चालू करें' : 'Unmute')}
+              >
+                {speakerOn ? <Volume2 className="w-3.5 h-3.5" /> : <VolumeX className="w-3.5 h-3.5" />}
+              </button>
             </div>
             <button
               onClick={handleSend}
