@@ -269,50 +269,28 @@ Measures B12 levels. Deficiency (<200 pg/mL) causes anemia, nerve damage, numbne
 - If unsure: "Iske baare mein main 100% sure nahi hoon. Aap directly humse baat kar sakte hain: WhatsApp: wa.me/916396786939, Call: +91 6396786939"
 `;
 
-const CATALOGUE_MAP = {
-  "CBC": { "name": "Complete Blood Count (CBC)", "price": 200, "testCode": "CBC", "isPackage": false },
-  "HB-01": { "name": "Hemoglobin (Hb)", "price": 100, "testCode": "HB-01", "isPackage": false },
-  "BG": { "name": "Blood Group ABO & Rh", "price": 100, "testCode": "BG", "isPackage": false },
-  "ESR-01": { "name": "ESR", "price": 150, "testCode": "ESR-01", "isPackage": false },
-  "015": { "name": "Platelets Count", "price": 100, "testCode": "015", "isPackage": false },
-  "016": { "name": "TLC (Total Leucocyte Count)", "price": 50, "testCode": "016", "isPackage": false },
-  "PT-01": { "name": "Prothrombin Time (PT)", "price": 250, "testCode": "PT-01", "isPackage": false },
-  "FBS": { "name": "Blood Sugar Fasting (FBS)", "price": 80, "testCode": "FBS", "isPackage": false },
-  "GLU-01": { "name": "Random Blood Sugar (RBS)", "price": 100, "testCode": "GLU-01", "isPackage": false },
-  "HBA1C": { "name": "HbA1c (Glycosylated Haemoglobin)", "price": 400, "testCode": "HBA1C", "isPackage": false },
-  "LIPID": { "name": "Lipid Profile", "price": 600, "testCode": "LIPID", "isPackage": false },
-  "LFT": { "name": "Liver Function Test (LFT)", "price": 500, "testCode": "LFT", "isPackage": false },
-  "KFT": { "name": "Kidney Function Test (KFT)", "price": 500, "testCode": "KFT", "isPackage": false },
-  "CREAT-01": { "name": "Serum Creatinine", "price": 150, "testCode": "CREAT-01", "isPackage": false },
-  "UREA-01": { "name": "Blood Urea", "price": 150, "testCode": "UREA-01", "isPackage": false },
-  "URIC_ACID": { "name": "Serum Uric Acid", "price": 100, "testCode": "URIC_ACID", "isPackage": false },
-  "CALCIUM-01": { "name": "Serum Calcium", "price": 200, "testCode": "CALCIUM-01", "isPackage": false },
-  "BILIRUBIN-TOTAL-01": { "name": "Total Bilirubin", "price": 150, "testCode": "BILIRUBIN-TOTAL-01", "isPackage": false },
-  "SGOT": { "name": "SGOT (AST)", "price": 100, "testCode": "SGOT", "isPackage": false },
-  "SGPT": { "name": "SGPT (ALT)", "price": 100, "testCode": "SGPT", "isPackage": false },
-  "SGOT-SGPT": { "name": "SGOT + SGPT (Combined)", "price": 250, "testCode": "SGOT-SGPT", "isPackage": false },
-  "TFT": { "name": "Thyroid Profile (T3, T4, TSH)", "price": 450, "testCode": "TFT", "isPackage": false },
-  "VITD": { "name": "Vitamin D (25-Hydroxy)", "price": 800, "testCode": "VITD", "isPackage": false },
-  "VITB12": { "name": "Vitamin B12", "price": 700, "testCode": "VITB12", "isPackage": false },
-  "URINE": { "name": "Urine Routine Examination", "price": 100, "testCode": "URINE", "isPackage": false },
-  "SEMEN-01": { "name": "Semen Analysis", "price": 350, "testCode": "SEMEN-01", "isPackage": false },
-  "ANC-01": { "name": "ANC (Ante-Natal Care) Profile", "price": 1200, "testCode": "ANC-01", "isPackage": false },
-  "MANTOUX-01": { "name": "Mantoux Test (Tuberculin)", "price": 250, "testCode": "MANTOUX-01", "isPackage": false },
-  "RF": { "name": "Rheumatoid Factor (RF)", "price": 150, "testCode": "RF", "isPackage": false },
-  "CRP-01": { "name": "CRP (C-Reactive Protein)", "price": 150, "testCode": "CRP-01", "isPackage": false },
-  "CRP-QUANT-01": { "name": "CRP Quantitative", "price": 350, "testCode": "CRP-QUANT-01", "isPackage": false },
-  "DENGUE-01": { "name": "Dengue Profile (IgG, IgM, NS1)", "price": 1200, "testCode": "DENGUE-01", "isPackage": false },
-  "DENGUE-NS1": { "name": "Dengue NS1 Antigen", "price": 500, "testCode": "DENGUE-NS1", "isPackage": false },
-  "WIDAL1": { "name": "Widal Test", "price": 150, "testCode": "WIDAL1", "isPackage": false },
-  "TYPHIDOT-01": { "name": "Typhidot (IgG & IgM)", "price": 100, "testCode": "TYPHIDOT-01", "isPackage": false },
-  "MP": { "name": "Malaria (MP ELISA)", "price": 100, "testCode": "MP", "isPackage": false },
-  "MP-MICRO": { "name": "Malaria Parasite Microscopy", "price": 150, "testCode": "MP-MICRO", "isPackage": false },
-  "PKG-01": { "name": "Sana Full Body Checkup", "price": 999, "testCode": "PKG-01", "isPackage": true },
-  "PKG-02": { "name": "Sana Diabetes Care Package", "price": 699, "testCode": "PKG-02", "isPackage": true },
-  "PKG-03": { "name": "Sana Women Premium Package", "price": 1899, "testCode": "PKG-03", "isPackage": true },
-  "PKG-04": { "name": "Sana Senior Citizen Package", "price": 1399, "testCode": "PKG-04", "isPackage": true },
-  "PKG-05": { "name": "Sana Fit Active Package", "price": 699, "testCode": "PKG-05", "isPackage": true },
-  "PKG-06": { "name": "Sana Heart Health Package", "price": 1199, "testCode": "PKG-06", "isPackage": true }
-};
+import { TESTS_DATA, HEALTH_PACKAGES_DATA } from '../data/testsData';
+
+const CATALOGUE_MAP = {};
+
+TESTS_DATA.forEach(test => {
+  CATALOGUE_MAP[test.code] = {
+    name: test.testName,
+    price: test.price,
+    testCode: test.code,
+    isPackage: false,
+    preparation: test.preparation
+  };
+});
+
+HEALTH_PACKAGES_DATA.forEach(pkg => {
+  CATALOGUE_MAP[pkg.code] = {
+    name: pkg.name,
+    price: pkg.price,
+    testCode: pkg.code,
+    isPackage: true,
+    preparation: 'As per test components'
+  };
+});
 
 export { AI_KNOWLEDGE_BASE, CATALOGUE_MAP };

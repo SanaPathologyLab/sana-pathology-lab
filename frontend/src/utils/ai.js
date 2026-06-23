@@ -62,25 +62,38 @@ export function setPatientInfo(name, mobile) {
 export function searchTests(query) {
   if (!query) return [];
   const q = query.toLowerCase().trim();
+  const ignoreWords = ['price', 'cost', 'rate', 'kitna', 'hai', 'the', 'a', 'is', 'for', 'of', 'test', 'profile', 'check', 'checkup', 'aur', 'and'];
+  const queryWords = q.split(/\s+/).filter(w => !ignoreWords.includes(w) && w.length > 2);
+  
   const catalogue = CATALOGUE_MAP || {};
   const results = [];
+  
   for (const [code, entry] of Object.entries(catalogue)) {
     const nameLower = (entry.name || '').toLowerCase();
     const codeLower = (entry.testCode || code || '').toLowerCase();
-    if (nameLower.includes(q) || codeLower.includes(q) || q.includes(codeLower)) {
-      results.push({ ...entry, code: entry.testCode || code });
+    
+    if (nameLower === q || codeLower === q || q.includes(` ${codeLower} `) || q.startsWith(`${codeLower} `) || q.endsWith(` ${codeLower}`)) {
+      results.push({ ...entry, code: entry.testCode || code, exact: true });
+      continue;
     }
-  }
-  if (results.length === 0) {
-    for (const [code, entry] of Object.entries(catalogue)) {
-      const nameLower = (entry.name || '').toLowerCase();
-      const keywords = nameLower.split(/\s+/);
-      const queryKeywords = q.split(/\s+/);
-      if (queryKeywords.some(k => keywords.some(kw => kw.includes(k) || k.includes(kw)))) {
-        results.push({ ...entry, code: entry.testCode || code });
+    
+    if (queryWords.length > 0) {
+      let matches = 0;
+      queryWords.forEach(kw => {
+        if (nameLower.includes(kw) || codeLower.includes(kw)) matches++;
+      });
+      if (matches > 0 && matches >= queryWords.length * 0.5) {
+        results.push({ ...entry, code: entry.testCode || code, matches });
       }
     }
   }
+  
+  results.sort((a, b) => {
+    if (a.exact && !b.exact) return -1;
+    if (!a.exact && b.exact) return 1;
+    return (b.matches || 0) - (a.matches || 0);
+  });
+  
   return results;
 }
 
@@ -88,36 +101,22 @@ export function localAnswer(prompt) {
   if (!prompt) return null;
   const q = prompt.toLowerCase().trim();
 
-  if (q.includes('cbc') && (q.includes('price') || q.includes('kitna') || q.includes('cost'))) {
-    return 'CBC test sirf ₹200 mein hota hai. Koi fasting nahi chahiye, ghar se free collection hai. Kya aap abhi book karna chahenge?';
+  if (q.includes('price') || q.includes('kitna') || q.includes('cost') || q.includes('rate') || q.includes('charge') || q.includes('paise')) {
+    const results = searchTests(q);
+    if (results && results.length > 0) {
+      const bestMatch = results[0];
+      const prepStr = bestMatch.preparation ? ` (${bestMatch.preparation}).` : '.';
+      return `${bestMatch.name} ka price ₹${bestMatch.price} hai${prepStr} Kya aap isko book karna chahenge?`;
+    }
   }
-  if (q.includes('thyroid') && (q.includes('price') || q.includes('kitna') || q.includes('cost'))) {
-    return 'Thyroid Profile (T3, T4, TSH) ₹450 mein hota hai. Koi fasting nahi chahiye. Book karein?';
+
+  const generalResults = searchTests(q);
+  if (generalResults && generalResults.length > 0 && q.split(/\s+/).length < 5 && !q.includes('how') && !q.includes('kaise') && !q.includes('kya')) {
+    const bestMatch = generalResults[0];
+    const prepStr = bestMatch.preparation ? ` (${bestMatch.preparation}).` : '.';
+    return `Haan, hum ${bestMatch.name} karte hain. Iska price ₹${bestMatch.price} hai${prepStr} Kya aap isko book karna chahenge?`;
   }
-  if (q.includes('lipid') && (q.includes('price') || q.includes('kitna') || q.includes('cost'))) {
-    return 'Lipid Profile ₹600 mein hota hai. 10-12 ghante ki fasting chahiye. Book karein?';
-  }
-  if (q.includes('sugar') && (q.includes('price') || q.includes('kitna') || q.includes('cost'))) {
-    return 'Blood Sugar Fasting ₹80 aur HbA1c ₹400 mein hota hai. Kya book karein?';
-  }
-  if (q.includes('vitamin b12') || q.includes('b12') && (q.includes('price') || q.includes('kitna'))) {
-    return 'Vitamin B12 ₹700 mein hota hai. Koi fasting nahi chahiye. Book karein?';
-  }
-  if (q.includes('vitamin d') && (q.includes('price') || q.includes('kitna') || q.includes('cost'))) {
-    return 'Vitamin D ₹800 mein hota hai. Koi fasting nahi chahiye. Book karein?';
-  }
-  if (q.includes('lft') && (q.includes('price') || q.includes('kitna') || q.includes('cost'))) {
-    return 'Liver Function Test (LFT) ₹500 mein hota hai. Koi strict fasting nahi chahiye. Book karein?';
-  }
-  if (q.includes('kft') && (q.includes('price') || q.includes('kitna') || q.includes('cost'))) {
-    return 'Kidney Function Test (KFT) ₹500 mein hota hai. Koi fasting nahi chahiye. Book karein?';
-  }
-  if (q.includes('dengue') && (q.includes('price') || q.includes('kitna') || q.includes('cost'))) {
-    return 'Dengue Profile ₹1,200 aur Dengue NS1 ₹500 mein hota hai. Book karein?';
-  }
-  if (q.includes('full body') && (q.includes('price') || q.includes('kitna') || q.includes('cost'))) {
-    return 'Full Body Checkup ₹1,800 mein hota hai — CBC, LFT, KFT, Lipid, Thyroid, Sugar, Urine sab shamil hai. Book karein?';
-  }
+
   if (q.includes('how are you') || q.includes('kaise ho') || q.includes('kya haal')) {
     return 'Main bilkul theek hoon, shukriya! Aap sunao — kaunsa test karwana hai ya koi sawaal hai?';
   }
@@ -156,9 +155,6 @@ export function localAnswer(prompt) {
   }
   if (q.includes('discount') || q.includes('coupon') || q.includes('offer')) {
     return 'Coupon codes: FIRST50 (₹50 off), FAMILY20 (20% off), HEALTH100 (₹100 off). Booking ke time apply karein. Aur kuch batayein?';
-  }
-  if (q.includes('sgot') || q.includes('sgpt') || q.includes('liver enzyme')) {
-    return 'SGOT aur SGPT (Liver Enzymes) ₹250 mein dono milte hain. Koi fasting nahi chahiye. Book karein?';
   }
 
   return null;

@@ -399,7 +399,13 @@ const formatMessage = (text) => {
 
 function LiveChatWidget() {
   const { language, setLanguage } = useLanguage();
-  var isHindi = language === 'hi';
+  const [chatLanguage, setChatLanguage] = useState(language);
+
+  useEffect(() => {
+    setChatLanguage(language);
+  }, [language]);
+
+  var isHindi = chatLanguage === 'hi';
   const [isOpen, setIsOpen] = useState(false);
   const [messages, setMessages] = useState(() => {
     try {
@@ -982,7 +988,7 @@ function LiveChatWidget() {
 
         // Strip out conversational filler from name
         let extractedName = text.trim();
-        const nameMatch = lower.match(/(?:mera naam|my name is|main|i am|i'm)\s+([a-z\s]+)/i) || lower.match(/mera naam\s+([a-z\s]+)\s+hai/i);
+        const nameMatch = lower.match(/(?:mera naam|my name is|main|i am|i'm)\s+([a-zA-Z\u0900-\u097F\s]+)/i) || lower.match(/mera naam\s+([a-zA-Z\u0900-\u097F\s]+)\s+hai/i);
         if (nameMatch) extractedName = nameMatch[1].trim();
 
         nextData.name = extractedName;
@@ -1021,11 +1027,11 @@ function LiveChatWidget() {
       case 'gender':
         const g = text.toUpperCase().trim();
         let genderVal = '';
-        if (g === 'MALE' || g === 'M' || g === 'पुरुष' || g === 'मेल') {
+        if (['MALE', 'M', 'पुरुष', 'मेल', 'LADKA', 'ADMI', 'AADMI', 'BOY', 'MAN'].includes(g)) {
           genderVal = 'MALE';
-        } else if (g === 'FEMALE' || g === 'F' || g === 'महिला' || g === 'फीमेल') {
+        } else if (['FEMALE', 'F', 'महिला', 'फीमेल', 'LADKI', 'AURAT', 'GIRL', 'WOMAN'].includes(g)) {
           genderVal = 'FEMALE';
-        } else if (g === 'OTHER' || g === 'O' || g === 'अन्य' || g === 'अदर') {
+        } else if (['OTHER', 'O', 'अन्य', 'अदर'].includes(g)) {
           genderVal = 'OTHER';
         } else {
           botReply = isHindi
@@ -1096,7 +1102,12 @@ function LiveChatWidget() {
         break;
 
       case 'time':
-        nextData.preferredTime = text.trim();
+        const tLower = text.trim().toLowerCase();
+        if (['abhi', 'ab', 'asap', 'jaldi', 'turant', 'abhi turant', 'abhi karo', 'abhi ke abhi', 'now'].includes(tLower)) {
+          nextData.preferredTime = 'ASAP';
+        } else {
+          nextData.preferredTime = text.trim();
+        }
         nextData.step = 'address';
         botReply = isHindi
           ? `📌 *Step 7:* Ghar se collection chahiye ya seedha lab aayenge?\n🏠 Ghar se -> Address daalein (gali, mohalla, landmark ke saath)\n🏫 Lab visit -> "Lab Visit" likhein`
@@ -1332,7 +1343,18 @@ function LiveChatWidget() {
       }
 
       // ===== EXISTING FAQ CHECKS (Refined) =====
-      if (/\b(price|cost|rate|keemat|kiimat|kitne paise|kitna charge)\b/i.test(lower) && !/\b(test|book)\b/i.test(lower)) {
+      if (/\b(price|cost|rate|keemat|kiimat|kitne paise|kitna charge|kitne ka)\b/i.test(lower)) {
+        const results = searchTests(lower);
+        if (results && results.length > 0) {
+           const bestMatch = results[0];
+           const prep = bestMatch.preparation ? ` Note: ${bestMatch.preparation}.` : '';
+           return isHindi 
+             ? `📋 ${bestMatch.name} ki keemat ₹${bestMatch.price} hai.${prep} Kya aap isko book karna chahenge?`
+             : `📋 The price of ${bestMatch.name} is ₹${bestMatch.price}.${prep} Would you like to book it?`;
+        }
+        
+        if (/\b(book|booking)\b/i.test(lower)) return null; 
+        
         return isHindi ? FAQ_RESPONSES.priceHi : FAQ_RESPONSES.price;
       }
       if (/\b(timing|lab timings?|kahan khulti|opening time|closing time|open hai|khula hai|kab tak khula|kitne baje khulta|lab time|schedule)\b/i.test(lower)) {
@@ -1408,7 +1430,7 @@ function LiveChatWidget() {
     }
 
     if (isHindiRequest && !isHindi) {
-      setLanguage('hi');
+      setChatLanguage('hi');
       isHindi = true;
       isHindiRef.current = true;
 
@@ -1459,7 +1481,7 @@ function LiveChatWidget() {
     }
 
     if (isEnglishRequest && isHindi) {
-      setLanguage('en');
+      setChatLanguage('en');
       isHindi = false;
       isHindiRef.current = false;
 
@@ -1556,7 +1578,7 @@ function LiveChatWidget() {
       }
     }
 
-    const isBookingRequest = (lower.includes('book') || lower.includes('booking') || lower.includes('appointment') || lower.includes('apointment') || lower.includes('बुक') || lower.includes('बुकिंग') || lower.includes('अपॉइंटमेंट') || lower.includes('टेस्ट कराना') || lower.includes('test karana') || lower.includes('karana hai') || lower.includes('schedule') || lower.includes('reserve') || lower.includes('register')) && !/\b(status|stetus|track|progress|check|kahan|cancel|radd|रद्द|close|stop)\b/i.test(lower);
+    const isBookingRequest = /\b(book|booking|appointment|apointment|बुक|बुकिंग|अपॉइंटमेंट|test karana|karana hai|schedule|reserve|register)\b/i.test(lower) && !/\b(status|stetus|track|progress|check|kahan|cancel|radd|रद्द|close|stop)\b/i.test(lower);
 
     if (isBookingRequest) {
       const testName = detectTestName(lower);
