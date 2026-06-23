@@ -573,7 +573,20 @@ function LiveChatWidget() {
       window.speechSynthesis.cancel();
       botSpeakingRef.current = true;
       
-      const clean = text.replace(/[📋📅🔍🩺🏠💰⚠️🙏😊👋🩸🍬❤️🦋🫀🫘☀️📊🧪🦟🧫💊💼📍🕐👉🔬🌟]/g, '').replace(/\*\*/g, '').replace(/\n{2,}/g, '. ');
+      let clean = text.replace(/[📋📅🔍🩺🏠💰⚠️🙏😊👋🩸🍬❤️🦋🫀🫘☀️📊🧪🦟🧫💊💼📍🕐👉🔬🌟]/g, '').replace(/\*\*/g, '').trim();
+      
+      // If the message contains a list or table, shorten it for voice
+      if (text.includes('•') || text.includes('|---|') || text.match(/\n\s*\d+\.\s/) || text.match(/\n\s*✅/)) {
+        const firstSentence = clean.split(/[:\n]/)[0].trim();
+        if (isHindiRef.current) {
+          clean = firstSentence + ". Kripya di gayi list mein se ek vikalp chunein.";
+        } else {
+          clean = firstSentence + ". Please select an option from the list provided.";
+        }
+      } else {
+        clean = clean.replace(/\n{2,}/g, '. ');
+      }
+
       currentSpokenTextRef.current = clean;
       
       const utterance = new SpeechSynthesisUtterance(clean);
@@ -718,7 +731,7 @@ function LiveChatWidget() {
     const lower = text.toLowerCase();
     const hasRefId = /\bSPL-APT-\d{6}\b/i.test(text);
     const hasReportNum = /\bRPT-\d{6}\b/i.test(text);
-    const isStatusIntent = /\b(status|stetus|track|progress|haal sthiti|स्थिति|ट्रैक|स्टेटस|kahan hai|कहाँ है|check)\b/i.test(lower);
+    const isStatusIntent = /\b(status|stetus|track|progress|haal sthiti|स्थिति|ट्रैक|स्टेटस|check status|check report|check booking)\b/i.test(lower);
     const mobile = extractMobile(text);
     const isCancel = /\b(cancel|exit|stop|close|radd|रद्द|बंद|बाहर|nhi|nahi)\b/i.test(lower);
 
@@ -991,8 +1004,8 @@ function LiveChatWidget() {
           break;
         }
 
-        const cleanMobile = text.replace(/\D/g, '');
-        if (cleanMobile.length !== 10) {
+        const cleanMobile = extractMobile(text);
+        if (!cleanMobile) {
           botReply = isHindi
             ? `❌ Invalid mobile number. Kripya 10 digits ka valid mobile number daalein:`
             : `❌ Invalid mobile number. Please enter a valid 10-digit mobile number:`;
@@ -1030,15 +1043,32 @@ function LiveChatWidget() {
       case 'date':
         let dateStr = text.trim().toLowerCase();
         let parsedDate = null;
-        if (dateStr === 'today' || dateStr === 'आज') {
+        if (dateStr.includes('today') || dateStr.includes('aaj') || dateStr === 'आज') {
           parsedDate = new Date();
-        } else if (dateStr === 'tomorrow' || dateStr === 'कल') {
+        } else if (dateStr.includes('tomorrow') || dateStr.includes('kal') || dateStr === 'कल') {
           parsedDate = new Date();
           parsedDate.setDate(parsedDate.getDate() + 1);
+        } else if (dateStr.includes('parso') || dateStr.includes('day after') || dateStr === 'परसों') {
+          parsedDate = new Date();
+          parsedDate.setDate(parsedDate.getDate() + 2);
         } else {
-          const match = dateStr.match(/^(\d{4})-(\d{2})-(\d{2})$/);
-          if (match) {
-            parsedDate = new Date(dateStr);
+          const dayMatch = dateStr.match(/^(\d{1,2})$/) || dateStr.match(/(\d{1,2})\s*(tarikh|th|st|nd|rd)/i);
+          if (dayMatch) {
+            const dayNum = parseInt(dayMatch[1]);
+            if (dayNum >= 1 && dayNum <= 31) {
+              parsedDate = new Date();
+              if (dayNum < parsedDate.getDate()) {
+                parsedDate.setMonth(parsedDate.getMonth() + 1);
+              }
+              parsedDate.setDate(dayNum);
+            }
+          } else {
+            const match = dateStr.match(/^(\d{4})-(\d{2})-(\d{2})$/);
+            if (match) {
+              parsedDate = new Date(dateStr);
+            } else if (!isNaN(Date.parse(dateStr))) {
+              parsedDate = new Date(dateStr);
+            }
           }
         }
 
@@ -1301,29 +1331,29 @@ function LiveChatWidget() {
         return isHindi ? GENERAL_RESPONSES.great.hi : GENERAL_RESPONSES.great.en;
       }
 
-      // ===== EXISTING FAQ CHECKS (unchanged) =====
-      if (lower.includes('price') || lower.includes('cost') || lower.includes('rate') || lower.includes('keemat') || lower.includes('kitna') || lower.includes('₹') || lower.includes('rs') || lower.includes('kiimat')) {
+      // ===== EXISTING FAQ CHECKS (Refined) =====
+      if (/\b(price|cost|rate|keemat|kiimat|kitne paise|kitna charge)\b/i.test(lower) && !/\b(test|book)\b/i.test(lower)) {
         return isHindi ? FAQ_RESPONSES.priceHi : FAQ_RESPONSES.price;
       }
-      if (lower.includes('timing') || lower.includes('time') || lower.includes('hour') || lower.includes('open') || lower.includes('samay') || lower.includes('khula') || lower.includes('kab') || lower.includes('schedule')) {
+      if (/\b(timing|lab timings?|kahan khulti|opening time|closing time|open hai|khula hai|kab tak khula|kitne baje khulta|lab time|schedule)\b/i.test(lower)) {
         return isHindi ? FAQ_RESPONSES.timingHi : FAQ_RESPONSES.timing;
       }
-      if (lower.includes('preparation') || lower.includes('fast') || lower.includes('empty') || lower.includes('upwas') || lower.includes('tyari') || lower.includes('prepare') || lower.includes('taiyari') || lower.includes('roza')) {
+      if (/\b(preparation|fasting|empty stomach|khali pet|upwas|tyari|taiyari|roza|bina khaye)\b/i.test(lower)) {
         return isHindi ? FAQ_RESPONSES.preparationHi : FAQ_RESPONSES.preparation;
       }
-      if (lower.includes('home') || lower.includes('collection') || lower.includes('doorstep') || lower.includes('ghar') || lower.includes('khat') || lower.includes('delivery') || lower.includes('pickup') || lower.includes('house') || lower.includes('ghar par') || lower.includes('sample')) {
+      if (/\b(home collection|doorstep|ghar se|ghar pe|ghar par aake|ghar aana|sample pickup|ghar par)\b/i.test(lower)) {
         return isHindi ? FAQ_RESPONSES.homeCollectionHi : FAQ_RESPONSES.home_collection;
       }
-      if (lower.includes('payment') || lower.includes('pay') || lower.includes('cash') || lower.includes('card') || lower.includes('upi') || lower.includes('bhugtan') || lower.includes('credit') || lower.includes('debit') || lower.includes('gpay') || lower.includes('phonepe') || lower.includes('paytm') || lower.includes('fee') || lower.includes('charge')) {
+      if (/\b(payment|pay|cash|card|upi|bhugtan|credit card|debit card|gpay|phonepe|paytm|fee|charge)\b/i.test(lower)) {
         return isHindi ? FAQ_RESPONSES.paymentHi : FAQ_RESPONSES.payment;
       }
-      if (lower.includes('address') || lower.includes('location') || lower.includes('map') || lower.includes('pata') || lower.includes('kahan hai') || lower.includes('jagah') || lower.includes('reach') || lower.includes('directions')) {
+      if (/\b(address|location|map|pata|kahan hai|jagah|reach|directions|where is lab|kidhar hai)\b/i.test(lower)) {
         return isHindi ? FAQ_RESPONSES.addressHi : FAQ_RESPONSES.address;
       }
-      if (lower.includes('about') || lower.includes('accredit') || lower.includes('certified') || lower.includes('nabl') || lower.includes('iso') || lower.includes('history') || lower.includes('profile')) {
+      if (/\b(about lab|accredit|certified|nabl|iso|history|profile|kya hai)\b/i.test(lower) && !/\b(test|book)\b/i.test(lower)) {
         return isHindi ? FAQ_RESPONSES.aboutHi : FAQ_RESPONSES.about;
       }
-      if (lower.includes('emergency') || lower.includes('urgent') || lower.includes('ambulance') || lower.includes('accident') || lower.includes('aapda') || lower.includes('aapatkal') || lower.includes('serious') || lower.includes('critical')) {
+      if (/\b(emergency|urgent|ambulance|accident|aapda|aapatkal|serious|critical)\b/i.test(lower)) {
         return isHindi ? FAQ_RESPONSES.hlHi : FAQ_RESPONSES.hl;
       }
 
@@ -1526,7 +1556,7 @@ function LiveChatWidget() {
       }
     }
 
-    const isBookingRequest = lower.includes('book') || lower.includes('booking') || lower.includes('appointment') || lower.includes('apointment') || lower.includes('बुक') || lower.includes('बुकिंग') || lower.includes('अपॉइंटमेंट') || lower.includes('टेस्ट कराना') || lower.includes('test karana') || lower.includes('karana hai') || lower.includes('schedule') || lower.includes('reserve') || lower.includes('register');
+    const isBookingRequest = (lower.includes('book') || lower.includes('booking') || lower.includes('appointment') || lower.includes('apointment') || lower.includes('बुक') || lower.includes('बुकिंग') || lower.includes('अपॉइंटमेंट') || lower.includes('टेस्ट कराना') || lower.includes('test karana') || lower.includes('karana hai') || lower.includes('schedule') || lower.includes('reserve') || lower.includes('register')) && !/\b(status|stetus|track|progress|check|kahan|cancel|radd|रद्द|close|stop)\b/i.test(lower);
 
     if (isBookingRequest) {
       const testName = detectTestName(lower);
