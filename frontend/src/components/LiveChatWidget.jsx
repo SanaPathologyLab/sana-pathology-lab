@@ -423,7 +423,7 @@ function LiveChatWidget() {
 
   const [isListening, setIsListening] = useState(false);
   const [voiceSupported, setVoiceSupported] = useState(true);
-  const [speakerOn, setSpeakerOn] = useState(true);
+  const [speakerOn, setSpeakerOn] = useState(false);
   const recognitionRef = useRef(null);
 
   const [isLiveMode, setIsLiveMode] = useState(false);
@@ -546,11 +546,12 @@ function LiveChatWidget() {
       return;
     }
     try {
+      setSpeakerOn(true);
       recognitionRef.current.lang = isHindi ? 'hi-IN' : 'en-US';
       recognitionRef.current.start();
       setIsListening(true);
     } catch { setIsListening(false); }
-  }, [isListening, isHindi, isLiveMode]);
+  }, [isListening, isHindi, isLiveMode, setSpeakerOn]);
 
   const speakResponse = useCallback((text) => {
     isProcessingRef.current = false; // Always reset immediately when we start speaking
