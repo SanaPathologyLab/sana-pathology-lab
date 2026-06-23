@@ -576,9 +576,28 @@ function LiveChatWidget() {
       currentSpokenTextRef.current = clean;
       
       const utterance = new SpeechSynthesisUtterance(clean);
+      
+      // Attempt to find the most human-like voice
+      const voices = window.speechSynthesis.getVoices();
+      let bestVoice = null;
+      const targetLang = isHindiRef.current ? 'hi' : 'en';
+      
+      // Look for premium/natural voices first
+      bestVoice = voices.find(v => v.lang.includes(targetLang) && (v.name.includes('Natural') || v.name.includes('Google') || v.name.includes('Premium')));
+      
+      // Fallback to any voice matching the language
+      if (!bestVoice) {
+        bestVoice = voices.find(v => v.lang.includes(targetLang));
+      }
+      
+      if (bestVoice) {
+        utterance.voice = bestVoice;
+      }
+      
       utterance.lang = isHindiRef.current ? 'hi-IN' : 'en-US';
-      utterance.rate = 0.9;
-      utterance.pitch = 1.1;
+      // Slightly slower and normal pitch for a calmer, more human-like tone
+      utterance.rate = 0.95;
+      utterance.pitch = 1.0;
       
       let recognitionRestarted = false;
       const finishSpeaking = () => {
@@ -915,7 +934,14 @@ function LiveChatWidget() {
 
     switch (bookingData.step) {
       case 'test':
-        nextData.test = text.trim();
+        const ignoreWords = /^(haan|han|yes|ok|okay|theek|ha|ji|han ji|haan ji|yep|yup|sure|bilkul|jarur|zaroor|hmmm|hmm)$/i;
+        if (ignoreWords.test(text.trim())) {
+          botReply = isHindi
+            ? `Kripya test ya package ka naam batayein (Jaise: CBC, Thyroid, Full Body):`
+            : `Please tell me the name of the test or package (e.g., CBC, Thyroid):`;
+          break;
+        }
+        nextData.test = detectTestName(lower) || text.trim();
         nextData.step = 'name';
         botReply = isHindi
           ? `📌 *Step 2:* Patient ka poora naam batayein? (Report is number par WhatsApp hogi)`
@@ -923,7 +949,29 @@ function LiveChatWidget() {
         break;
 
       case 'name':
-        nextData.name = text.trim();
+        // If user mentions a test name while we ask for their name, and it's a long sentence, they might be correcting the test
+        const possibleTest = detectTestName(lower);
+        if (possibleTest && lower.length > 10 && /\b(mujhe|karana|janch|test|pehle|nahi)\b/i.test(lower)) {
+          nextData.test = possibleTest;
+          botReply = isHindi
+            ? `Theek hai, test update kar diya: ${possibleTest}.\n\n📌 *Step 2:* Ab patient ka poora naam batayein?`
+            : `Got it, test updated to: ${possibleTest}.\n\n📌 *Step 2:* Now please tell me the patient's full name?`;
+          break;
+        }
+        
+        if (lower.length < 2 || /^(haan|han|yes|ok|okay|theek|ha|ji|han ji|haan ji)$/i.test(text.trim())) {
+           botReply = isHindi
+             ? `Kripya patient ka poora naam batayein:`
+             : `Please provide the full name of the patient:`;
+           break;
+        }
+
+        // Strip out conversational filler from name
+        let extractedName = text.trim();
+        const nameMatch = lower.match(/(?:mera naam|my name is|main|i am|i'm)\s+([a-z\s]+)/i) || lower.match(/mera naam\s+([a-z\s]+)\s+hai/i);
+        if (nameMatch) extractedName = nameMatch[1].trim();
+
+        nextData.name = extractedName;
         nextData.step = 'mobile';
         botReply = isHindi
           ? `📌 *Step 3:* Mobile number? (10 digit) — Report is number par WhatsApp hogi 📱`
@@ -931,6 +979,17 @@ function LiveChatWidget() {
         break;
 
       case 'mobile':
+        // Check if user is trying to correct the test here too
+        const testCorrection = detectTestName(lower);
+        if (testCorrection && lower.length > 15 && /\b(mujhe|karana|janch|test|pehle|nahi|baad mein)\b/i.test(lower)) {
+          nextData.test = testCorrection;
+          nextData.step = 'name';
+          botReply = isHindi
+            ? `Theek hai, maine test ko ${testCorrection} kar diya hai.\n\n📌 *Step 2:* Kripya patient ka poora naam batayein:`
+            : `Got it, I've updated the test to ${testCorrection}.\n\n📌 *Step 2:* Please tell me the patient's full name:`;
+          break;
+        }
+
         const cleanMobile = text.replace(/\D/g, '');
         if (cleanMobile.length !== 10) {
           botReply = isHindi
