@@ -297,8 +297,8 @@ function generateCasualResponse(text, lang) {
     if (/thank|shukriya|dhanyawad/.test(t)) return 'Aapka swagat hai! Kya aur kuch madad chahiye?';
     if (/bye|goodbye|alvida/.test(t)) return 'Alvida! Swasth rahein. Kabhi bhi zaroorat ho, hum yahan hain.';
     if (/^sana/i.test(t)) return 'Haan ji! Main Sana AI hoon. Bataayein — test price, booking, report ya koi aur madad?';
-    if (/^ji$|^haan$|^haa$|^hmm$|^acha$/.test(t)) return 'Haan ji! Bataayein — test price, booking, report ya koi aur madad?';
-    if (/^nahi$|^na$|^no$/.test(t)) return 'Theek hai! Koi aur sawaal ho to bataayein. Test price, booking, report — jo bhi chahiye.';
+    if (/^(ji|haan|haa|hmm|acha|haan\s*ji|han\s*ji|hanji|han|ha)$/i.test(t)) return 'Haan ji! Bataayein — test price, booking, report ya koi aur madad?';
+    if (/^(nahi|na|no)$/i.test(t)) return 'Theek hai! Koi aur sawaal ho to bataayein. Test price, booking, report — jo bhi chahiye.';
     return 'Namaste! Main Sana AI hoon. Bataayein — test ke baare mein jaankari, booking, ya report?';
   }
   if (/how are you/.test(t) || /how are/.test(t) || /how r u/.test(t) || /how r/.test(t) || /kya haal/.test(t) || /kiya haal/.test(t)) return "Main bilkul theek hoon, shukriya! Aap sunao — kaunsa test karwana hai ya koi sawaal hai?";

@@ -579,15 +579,15 @@ function LiveChatWidget() {
       window.speechSynthesis.cancel();
       botSpeakingRef.current = true;
       
-      let clean = text.replace(/[📋📅🔍🩺🏠💰⚠️🙏😊👋🩸🍬❤️🦋🫀🫘☀️📊🧪🦟🧫💊💼📍🕐👉🔬🌟]/g, '').replace(/\*\*/g, '').trim();
+      let clean = text.replace(/[📋📅🔍🩺🏠💰⚠️🙏😊👋🩸🍬❤️🦋🫀🫘☀️📊🧪🦟🧫💊💼📍🕐👉🔬🌟\*]/g, '').trim();
       
       // If the message contains a list or table, shorten it for voice
-      if (text.includes('•') || text.includes('|---|') || text.match(/\n\s*\d+\.\s/) || text.match(/\n\s*✅/)) {
+      if (text.includes('•') || text.includes('|---|') || text.match(/\n\s*\d+\.\s/) || text.match(/\n\s*✅/) || text.includes('📋') || text.match(/\n\s*\w+:/)) {
         const firstSentence = clean.split(/[:\n]/)[0].trim();
         if (isHindiRef.current) {
-          clean = firstSentence + ". Kripya di gayi list mein se ek vikalp chunein.";
+          clean = firstSentence + ". Kripya apne screen par di gayi list dekhein aur chunein.";
         } else {
-          clean = firstSentence + ". Please select an option from the list provided.";
+          clean = firstSentence + ". Please see the list on your screen and select an option.";
         }
       } else {
         clean = clean.replace(/\n{2,}/g, '. ');
@@ -1610,15 +1610,21 @@ function LiveChatWidget() {
     // Greetings
     if (/^(hi|hello|hey|hii|hlo|helo|हेलो|हाय|नमस्ते|नमस्कार|good morning|suprabhat|good afternoon|good evening|shubh sandhya|gm)$/i.test(lower) ||
         /^(hi|hello|hey)\s/i.test(lower)) {
-      const now = new Date().getHours();
-      let greeting;
-      if (/good morning|suprabhat|gm/i.test(lower)) greeting = GENERAL_RESPONSES.greetingMorning;
-      else if (/good afternoon|namaste/i.test(lower) && now < 17) greeting = GENERAL_RESPONSES.greetingAfternoon;
-      else if (/good evening|shubh sandhya/i.test(lower) || now >= 17) greeting = GENERAL_RESPONSES.greetingEvening;
-      else greeting = GENERAL_RESPONSES.greeting;
-      const botMsg = { id: Date.now().toString(), text: isHindi ? greeting.hi : greeting.en, sender: 'bot', timestamp: new Date() };
-      setMessages((prev) => [...prev, botMsg]);
-      return;
+      
+      // If we are already deep in conversation, don't restart the main menu
+      if (messages.length > 2 && !/start menu|main menu/i.test(lower)) {
+        // Fallthrough to AI for a contextual greeting
+      } else {
+        const now = new Date().getHours();
+        let greeting;
+        if (/good morning|suprabhat|gm/i.test(lower)) greeting = GENERAL_RESPONSES.greetingMorning;
+        else if (/good afternoon|namaste/i.test(lower) && now < 17) greeting = GENERAL_RESPONSES.greetingAfternoon;
+        else if (/good evening|shubh sandhya/i.test(lower) || now >= 17) greeting = GENERAL_RESPONSES.greetingEvening;
+        else greeting = GENERAL_RESPONSES.greeting;
+        const botMsg = { id: Date.now().toString(), text: isHindi ? greeting.hi : greeting.en, sender: 'bot', timestamp: new Date() };
+        setMessages((prev) => [...prev, botMsg]);
+        return;
+      }
     }
 
     // How are you
