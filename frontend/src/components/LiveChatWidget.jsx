@@ -447,6 +447,7 @@ function LiveChatWidget() {
   const isProcessingRef = useRef(false);
   const botSpeakingRef = useRef(false);
   const currentSpokenTextRef = useRef(null);
+  const lastSpokenMsgIdRef = useRef(null);
 
   const [bookingData, setBookingData] = useState(null);
   const [statusCheckState, setStatusCheckState] = useState(null);
@@ -615,8 +616,8 @@ function LiveChatWidget() {
       }
       
       utterance.lang = isHindiRef.current ? 'hi-IN' : 'en-US';
-      // Slightly slower and normal pitch for a calmer, more human-like tone
-      utterance.rate = 0.95;
+      // Slightly faster rate in live mode for snappier conversation
+      utterance.rate = liveModeRef.current ? 1.15 : 1.0;
       utterance.pitch = 1.0;
       
       let recognitionRestarted = false;
@@ -681,6 +682,10 @@ function LiveChatWidget() {
     if (messages.length === 0) return;
     const lastMsg = messages[messages.length - 1];
     if (lastMsg && lastMsg.sender === 'bot') {
+      // Prevent retroactive speaking if user just toggled speakerOn
+      if (lastSpokenMsgIdRef.current === lastMsg.id) return;
+      lastSpokenMsgIdRef.current = lastMsg.id;
+
       if (liveModeRef.current) {
         if (speakerOn && window.speechSynthesis) {
           speakResponse(lastMsg.text);
@@ -793,30 +798,37 @@ function LiveChatWidget() {
         setStatusCheckState(null);
       } else {
         if (mobile) {
-          const res = await fetch(`/api/public/appointment-status?mobile=${encodeURIComponent(mobile)}`);
-          const data = res.ok ? await res.json() : null;
-          if (data?.appointments?.length > 0) {
-            const items = data.appointments.map((apt, i) =>
+          let allText = '';
+          const resApt = await fetch(`/api/public/appointment-status?mobile=${encodeURIComponent(mobile)}`);
+          const dataApt = resApt.ok ? await resApt.json() : null;
+          
+          if (dataApt?.appointments?.length > 0) {
+            const items = dataApt.appointments.map((apt, i) =>
               `${i + 1}. 📌 ${apt.refId} | 📅 ${new Date(apt.date).toLocaleDateString()} ${apt.time} | ${apt.statusLabel}`
             ).join('\n');
-            statusText = isHindi
-              ? `📋 *${mobile} के लिए अपॉइंटमेंट*\n\n${data.appointments.length} अपॉइंटमेंट:\n${items}`
-              : `📋 *Appointments for ${mobile}*\n\n${data.appointments.length} appointment(s):\n${items}`;
+            allText += isHindi
+              ? `📋 *${mobile} के लिए अपॉइंटमेंट*\n${items}\n\n`
+              : `📋 *Appointments for ${mobile}*\n${items}\n\n`;
+          }
+
+          const resRpt = await fetch(`/api/public/report-status?mobile=${encodeURIComponent(mobile)}`);
+          const dataRpt = resRpt.ok ? await resRpt.json() : null;
+          
+          if (dataRpt?.reports?.length > 0) {
+            const items = dataRpt.reports.map((r, i) =>
+              `${i + 1}. 🔖 ${r.reportNumber} | 📅 ${new Date(r.reportDate).toLocaleDateString()} | ${r.statusLabel}`
+            ).join('\n');
+            allText += isHindi
+              ? `📄 *${mobile} के लिए रिपोर्ट*\n${items}`
+              : `📄 *Reports for ${mobile}*\n${items}`;
+          }
+
+          if (allText) {
+            statusText = allText.trim();
           } else {
-            const res2 = await fetch(`/api/public/report-status?mobile=${encodeURIComponent(mobile)}`);
-            const data2 = res2.ok ? await res2.json() : null;
-            if (data2?.reports?.length > 0) {
-              const items = data2.reports.map((r, i) =>
-                `${i + 1}. 🔖 ${r.reportNumber} | 📅 ${new Date(r.reportDate).toLocaleDateString()} | ${r.statusLabel}`
-              ).join('\n');
-              statusText = isHindi
-                ? `📄 *${mobile} के लिए रिपोर्ट*\n\n${data2.reports.length} रिपोर्ट:\n${items}`
-                : `📄 *Reports for ${mobile}*\n\nFound ${data2.reports.length} report(s):\n${items}`;
-            } else {
-              statusText = isHindi
-                ? '❌ इस मोबाइल नंबर के साथ कोई रिकॉर्ड नहीं मिला।\n💡 Tip: आप Reference ID (जैसे: SPL-APT-XXXXXX) से भी खोज सकते हैं।'
-                : '❌ No records found with this mobile number.\n💡 Tip: You can also search by Reference ID (e.g., SPL-APT-XXXXXX).';
-            }
+            statusText = isHindi
+              ? '❌ इस मोबाइल नंबर के साथ कोई रिकॉर्ड नहीं मिला।\n💡 Tip: आप Reference ID (जैसे: SPL-APT-XXXXXX) से भी खोज सकते हैं।'
+              : '❌ No records found with this mobile number.\n💡 Tip: You can also search by Reference ID (e.g., SPL-APT-XXXXXX).';
           }
           setStatusCheckState(null);
         } else {
@@ -1591,9 +1603,8 @@ function LiveChatWidget() {
 
     const localReply = getBotReply(text);
     if (localReply) {
-      setIsTyping(true);
-      setTimeout(() => {
-        setIsTyping(false);
+      if (liveModeRef.current) {
+        // Instant response in live mode
         const botMsg = {
           id: Date.now().toString(),
           text: localReply,
@@ -1601,7 +1612,19 @@ function LiveChatWidget() {
           timestamp: new Date(),
         };
         setMessages((prev) => [...prev, botMsg]);
-      }, 600);
+      } else {
+        setIsTyping(true);
+        setTimeout(() => {
+          setIsTyping(false);
+          const botMsg = {
+            id: Date.now().toString(),
+            text: localReply,
+            sender: 'bot',
+            timestamp: new Date(),
+          };
+          setMessages((prev) => [...prev, botMsg]);
+        }, 600);
+      }
       return;
     }
 
@@ -2151,13 +2174,27 @@ function LiveChatWidget() {
                         try { recognitionRef.current?.abort(); setIsListening(false); window.speechSynthesis.cancel(); } catch {}
                       }
                     }}
-                    className={`absolute left-8 top-1/2 -translate-y-1/2 flex items-center gap-1 px-2 py-1 rounded-full transition-all text-[10px] font-bold ${
-                      isLiveMode ? 'bg-red-100 text-red-600 animate-pulse shadow-sm' : 'bg-gray-100 text-gray-500 hover:bg-blue-50 hover:text-[#00488d]'
+                    className={`absolute left-8 top-1/2 -translate-y-1/2 flex items-center gap-1.5 px-2.5 py-1 rounded-full transition-all text-[10px] font-bold tracking-wide ${
+                      isLiveMode 
+                        ? 'bg-red-500 text-white shadow-[0_0_8px_rgba(239,68,68,0.7)] hover:bg-red-600' 
+                        : 'bg-white border border-gray-200 text-gray-500 hover:border-[#00488d] hover:text-[#00488d] shadow-sm hover:shadow-md'
                     }`}
                     title={isHindi ? 'लगातार बात करें (Live)' : 'Continuous Live Talk'}
                   >
-                    <Radio className="w-3 h-3" />
-                    <span>Live</span>
+                    {isLiveMode ? (
+                      <>
+                        <span className="relative flex h-2 w-2">
+                          <span className="animate-ping absolute inline-flex h-full w-full rounded-full bg-white opacity-75"></span>
+                          <span className="relative inline-flex rounded-full h-2 w-2 bg-white"></span>
+                        </span>
+                        <span>LIVE</span>
+                      </>
+                    ) : (
+                      <>
+                        <Radio className="w-3 h-3" />
+                        <span>Live Talk</span>
+                      </>
+                    )}
                   </button>
                 </>
               )}

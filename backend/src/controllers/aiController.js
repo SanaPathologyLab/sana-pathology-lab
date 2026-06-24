@@ -28,6 +28,60 @@ try {
   console.log('Anthropic SDK not available. Using template-based responses only.');
 }
 
+// Fallback AI using Groq API via Database Settings
+async function callGroqAI(systemPrompt, historyMsgs, currentMsg) {
+  try {
+    const rows = await prisma.settings.findMany();
+    const settings = {};
+    rows.forEach(r => { settings[r.key] = r.value; });
+    const apiKey = settings.aiApiKey || process.env.GROQ_API_KEY || '';
+
+    if (!apiKey.startsWith('gsk_')) {
+      console.warn('No Groq API key found in settings or it is invalid. Cannot use Groq fallback.');
+      return null;
+    }
+
+    const groqModels = ['llama-3.3-70b-versatile', 'llama-3-8b-8192', 'mixtral-8x7b-32768'];
+    const messages = [
+      { role: 'system', content: systemPrompt },
+      ...historyMsgs.map(m => ({ role: m.role === 'user' ? 'user' : 'assistant', content: m.message })),
+      { role: 'user', content: currentMsg }
+    ];
+
+    for (const model of groqModels) {
+      try {
+        const response = await fetch('https://api.groq.com/openai/v1/chat/completions', {
+          method: 'POST',
+          headers: {
+            'Authorization': `Bearer ${apiKey}`,
+            'Content-Type': 'application/json',
+          },
+          body: JSON.stringify({
+            model,
+            messages,
+            temperature: 0.5,
+            max_tokens: 512
+          })
+        });
+
+        if (response.ok) {
+          const data = await response.json();
+          const text = data.choices?.[0]?.message?.content;
+          if (text) return text;
+        } else {
+          console.warn(`Groq model ${model} returned status ${response.status}`);
+        }
+      } catch (e) {
+        console.warn(`Groq model ${model} failed in chat fallback, trying next.`, e.message);
+      }
+    }
+    return null;
+  } catch (err) {
+    console.error('Error in Groq fallback:', err.message);
+    return null;
+  }
+}
+
 const sessions = new Map();
 const SESSION_TTL = 30 * 60 * 1000;
 
@@ -311,7 +365,10 @@ exports.chat = async (req, res) => {
           response = generateResponse(cleanMessage, lang, intent, session);
         }
       } else {
-        response = generateResponse(cleanMessage, lang, intent, session);
+        const systemPrompt = buildSystemPrompt(lang, session);
+        const historyMsgs = session.history.filter(m => m.role === 'user').slice(-5);
+        const aiResp = await callGroqAI(systemPrompt, historyMsgs, cleanMessage);
+        response = aiResp || generateResponse(cleanMessage, lang, intent, session);
       }
       actions = [
         { type: 'deeplink', label: lang === 'hi' ? 'Book karein' : 'Book Tests', url: 'sanapathology://book', icon: 'shopping-cart' },
@@ -337,6 +394,11 @@ exports.chat = async (req, res) => {
           console.error('Claude error:', err.message);
           response = generateResponse(cleanMessage, lang, intent, session);
         }
+      } else if (!anthropic && intent === 'general') {
+        const systemPrompt = buildSystemPrompt(lang, session);
+        const historyMsgs = session.history.filter(m => m.role === 'user').slice(-5);
+        const aiResp = await callGroqAI(systemPrompt, historyMsgs, cleanMessage);
+        response = aiResp || generateResponse(cleanMessage, lang, intent, session);
       } else {
         response = generateResponse(cleanMessage, lang, intent, session);
       }
