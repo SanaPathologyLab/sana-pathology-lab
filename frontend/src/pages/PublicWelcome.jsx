@@ -599,100 +599,97 @@ Question: ${userMsg}
 
       <OfferBanner />
 
-      {/* Hero Section */}
-      <section className="relative pt-24 pb-32 lg:pt-32 lg:pb-40 overflow-hidden bg-[#063b30]">
-        {/* Sliding Background Images */}
+      {/* Lal PathLabs Style Hero Section */}
+      <section className="relative pt-24 pb-16 lg:pt-32 lg:pb-28 bg-[#f8fafc]">
+        {/* Banner Images */}
         {slides.map((slide, index) => (
           <div 
             key={index}
-            className={`absolute inset-0 transition-opacity duration-1000 ease-in-out ${index === currentSlide ? 'opacity-[0.18] scale-105' : 'opacity-0 scale-100'}`}
+            className={`absolute inset-0 transition-opacity duration-1000 ease-in-out z-0 ${index === currentSlide ? 'opacity-100' : 'opacity-0'}`}
           >
-            <img src={slide} alt="Lab background" className="w-full h-full object-cover" />
+            <img src={slide} alt="Lab background" className="w-full h-full object-cover object-right-top" />
+            <div className="absolute inset-0 bg-gradient-to-r from-white via-white/80 to-transparent"></div>
           </div>
         ))}
-        {/* Dark Teal Gradient Overlay */}
-        <div className="absolute inset-0 bg-gradient-to-br from-[#063b30]/95 via-[#085041]/85 to-[#0b6b55]/40"></div>
-        <div className="absolute top-0 left-0 right-0 h-40 bg-gradient-to-b from-black/40 to-transparent pointer-events-none"></div>
 
-        {/* Floating Background Particles */}
-        <div className="absolute top-[15%] left-[8%] w-3.5 h-3.5 bg-emerald-400/25 rounded-full blur-[1px] animate-float-p1 pointer-events-none"></div>
-        <div className="absolute top-[40%] left-[25%] w-4 h-4 bg-teal-300/15 rounded-full blur-[2px] animate-float-p2 pointer-events-none"></div>
-        <div className="absolute bottom-[20%] left-[12%] w-2.5 h-2.5 bg-yellow-300/20 rounded-full blur-[1px] animate-float-p1 pointer-events-none"></div>
-        <div className="absolute top-[25%] right-[15%] w-5 h-5 bg-emerald-400/15 rounded-full blur-[3px] animate-float-p2 pointer-events-none"></div>
-        <div className="absolute bottom-[35%] right-[28%] w-3 h-3 bg-teal-300/25 rounded-full blur-[1px] animate-float-p1 pointer-events-none"></div>
-        <div className="absolute top-[60%] right-[8%] w-4 h-4 bg-yellow-300/20 rounded-full blur-[2px] animate-float-p2 pointer-events-none"></div>
-
-        {/* Decorative Blobs */}
-        <div className="absolute top-1/4 left-10 w-72 h-72 bg-primary-light/10 rounded-full blur-3xl animate-blob"></div>
-        <div className="absolute bottom-1/4 right-10 w-96 h-96 bg-accent/5 rounded-full blur-3xl animate-blob" style={{ animationDelay: '3s' }}></div>
-
-        <div className="relative z-10 max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
-          <div className="flex flex-col lg:flex-row items-center justify-between gap-12 lg:gap-8 mb-12">
+        <div className="relative z-10 max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 flex flex-col lg:flex-row items-center">
+          
+          <div className="w-full lg:w-[55%] pt-10 pb-10">
+            <div className="inline-flex items-center gap-2 px-3 py-1.5 rounded-md bg-[#eef5fc] text-[#00488d] text-xs font-bold tracking-wider mb-4 border border-[#00488d]/10">
+              <ShieldCheck size={16} className="text-[#00488d]" />
+              {t('nablAccredited')}
+            </div>
             
-            {/* Left Content */}
-            <div className="w-full lg:w-1/2 text-center lg:text-left">
-              <div className="inline-flex items-center gap-2 px-4 py-1.5 rounded-full bg-white/10 text-primary-pale text-xs font-bold tracking-wider uppercase mb-6 backdrop-blur-md border border-white/20 animate-pulse-glow-teal">
-                <CheckCircle2 size={16} className="text-[#F1C40F]" />
-                {t('isoCertified')}
-              </div>
-              <h2 className="text-4xl md:text-5xl lg:text-7xl font-heading font-black text-white leading-[1.1] mb-6 drop-shadow-lg">
-                {t('welcome')}
-              </h2>
-              <p className="text-lg md:text-xl text-blue-100/90 mb-8 max-w-2xl mx-auto lg:mx-0 font-medium leading-relaxed drop-shadow-md">
-                {t('welcomeSub')}
-              </p>
-              
-              <div className="flex flex-col sm:flex-row items-center gap-4 justify-center lg:justify-start">
-                <button 
-                  onClick={() => navigate('/book-online')} 
-                  className="w-full sm:w-auto bg-gradient-to-r from-[#BA7517] to-[#d68f23] hover:from-[#c97f1a] hover:to-[#e39c2f] text-white px-8 py-4 rounded-2xl font-bold text-lg transition-all duration-300 flex items-center justify-center gap-2 hover:shadow-2xl hover:shadow-[#BA7517]/30 hover:-translate-y-1 animate-pulse-glow-gold active:scale-[0.98] relative overflow-hidden group"
-                >
-                  <Calendar size={20} className="group-hover:rotate-12 transition-transform duration-350" />
-                  {t('bookHomeCollection')}
-                </button>
-                <button 
-                  onClick={() => navigate('/contact')} 
-                  className="w-full sm:w-auto bg-white/10 hover:bg-white/20 border border-white/20 hover:border-white/40 text-white px-8 py-4 rounded-2xl font-bold text-lg transition-all duration-300 flex items-center justify-center gap-2 backdrop-blur-md hover:shadow-xl hover:shadow-black/10 hover:-translate-y-1 active:scale-[0.98] shimmer-btn"
-                >
-                  <FileText size={20} />
-                  {t('trackReports')}
-                </button>
-              </div>
+            <h1 className="text-4xl md:text-5xl lg:text-6xl font-black text-[#0f172a] leading-[1.15] mb-5 tracking-tight">
+              Trust in every test, <br />
+              <span className="text-[#f15a22]">accuracy in every result.</span>
+            </h1>
+            
+            <p className="text-lg text-slate-600 font-medium mb-8 max-w-lg leading-relaxed">
+              India's leading diagnostic network now in your neighborhood. Get free home sample collection and verified pathologist reports.
+            </p>
+
+            {/* Quick Search Bar within Hero (Lal style) */}
+            <div className="bg-white p-3 rounded-2xl shadow-[0_15px_40px_rgba(0,72,141,0.12)] border border-slate-100 flex flex-col sm:flex-row gap-3 max-w-xl relative">
+               <input 
+                 type="text" 
+                 placeholder="Search for Test or Health Package..." 
+                 className="flex-1 px-4 py-3.5 border border-slate-200 rounded-xl focus:border-[#00488d] focus:ring-2 focus:ring-[#00488d]/10 outline-none text-slate-800 font-bold"
+                 value={searchQueryTest}
+                 onChange={(e) => setSearchQueryTest(e.target.value)}
+                 onKeyDown={(e) => {
+                   if (e.key === 'Enter') {
+                     scrollToSection('search-section');
+                   }
+                 }}
+               />
+               <button 
+                 onClick={() => {
+                   scrollToSection('search-section');
+                 }}
+                 className="bg-[#f15a22] hover:bg-[#e04c1a] text-white px-8 py-3.5 rounded-xl font-bold flex items-center justify-center gap-2 transition-colors whitespace-nowrap shadow-md shadow-[#f15a22]/20"
+               >
+                 <Search size={18} /> Search Test
+               </button>
             </div>
-
-            {/* Right Content - 3D CSS Model */}
-            <div className="w-full lg:w-1/2 h-[350px] sm:h-[450px] lg:h-[600px] relative mt-8 lg:mt-0 flex justify-center items-center">
-              <div className="absolute inset-0 bg-white/5 rounded-full blur-3xl -z-10 animate-blob"></div>
-              {/* Laboratory Blood Tube 3D Model */}
-              <BloodTube3D />
-            </div>
-
           </div>
-
-          <div className="flex flex-wrap justify-center gap-4 sm:gap-6 lg:gap-8 text-white">
-            <div className="flex items-center gap-2.5 bg-white/5 hover:bg-white/10 px-5 py-3 rounded-2xl border border-white/10 hover:border-white/20 backdrop-blur-md transition-all duration-300 hover:-translate-y-0.5"><CheckCircle2 className="text-[#F1C40F] animate-pulse" size={20} /><span className="font-semibold text-sm tracking-wide">{t('pts15k')}</span></div>
-            <div className="flex items-center gap-2.5 bg-white/5 hover:bg-white/10 px-5 py-3 rounded-2xl border border-white/10 hover:border-white/20 backdrop-blur-md transition-all duration-300 hover:-translate-y-0.5"><Clock className="text-[#F1C40F] animate-pulse" size={20} /><span className="font-semibold text-sm tracking-wide">{t('tat612')}</span></div>
-            <div className="flex items-center gap-2.5 bg-white/5 hover:bg-white/10 px-5 py-3 rounded-2xl border border-white/10 hover:border-white/20 backdrop-blur-md transition-all duration-300 hover:-translate-y-0.5"><Phone className="text-[#F1C40F] animate-pulse" size={20} /><span className="font-semibold text-sm tracking-wide">{t('freeHomeCollection')}</span></div>
-            <div className="flex items-center gap-2.5 bg-white/5 hover:bg-white/10 px-5 py-3 rounded-2xl border border-white/10 hover:border-white/20 backdrop-blur-md transition-all duration-300 hover:-translate-y-0.5"><ShieldCheck className="text-[#F1C40F] animate-pulse" size={20} /><span className="font-semibold text-sm tracking-wide">{t('nablAccredited')}</span></div>
-          </div>
-          <LiveAvailabilityIndicator />
         </div>
       </section>
+
+      {/* Lal PathLabs Style Quick Actions Banner */}
+      <div className="relative z-20 -mt-12 max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 mb-16">
+        <div className="grid grid-cols-2 lg:grid-cols-4 gap-4 md:gap-6">
+          {[
+            { icon: <Activity className="text-[#f15a22]" size={28} />, title: 'Book a Test', desc: 'Home Collection', action: () => scrollToSection('booking') },
+            { icon: <FileText className="text-[#00488d]" size={28} />, title: 'Download Report', desc: 'View online', action: () => scrollToSection('search-section') },
+            { icon: <Phone className="text-[#00488d]" size={28} />, title: 'Call to Book', desc: '+91 6396786939', action: () => window.location.href='tel:+916396786939' },
+            { icon: <MapPin className="text-[#f15a22]" size={28} />, title: 'Find a Lab', desc: 'Nearest center', action: () => navigate('/contact') },
+          ].map((item, idx) => (
+            <div key={idx} onClick={item.action} className="bg-white rounded-2xl p-5 shadow-[0_10px_30px_rgba(0,0,0,0.06)] hover:shadow-[0_20px_40px_rgba(0,72,141,0.1)] hover:-translate-y-1 transition-all cursor-pointer border border-slate-100 flex flex-col items-center text-center group">
+              <div className="w-14 h-14 rounded-full bg-[#f8fafc] flex items-center justify-center mb-3 group-hover:bg-[#eef5fc] transition-colors border border-slate-100 group-hover:border-[#00488d]/10">
+                {item.icon}
+              </div>
+              <h3 className="font-extrabold text-slate-800 text-sm">{item.title}</h3>
+              <p className="text-[11px] text-slate-500 font-bold mt-1 uppercase tracking-wider">{item.desc}</p>
+            </div>
+          ))}
+        </div>
+      </div>
 
       <SocialProofTicker />
 
       {/* Test Price Ticker */}
-      <div className="bg-[#085041] text-white py-2.5 overflow-hidden border-b border-emerald-800">
+      <div className="bg-[#00488d] text-white py-2.5 overflow-hidden border-b border-[#003870]">
         <div className="flex items-center">
-          <div className="shrink-0 bg-[#F1C40F] text-[#085041] text-xs font-black px-4 py-1.5 uppercase tracking-wider z-10 mr-4 rounded-r-full">{t('livePrices')}</div>
+          <div className="shrink-0 bg-[#f15a22] text-white text-xs font-black px-4 py-1.5 uppercase tracking-wider z-10 mr-4 rounded-r-full shadow-md">LIVE PRICES</div>
           <div className="overflow-hidden flex-1">
             <div className="animate-marquee">
               {[...TICKER_TESTS, ...TICKER_TESTS].map((tItem, i) => (
                 <span key={i} className="inline-flex items-center gap-2 mr-10 text-sm font-semibold whitespace-nowrap">
-                  <FlaskConical className="w-3.5 h-3.5 text-emerald-300" />
+                  <FlaskConical className="w-3.5 h-3.5 text-blue-200" />
                   {t(tItem.name) === tItem.name ? tItem.name : t(tItem.name)}
-                  <span className="text-[#F1C40F] font-black">₹{tItem.price}</span>
-                  <span className="text-emerald-600 mx-2">•</span>
+                  <span className="text-[#fca5a5] font-black">₹{tItem.price}</span>
+                  <span className="text-blue-500 mx-2">•</span>
                 </span>
               ))}
             </div>
@@ -701,9 +698,9 @@ Question: ${userMsg}
       </div>
 
       {/* Health Tips Strip */}
-      <div className="bg-gradient-to-r from-blue-50 to-teal-50 border-b border-teal-100 py-3 px-4">
+      <div className="bg-white border-b border-slate-200 py-3 px-4 shadow-sm">
         <div className="max-w-7xl mx-auto flex items-center gap-4">
-          <div className="shrink-0 bg-[#085041] text-white text-xs font-black px-3 py-1 rounded-full uppercase tracking-wider">{t('healthTip')}</div>
+          <div className="shrink-0 bg-[#eef5fc] text-[#00488d] border border-[#00488d]/10 text-xs font-black px-3 py-1 rounded-full uppercase tracking-wider">{t('healthTip')}</div>
           <div className="flex-1 overflow-hidden">
             <p className="text-sm font-medium text-slate-700 truncate">
               {HEALTH_TIPS[currentTip].emoji} {t(HEALTH_TIPS[currentTip].tipKey) === HEALTH_TIPS[currentTip].tipKey ? HEALTH_TIPS[currentTip].tip : t(HEALTH_TIPS[currentTip].tipKey)}
@@ -712,7 +709,7 @@ Question: ${userMsg}
           <div className="shrink-0 flex gap-1">
             {HEALTH_TIPS.map((_, i) => (
               <button key={i} onClick={() => setCurrentTip(i)}
-                className={`w-1.5 h-1.5 rounded-full transition-all ${i === currentTip ? 'bg-[#085041] w-4' : 'bg-slate-300'}`}
+                className={`w-1.5 h-1.5 rounded-full transition-all ${i === currentTip ? 'bg-[#f15a22] w-4' : 'bg-slate-200'}`}
               />
             ))}
           </div>
@@ -720,42 +717,39 @@ Question: ${userMsg}
       </div>
 
       {/* Animated Stats Section */}
-      <section ref={statsRef} id="stats" className="py-20 bg-white relative overflow-hidden">
-        {/* Subtle background blob */}
-        <div className="absolute -top-[10%] -left-[10%] w-[400px] h-[400px] bg-primary-pale/25 rounded-full blur-[100px] pointer-events-none"></div>
-
+      <section ref={statsRef} id="stats" className="py-20 bg-slate-50 relative overflow-hidden">
         <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 relative z-10">
           <div className="text-center mb-12">
-            <span className="text-xs font-black text-[#085041] uppercase tracking-widest bg-[#085041]/10 px-4 py-1.5 rounded-full">{t('byTheNumbers')}</span>
-            <h2 className="text-3xl md:text-4xl font-black text-slate-800 mt-4 mb-2">{t('trustedByThousands')}</h2>
-            <p className="text-slate-500 font-semibold">{t('statsSub')}</p>
+            <span className="text-xs font-black text-[#f15a22] uppercase tracking-widest bg-[#f15a22]/10 px-4 py-1.5 rounded-full border border-[#f15a22]/20">{t('byTheNumbers')}</span>
+            <h2 className="text-3xl md:text-4xl font-black text-[#00488d] mt-4 mb-2">{t('trustedByThousands')}</h2>
+            <p className="text-slate-600 font-semibold">{t('statsSub')}</p>
           </div>
           <div className="grid grid-cols-2 lg:grid-cols-4 gap-6">
             {[
-              { label: t('patientsServed'), value: counterValues.patients.toLocaleString() + '+', icon: <UserCircle className="w-6 h-6 animate-pulse" />, color: 'text-[#085041]', bg: 'bg-[#085041]/5' },
-              { label: t('testsAvailable'), value: counterValues.tests + '+', icon: <FlaskConical className="w-6 h-6 animate-pulse" />, color: 'text-blue-700', bg: 'bg-blue-50' },
-              { label: t('yearsOfService'), value: counterValues.years + '+', icon: <Award className="w-6 h-6 animate-pulse" />, color: 'text-amber-600', bg: 'bg-amber-50' },
-              { label: t('reportsDelivered'), value: counterValues.reports.toLocaleString() + '+', icon: <FileText className="w-6 h-6 animate-pulse" />, color: 'text-purple-700', bg: 'bg-purple-50' },
+              { label: t('patientsServed'), value: counterValues.patients.toLocaleString() + '+', icon: <UserCircle className="w-6 h-6" />, color: 'text-[#00488d]', bg: 'bg-[#eef5fc]' },
+              { label: t('testsAvailable'), value: counterValues.tests + '+', icon: <FlaskConical className="w-6 h-6" />, color: 'text-[#f15a22]', bg: 'bg-[#fff0eb]' },
+              { label: t('yearsOfService'), value: counterValues.years + '+', icon: <Award className="w-6 h-6" />, color: 'text-[#00488d]', bg: 'bg-[#eef5fc]' },
+              { label: t('reportsDelivered'), value: counterValues.reports.toLocaleString() + '+', icon: <FileText className="w-6 h-6" />, color: 'text-[#f15a22]', bg: 'bg-[#fff0eb]' },
             ].map((s, i) => (
-              <div key={i} className={`bg-white/50 backdrop-blur-md rounded-3xl border border-slate-100 p-8 text-center shadow-[0_10px_30px_rgba(0,0,0,0.015)] hover:shadow-[0_15px_45px_rgba(15,110,86,0.06)] hover:border-primary-light/25 transition-all duration-300 hover:-translate-y-1 animate-fade-in-up stagger-${i+1}`}>
-                <div className={`${s.bg} ${s.color} w-12 h-12 rounded-full flex items-center justify-center mx-auto mb-4`}>{s.icon}</div>
-                <p className={`text-3xl font-black ${s.color} animate-count-up`}>{s.value}</p>
+              <div key={i} className={`bg-white rounded-2xl border border-slate-100 p-8 text-center shadow-md hover:shadow-xl transition-all duration-300 hover:-translate-y-1`}>
+                <div className={`${s.bg} ${s.color} w-14 h-14 rounded-full flex items-center justify-center mx-auto mb-4 border border-current opacity-80`}>{s.icon}</div>
+                <p className={`text-3xl font-black text-slate-800 animate-count-up`}>{s.value}</p>
                 <p className="text-xs font-bold text-slate-500 uppercase tracking-wider mt-1">{s.label}</p>
               </div>
             ))}
           </div>
 
           {/* Trust Badges */}
-          <div className="mt-12 flex flex-wrap justify-center gap-4">
+          <div className="mt-12 flex flex-wrap justify-center gap-3">
             {[
-              { icon: <ShieldCheck className="w-4 h-4" />, label: t('nablAccredited'), color: 'text-[#085041] bg-[#E1F5EE]/40 border-emerald-200/50 hover:bg-[#E1F5EE]/60' },
-              { icon: <Award className="w-4 h-4" />, label: t('iso15189'), color: 'text-blue-700 bg-blue-50/40 border-blue-200/50 hover:bg-blue-50/60' },
-              { icon: <Clock className="w-4 h-4" />, label: t('tat612hr'), color: 'text-[#BA7517] bg-[#FAEEDA]/40 border-amber-200/50 hover:bg-[#FAEEDA]/60' },
-              { icon: <Heart className="w-4 h-4" />, label: t('compassionateCare'), color: 'text-rose-600 bg-rose-50/40 border-rose-200/50 hover:bg-rose-50/60' },
-              { icon: <Zap className="w-4 h-4" />, label: t('digitalReports'), color: 'text-purple-700 bg-purple-50/40 border-purple-200/50 hover:bg-purple-50/60' },
-              { icon: <Phone className="w-4 h-4" />, label: t('freeHomeCollection'), color: 'text-teal-700 bg-teal-50/40 border-teal-200/50 hover:bg-teal-50/60' },
+              { icon: <ShieldCheck className="w-4 h-4" />, label: t('nablAccredited') },
+              { icon: <Award className="w-4 h-4" />, label: t('iso15189') },
+              { icon: <Clock className="w-4 h-4" />, label: t('tat612hr') },
+              { icon: <Heart className="w-4 h-4" />, label: t('compassionateCare') },
+              { icon: <Zap className="w-4 h-4" />, label: t('digitalReports') },
+              { icon: <Phone className="w-4 h-4" />, label: t('freeHomeCollection') },
             ].map((badge, i) => (
-              <div key={i} className={`inline-flex items-center gap-2 border px-5 py-2.5 rounded-full text-xs font-bold transition-all duration-300 backdrop-blur-sm shadow-sm hover:shadow-md hover:-translate-y-0.5 ${badge.color}`}>
+              <div key={i} className={`inline-flex items-center gap-2 border border-slate-200 bg-white px-5 py-2.5 rounded-full text-xs font-bold text-slate-600 transition-all hover:border-[#00488d] hover:text-[#00488d] shadow-sm`}>
                 {badge.icon} {badge.label}
               </div>
             ))}
@@ -813,28 +807,28 @@ Question: ${userMsg}
             </div>
           </div>
 
-          <form onSubmit={handleSearch} className="space-y-4 max-w-2xl mx-auto">
+          <form onSubmit={handleSearch} className="space-y-5 max-w-2xl mx-auto">
             {searchType === 'report' && (
-              <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
-                <div className="space-y-1">
-                  <label className="text-xs font-bold text-slate-600 block">Report Number</label>
+              <div className="grid grid-cols-1 sm:grid-cols-2 gap-5">
+                <div className="space-y-1.5">
+                  <label className="text-xs font-black text-slate-500 tracking-widest uppercase ml-2 block">Report Number</label>
                   <input
                     type="text"
                     placeholder="e.g. SPL-0001"
                     value={searchQuery}
                     onChange={(e) => setSearchQuery(e.target.value)}
-                    className="w-full px-4 py-3 border border-slate-200 focus:border-primary focus:ring-2 focus:ring-primary/10 rounded-xl outline-none text-sm font-semibold text-slate-700 bg-white"
+                    className="w-full px-5 py-4 border border-slate-200 focus:border-emerald-500 focus:ring-4 focus:ring-emerald-500/10 rounded-full outline-none text-sm font-bold text-slate-800 bg-white shadow-inner transition-all"
                     required
                   />
                 </div>
-                <div className="space-y-1">
-                  <label className="text-xs font-bold text-slate-600 block">Patient Full Name</label>
+                <div className="space-y-1.5">
+                  <label className="text-xs font-black text-slate-500 tracking-widest uppercase ml-2 block">Patient Full Name</label>
                   <input
                     type="text"
                     placeholder="e.g. Rahul Sharma"
                     value={patientName}
                     onChange={(e) => setPatientName(e.target.value)}
-                    className="w-full px-4 py-3 border border-slate-200 focus:border-primary focus:ring-2 focus:ring-primary/10 rounded-xl outline-none text-sm font-semibold text-slate-700 bg-white"
+                    className="w-full px-5 py-4 border border-slate-200 focus:border-emerald-500 focus:ring-4 focus:ring-emerald-500/10 rounded-full outline-none text-sm font-bold text-slate-800 bg-white shadow-inner transition-all"
                     required
                   />
                 </div>
@@ -842,43 +836,46 @@ Question: ${userMsg}
             )}
 
             {searchType === 'mobile' && (
-              <div className="space-y-1">
-                <label className="text-xs font-bold text-slate-600 block">Registered Mobile Number</label>
+              <div className="space-y-1.5">
+                <label className="text-xs font-black text-slate-500 tracking-widest uppercase ml-2 block">Registered Mobile Number</label>
                 <input
                   type="tel"
                   placeholder="Enter 10-digit mobile number..."
                   value={searchQuery}
                   onChange={(e) => setSearchQuery(e.target.value)}
-                  className="w-full px-4 py-3 border border-slate-200 focus:border-primary focus:ring-2 focus:ring-primary/10 rounded-xl outline-none text-sm font-semibold text-slate-700 bg-white"
+                  className="w-full px-5 py-4 border border-slate-200 focus:border-emerald-500 focus:ring-4 focus:ring-emerald-500/10 rounded-full outline-none text-sm font-bold text-slate-800 bg-white shadow-inner transition-all"
                   required
                 />
               </div>
             )}
 
             {searchType === 'appointment' && (
-              <div className="space-y-1">
-                <label className="text-xs font-bold text-slate-600 block">Mobile Number Used for Booking</label>
+              <div className="space-y-1.5">
+                <label className="text-xs font-black text-slate-500 tracking-widest uppercase ml-2 block">Mobile Number Used for Booking</label>
                 <input
                   type="tel"
                   placeholder="Enter 10-digit mobile number..."
                   value={searchQuery}
                   onChange={(e) => setSearchQuery(e.target.value)}
-                  className="w-full px-4 py-3 border border-slate-200 focus:border-primary focus:ring-2 focus:ring-primary/10 rounded-xl outline-none text-sm font-semibold text-slate-700 bg-white"
+                  className="w-full px-5 py-4 border border-slate-200 focus:border-emerald-500 focus:ring-4 focus:ring-emerald-500/10 rounded-full outline-none text-sm font-bold text-slate-800 bg-white shadow-inner transition-all"
                   required
                 />
               </div>
             )}
 
             {/* Helper Text */}
-            <p className="text-xs text-slate-400 font-medium">
-              {searchType === 'report' && "💡 Enter the report ID and patient's name exactly as written on your receipt to access reports without logging in."}
-              {searchType === 'mobile' && "💡 Enter your registered mobile number to search and view all diagnostic reports assigned to you."}
-              {searchType === 'appointment' && "💡 Track your home collection appointment status and phlebotomist assignment state in real-time."}
-            </p>
+            <div className="bg-blue-50/50 border border-blue-100 rounded-xl p-4 flex gap-3 items-start">
+              <span className="text-xl">💡</span>
+              <p className="text-xs text-blue-800 font-semibold leading-relaxed">
+                {searchType === 'report' && "Enter the report ID and patient's name exactly as written on your receipt to access reports without logging in."}
+                {searchType === 'mobile' && "Enter your registered mobile number to search and view all diagnostic reports assigned to you."}
+                {searchType === 'appointment' && "Track your home collection appointment status and phlebotomist assignment state in real-time."}
+              </p>
+            </div>
 
             <button
               type="submit"
-              className="w-full bg-[#00488d] hover:bg-blue-800 text-white font-black py-4 rounded-xl text-base transition-colors flex items-center justify-center gap-2 shadow-lg shadow-blue-100"
+              className="w-full bg-gradient-to-r from-[#00488d] to-[#00366b] hover:from-[#00366b] hover:to-[#00254c] text-white font-black py-4.5 rounded-full text-base transition-all flex items-center justify-center gap-2 shadow-[0_8px_20px_rgba(0,72,141,0.3)] hover:shadow-[0_12px_25px_rgba(0,72,141,0.4)] hover:-translate-y-0.5 active:scale-[0.99] mt-2"
             >
               <Search className="w-5 h-5" />
               {searchType === 'appointment' ? 'Track Collection Request' : 'Find Verified Report'}
@@ -1013,13 +1010,13 @@ Question: ${userMsg}
 
 
       {/* Pathology Testing Journey (Interactive Visual Stepper) */}
-      <section className="py-20 bg-gradient-to-b from-primary-pale/30 via-white to-bg px-4 sm:px-6 lg:px-8 border-y border-emerald-100/50">
+      <section className="py-20 bg-white border-y border-slate-100 px-4 sm:px-6 lg:px-8">
         <div className="max-w-7xl mx-auto">
           <div className="text-center mb-16">
-            <span className="text-xs font-black tracking-widest text-primary uppercase bg-primary-pale px-4 py-1.5 rounded-full">{t('process')}</span>
-            <h2 className="text-4xl font-heading text-primary font-black mt-4">{t('howItWorks')}</h2>
+            <span className="text-xs font-black tracking-widest text-[#00488d] uppercase bg-[#eef5fc] px-4 py-1.5 rounded-full border border-[#00488d]/10">{t('process')}</span>
+            <h2 className="text-3xl md:text-4xl font-heading text-slate-800 font-black mt-4">{t('howItWorks')}</h2>
             <p className="text-slate-500 mt-2 font-semibold">{t('processSub')}</p>
-            <div className="w-16 h-1 bg-accent mx-auto mt-4 rounded-full"></div>
+            <div className="w-16 h-1 bg-[#f15a22] mx-auto mt-4 rounded-full"></div>
           </div>
 
           <div className="grid grid-cols-1 md:grid-cols-5 gap-8 relative">
@@ -1031,13 +1028,13 @@ Question: ${userMsg}
               { step: '05', title: t('step5Title'), desc: t('step5Desc') }
             ].map((item, index) => (
               <div key={index} className="relative flex flex-col items-center text-center group">
-                <div className="w-16 h-16 rounded-full bg-white border-2 border-primary-light flex items-center justify-center text-primary font-bold text-xl shadow-[0_10px_25px_rgba(29,158,117,0.12)] group-hover:bg-gradient-to-br group-hover:from-primary group-hover:to-primary-light group-hover:text-white group-hover:border-transparent group-hover:shadow-[0_15px_30px_rgba(15,110,86,0.25)] transition-all duration-300 z-10 relative overflow-hidden group-hover:-translate-y-1">
+                <div className="w-16 h-16 rounded-full bg-white border-2 border-[#00488d]/20 flex items-center justify-center text-[#00488d] font-bold text-xl shadow-[0_10px_25px_rgba(0,72,141,0.08)] group-hover:bg-[#00488d] group-hover:text-white group-hover:border-[#00488d] group-hover:shadow-[0_15px_30px_rgba(0,72,141,0.2)] transition-all duration-300 z-10 relative overflow-hidden group-hover:-translate-y-1">
                   {item.step}
                 </div>
-                <h3 className="font-extrabold text-slate-800 mt-5 mb-2 text-lg group-hover:text-primary transition-colors">{item.title}</h3>
+                <h3 className="font-extrabold text-slate-800 mt-5 mb-2 text-lg group-hover:text-[#f15a22] transition-colors">{item.title}</h3>
                 <p className="text-slate-500 text-sm max-w-[200px] leading-relaxed font-semibold">{item.desc}</p>
                 {index < 4 && (
-                  <div className="hidden md:block absolute top-8 left-[60%] w-[80%] h-[3px] bg-gradient-to-r from-primary-light/30 to-primary-light/10 z-0 group-hover:from-primary group-hover:to-primary-light/30 transition-all duration-500"></div>
+                  <div className="hidden md:block absolute top-8 left-[60%] w-[80%] h-[2px] bg-gradient-to-r from-[#00488d]/20 to-[#00488d]/5 z-0 group-hover:from-[#f15a22]/50 group-hover:to-[#f15a22]/10 transition-all duration-500"></div>
                 )}
               </div>
             ))}
@@ -1048,7 +1045,7 @@ Question: ${userMsg}
       {/* Curated Health & Wellness Packages */}
 
 
-      <section id="symptom-finder" className="py-20 bg-primary-pale/25 px-4 sm:px-6 lg:px-8">
+      <section id="symptom-finder" className="py-20 bg-slate-50 border-b border-slate-200 px-4 sm:px-6 lg:px-8">
         <div className="max-w-7xl mx-auto">
           <SymptomFinder />
         </div>
@@ -1066,41 +1063,41 @@ Question: ${userMsg}
 
 
 
-      <section id="testimonial-video" className="py-20 bg-bg px-4 sm:px-6 lg:px-8">
+      <section id="testimonial-video" className="py-20 bg-white px-4 sm:px-6 lg:px-8">
         <div className="max-w-7xl mx-auto">
           <TestimonialVideoSection />
         </div>
       </section>
 
-      <section id="gift-health-test" className="py-20 bg-primary-pale/25 px-4 sm:px-6 lg:px-8">
+      <section id="gift-health-test" className="py-20 bg-slate-50 border-b border-slate-200 px-4 sm:px-6 lg:px-8">
         <div className="max-w-7xl mx-auto">
           <GiftHealthTest />
         </div>
       </section>
 
-      <section id="subscription-plans" className="py-20 bg-bg px-4 sm:px-6 lg:px-8">
+      <section id="subscription-plans" className="py-20 bg-white px-4 sm:px-6 lg:px-8">
         <div className="max-w-7xl mx-auto">
           <SubscriptionPlans />
         </div>
       </section>
 
       {/* FAQ Section */}
-      <section id="faq" className="py-20 bg-primary-pale/35 px-4 sm:px-6 lg:px-8">
+      <section id="faq" className="py-20 bg-[#f8fafc] border-y border-slate-200 px-4 sm:px-6 lg:px-8">
         <div className="max-w-3xl mx-auto">
           <div className="text-center mb-12">
-            <h2 className="text-4xl font-heading text-primary">{t('faqTitle')}</h2>
-            <div className="w-16 h-1 bg-accent mx-auto mt-4 rounded-full"></div>
+            <h2 className="text-3xl md:text-4xl font-heading font-black text-[#00488d]">{t('faqTitle')}</h2>
+            <div className="w-16 h-1 bg-[#f15a22] mx-auto mt-4 rounded-full"></div>
           </div>
 
           <div className="space-y-4">
             {faqs.map((faq, i) => (
-              <div key={i} className="bg-white rounded-xl shadow-sm overflow-hidden border border-slate-100">
+              <div key={i} className="bg-white rounded-xl shadow-sm overflow-hidden border border-slate-200">
                 <button 
                   onClick={() => toggleFaq(i)}
                   className="w-full text-left px-6 py-5 flex items-center justify-between font-bold text-slate-800 hover:bg-slate-50 transition-colors"
                 >
                   {t('faq_q_' + i) === 'faq_q_' + i ? faq.q : t('faq_q_' + i)}
-                  {openFaq === i ? <ChevronUp className="text-primary flex-shrink-0" /> : <ChevronDown className="text-primary flex-shrink-0" />}
+                  {openFaq === i ? <ChevronUp className="text-[#f15a22] flex-shrink-0" /> : <ChevronDown className="text-[#00488d] flex-shrink-0" />}
                 </button>
                 {openFaq === i && (
                   <div className="px-6 pb-5 text-slate-600">
@@ -1113,18 +1110,17 @@ Question: ${userMsg}
         </div>
       </section>
 
-      {/* Location & Contact */}
       {/* Final Conversion CTA & Local Trust Strip */}
-      <section className="bg-gradient-to-r from-[#063b30] via-[#085041] to-[#0b6b55] text-white py-16 px-4 sm:px-6 lg:px-8 relative overflow-hidden border-t border-white/10">
+      <section className="bg-gradient-to-r from-[#00488d] to-[#002b54] text-white py-16 px-4 sm:px-6 lg:px-8 relative overflow-hidden border-t border-white/10">
         <div className="absolute inset-0 bg-grid-pattern opacity-10"></div>
         <div className="max-w-5xl mx-auto text-center relative z-10 space-y-6">
-          <span className="text-xs font-black tracking-widest text-[#F1C40F] uppercase bg-white/10 px-4 py-1.5 rounded-full border border-white/10">
+          <span className="text-xs font-black tracking-widest text-[#f15a22] uppercase bg-white/10 px-4 py-1.5 rounded-full border border-white/10">
             Trusted Local Diagnostics
           </span>
           <h2 className="text-3xl md:text-5xl font-black font-heading leading-tight max-w-3xl mx-auto">
             Accurate Reports. Trusted Pathologist Oversight. Right at Your Doorstep.
           </h2>
-          <p className="text-sm md:text-base text-emerald-100 max-w-2xl mx-auto font-medium leading-relaxed">
+          <p className="text-sm md:text-base text-blue-100 max-w-2xl mx-auto font-medium leading-relaxed">
             Sana Pathology Lab is Sambhal's dedicated diagnostic service. We provide fast home sample collection, certified pathologist signatures on every report, and direct human support whenever you need it.
           </p>
           <div className="flex flex-wrap gap-4 justify-center items-center pt-4">
@@ -1141,7 +1137,7 @@ Question: ${userMsg}
           <div className="flex flex-col sm:flex-row gap-4 justify-center pt-6">
             <button 
               onClick={() => scrollToSection('booking')}
-              className="bg-[#BA7517] hover:bg-amber-600 text-white px-8 py-4 rounded-2xl font-bold text-base shadow-xl transition-all hover:-translate-y-0.5 cursor-pointer"
+              className="bg-[#f15a22] hover:bg-[#d94f1c] text-white px-8 py-4 rounded-2xl font-bold text-base shadow-xl transition-all hover:-translate-y-0.5 cursor-pointer"
             >
               Book Test in 1 Minute
             </button>
@@ -1156,54 +1152,50 @@ Question: ${userMsg}
       </section>
 
       {/* ══ LAB TOUR PREVIEW STRIP (HIGHLIGHTED) ══ */}
-      <section className="py-24 bg-gradient-to-br from-[#042f24] via-[#085041] to-[#043d30] border-y border-emerald-900 px-4 sm:px-6 lg:px-8 relative overflow-hidden shadow-[inset_0_0_100px_rgba(0,0,0,0.3)]">
-        {/* Glow Effects */}
-        <div className="absolute -top-[20%] -left-[10%] w-[500px] h-[500px] bg-emerald-500/20 rounded-full blur-[120px] pointer-events-none"></div>
-        <div className="absolute -bottom-[20%] -right-[10%] w-[500px] h-[500px] bg-teal-500/20 rounded-full blur-[120px] pointer-events-none"></div>
-        <div className="absolute top-[20%] left-[40%] w-[300px] h-[300px] bg-[#F1C40F]/5 rounded-full blur-[100px] pointer-events-none"></div>
-
+      <section className="py-24 bg-[#f8fafc] border-y border-slate-200 px-4 sm:px-6 lg:px-8 relative overflow-hidden">
         <div className="max-w-7xl mx-auto relative z-10">
           <div className="flex flex-col md:flex-row items-center justify-between gap-8 mb-14">
             <div>
-              <span className="inline-block mb-4 text-xs font-black text-emerald-200 uppercase tracking-widest bg-emerald-900/60 border border-emerald-400/30 px-4 py-1.5 rounded-full shadow-[0_0_15px_rgba(52,211,153,0.2)]">
+              <span className="inline-block mb-4 text-xs font-black text-[#00488d] uppercase tracking-widest bg-[#eef5fc] border border-[#00488d]/10 px-4 py-1.5 rounded-full">
                 ✨ Virtual Lab Tour
               </span>
-              <h2 className="text-4xl md:text-5xl font-heading font-black text-white tracking-tight drop-shadow-md">
+              <h2 className="text-3xl md:text-5xl font-heading font-black text-slate-800 tracking-tight">
                 Inside Sana Pathology
               </h2>
-              <p className="text-emerald-100/80 mt-4 max-w-2xl font-medium text-sm md:text-base leading-relaxed">
+              <p className="text-slate-600 mt-4 max-w-2xl font-medium text-sm md:text-base leading-relaxed">
                 Step inside Sambhal's state-of-the-art diagnostic facility. Take a 3D-guided look at our equipment, clinical workflows, and biosafe environments.
               </p>
             </div>
-            <Link to="/lab-tour" className="shrink-0 flex items-center gap-2 bg-gradient-to-r from-[#F1C40F] to-yellow-400 hover:from-yellow-400 hover:to-yellow-300 text-amber-950 px-8 py-4 rounded-2xl font-black text-sm shadow-[0_0_30px_rgba(241,196,15,0.3)] transition-all duration-300 hover:-translate-y-1 hover:scale-105">
+            <Link to="/lab-tour" className="shrink-0 flex items-center gap-2 bg-white text-[#00488d] border border-[#00488d] hover:bg-[#eef5fc] px-8 py-4 rounded-2xl font-black text-sm shadow-sm transition-all duration-300 hover:-translate-y-1">
               Launch Full Lab Tour <ArrowRight size={18} />
             </Link>
           </div>
           
           <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-6 gap-5">
             {[
-              { icon: UserCircle, name: 'Welcome Reception', color: 'from-blue-500 to-indigo-600', textClass: 'text-blue-600', bgClass: 'bg-blue-50 border border-blue-100', desc: 'Digital check-in & comfortable waiting space' },
-              { icon: Activity, name: 'Sample Collection', color: 'from-emerald-500 to-teal-600', textClass: 'text-emerald-600', bgClass: 'bg-emerald-50 border border-emerald-100', desc: 'Sterile private cubicles & vacuum blood draw' },
-              { icon: Heart, name: 'Hematology Section', color: 'from-red-500 to-rose-600', textClass: 'text-rose-600', bgClass: 'bg-red-50 border border-red-100', desc: '5-part cell counter for cell calculations' },
-              { icon: FlaskConical, name: 'Biochemistry', color: 'from-amber-500 to-orange-600', textClass: 'text-amber-600', bgClass: 'bg-amber-50 border border-amber-100', desc: 'Automated liver, kidney & sugar panels' },
-              { icon: ShieldCheck, name: 'Serology & Immunology', color: 'from-purple-500 to-violet-600', textClass: 'text-purple-600', bgClass: 'bg-purple-50 border border-purple-100', desc: 'Sensitive ELISA tests & infection screening' },
-              { icon: Microscope, name: 'Microscopy Room', color: 'from-cyan-500 to-sky-600', textClass: 'text-cyan-600', bgClass: 'bg-cyan-50 border border-cyan-100', desc: 'High-powered manual review & smear analysis' },
+              { icon: UserCircle, name: 'Welcome Reception', color: 'from-blue-500 to-indigo-600', textClass: 'text-[#00488d]', bgClass: 'bg-white border-slate-200', desc: 'Digital check-in & comfortable waiting space' },
+              { icon: Activity, name: 'Sample Collection', color: 'from-emerald-500 to-teal-600', textClass: 'text-[#f15a22]', bgClass: 'bg-white border-slate-200', desc: 'Sterile private cubicles & vacuum blood draw' },
+              { icon: Heart, name: 'Hematology Section', color: 'from-red-500 to-rose-600', textClass: 'text-[#00488d]', bgClass: 'bg-white border-slate-200', desc: '5-part cell counter for cell calculations' },
+              { icon: FlaskConical, name: 'Biochemistry', color: 'from-amber-500 to-orange-600', textClass: 'text-[#f15a22]', bgClass: 'bg-white border-slate-200', desc: 'Automated liver, kidney & sugar panels' },
+              { icon: ShieldCheck, name: 'Serology & Immunology', color: 'from-purple-500 to-violet-600', textClass: 'text-[#00488d]', bgClass: 'bg-white border-slate-200', desc: 'Sensitive ELISA tests & infection screening' },
+              { icon: Microscope, name: 'Microscopy Room', color: 'from-cyan-500 to-sky-600', textClass: 'text-[#f15a22]', bgClass: 'bg-white border-slate-200', desc: 'High-powered manual review & smear analysis' },
             ].map(sec => {
               const IconComponent = sec.icon;
               return (
                 <Link 
                   key={sec.name} 
                   to="/lab-tour" 
-                  className="bg-white/5 backdrop-blur-xl hover:bg-white/10 border border-white/10 hover:border-emerald-400/40 rounded-[2rem] p-6 text-left transition-all duration-300 group hover:-translate-y-2 flex flex-col justify-between shadow-[0_8px_32px_rgba(0,0,0,0.12)] hover:shadow-[0_15px_40px_rgba(52,211,153,0.15)]"
+                  className="bg-white border border-slate-200 hover:border-[#00488d]/50 rounded-[2rem] p-6 text-left transition-all duration-500 group hover:-translate-y-3 flex flex-col justify-between shadow-sm hover:shadow-[0_20px_50px_rgba(0,72,141,0.1)] relative overflow-hidden"
                 >
-                  <div>
-                    <div className={`w-14 h-14 rounded-2xl bg-white/10 border border-white/5 flex items-center justify-center mb-5 group-hover:scale-110 group-hover:-rotate-3 transition-transform duration-300 shadow-inner`}>
-                      <IconComponent className={`w-7 h-7 text-emerald-300 group-hover:text-white transition-colors`} />
+                  <div className="absolute inset-0 bg-[#eef5fc] opacity-0 group-hover:opacity-100 transition-opacity duration-500"></div>
+                  <div className="relative z-10">
+                    <div className={`w-14 h-14 rounded-2xl bg-slate-50 border border-slate-100 flex items-center justify-center mb-5 group-hover:scale-110 group-hover:-rotate-6 group-hover:bg-white group-hover:border-[#00488d]/10 transition-all duration-500 shadow-sm`}>
+                      <IconComponent className={`w-7 h-7 ${sec.textClass} transition-colors duration-300`} />
                     </div>
-                    <h3 className="text-white font-black text-sm mb-2 group-hover:text-emerald-300 transition-colors">{sec.name}</h3>
-                    <p className="text-emerald-100/60 text-[11px] leading-relaxed font-semibold">{sec.desc}</p>
+                    <h3 className="text-slate-800 font-black text-sm mb-2 group-hover:text-[#00488d] transition-colors duration-300">{sec.name}</h3>
+                    <p className="text-slate-500 text-[11px] leading-relaxed font-semibold">{sec.desc}</p>
                   </div>
-                  <div className="mt-5 flex items-center gap-1.5 text-[10px] font-black text-emerald-400 uppercase tracking-widest opacity-0 group-hover:opacity-100 transition-opacity">
+                  <div className="mt-5 flex items-center gap-1.5 text-[10px] font-black text-[#f15a22] uppercase tracking-widest opacity-0 group-hover:opacity-100 transition-all duration-300 group-hover:translate-x-1 relative z-10">
                     Explore <ArrowRight size={12} />
                   </div>
                 </Link>
@@ -1214,25 +1206,21 @@ Question: ${userMsg}
       </section>
 
       {/* ══ HEALTH CALCULATORS CTA ══ */}
-      <section className="py-20 bg-gradient-to-br from-slate-900 via-slate-950 to-slate-900 border-y border-slate-800/80 px-4 sm:px-6 lg:px-8 relative overflow-hidden">
-        {/* Glow ambient background effects */}
-        <div className="absolute top-[-30%] left-[-10%] w-[400px] h-[400px] bg-emerald-500/10 rounded-full blur-[120px] pointer-events-none"></div>
-        <div className="absolute bottom-[-30%] right-[-10%] w-[400px] h-[400px] bg-blue-500/5 rounded-full blur-[120px] pointer-events-none"></div>
-
+      <section className="py-20 bg-white border-y border-slate-200 px-4 sm:px-6 lg:px-8 relative overflow-hidden">
         <div className="max-w-7xl mx-auto relative z-10 flex flex-col lg:flex-row items-center gap-12">
           {/* Left Column: Heading Block */}
           <div className="flex-1 space-y-6 text-center lg:text-left">
-            <span className="inline-flex items-center gap-1.5 text-xs font-black text-[#F1C40F] uppercase tracking-widest bg-white/10 px-4 py-1.5 rounded-full border border-white/10">
+            <span className="inline-flex items-center gap-1.5 text-xs font-black text-[#f15a22] uppercase tracking-widest bg-[#f15a22]/10 px-4 py-1.5 rounded-full border border-[#f15a22]/20">
               <Calculator size={13} /> Free Health Tools
             </span>
-            <h2 className="text-3xl md:text-5xl font-heading font-black bg-gradient-to-r from-emerald-400 via-teal-300 to-cyan-400 bg-clip-text text-transparent leading-tight animate-pulse" style={{ animationDuration: '4s' }}>
+            <h2 className="text-3xl md:text-5xl font-heading font-black text-[#00488d] leading-tight">
               Interactive Health Risk Assessment
             </h2>
-            <p className="text-slate-400 max-w-xl mx-auto lg:mx-0 font-medium text-sm leading-relaxed">
+            <p className="text-slate-600 max-w-xl mx-auto lg:mx-0 font-medium text-sm leading-relaxed">
               Knowledge is prevention. Assess your risk profiles instantly with our clinically aligned calculators, and get direct test recommendations based on your scores.
             </p>
             <div className="pt-2">
-              <Link to="/health-calculators" className="inline-flex items-center gap-2 bg-gradient-to-r from-[#BA7517] to-[#d48924] hover:from-amber-600 hover:to-amber-500 text-white px-8 py-4 rounded-2xl font-bold shadow-xl shadow-amber-500/10 hover:scale-[1.01] active:scale-[0.99] transition-all hover:-translate-y-0.5 text-sm">
+              <Link to="/health-calculators" className="inline-flex items-center gap-2 bg-[#f15a22] hover:bg-[#d94f1c] text-white px-8 py-4 rounded-2xl font-bold shadow-md hover:scale-[1.01] active:scale-[0.99] transition-all hover:-translate-y-0.5 text-sm">
                 Try Free Health Calculators <ArrowRight size={16} />
               </Link>
             </div>
@@ -1241,27 +1229,27 @@ Question: ${userMsg}
           {/* Right Column: 5 Mini Cards Grid + 1 filler */}
           <div className="flex-[1.2] w-full grid grid-cols-1 sm:grid-cols-2 md:grid-cols-3 gap-4">
             {[
-              { id: 'bmi', icon: Activity, label: 'BMI Calc', desc: 'Check body mass index and find metabolic screening needs.', color: 'emerald', textClass: 'text-emerald-400', bgClass: 'bg-emerald-500/10 border-emerald-500/20 hover:border-emerald-500/40 hover:shadow-emerald-500/5' },
-              { id: 'diabetes', icon: AlertCircle, label: 'Diabetes Risk', desc: 'Assess Type 2 diabetes risks based on lifestyle indicators.', color: 'amber', textClass: 'text-amber-400', bgClass: 'bg-amber-500/10 border-amber-500/20 hover:border-amber-500/40 hover:shadow-amber-500/5' },
-              { id: 'heart', icon: Heart, label: 'Heart Risk', desc: 'Evaluate cardiovascular risk markers & recommended tests.', color: 'red', textClass: 'text-red-400', bgClass: 'bg-red-500/10 border-red-500/20 hover:border-red-500/40 hover:shadow-red-500/5' },
-              { id: 'duedate', icon: Baby, label: 'Pregnancy Due Date', desc: 'Track expected delivery date & crucial ANC test intervals.', color: 'pink', textClass: 'text-pink-400', bgClass: 'bg-pink-500/10 border-pink-500/20 hover:border-pink-500/40 hover:shadow-pink-500/5' },
-              { id: 'water', icon: Droplets, label: 'Water Intake', desc: 'Estimate ideal daily hydration targets based on weight.', color: 'blue', textClass: 'text-blue-400', bgClass: 'bg-blue-500/10 border-blue-500/20 hover:border-blue-500/40 hover:shadow-blue-500/5' },
+              { id: 'bmi', icon: Activity, label: 'BMI Calc', desc: 'Check body mass index and find metabolic screening needs.', textClass: 'text-[#00488d]', bgClass: 'bg-[#eef5fc] border-[#00488d]/10' },
+              { id: 'diabetes', icon: AlertCircle, label: 'Diabetes Risk', desc: 'Assess Type 2 diabetes risks based on lifestyle indicators.', textClass: 'text-[#f15a22]', bgClass: 'bg-[#fff0eb] border-[#f15a22]/10' },
+              { id: 'heart', icon: Heart, label: 'Heart Risk', desc: 'Evaluate cardiovascular risk markers & recommended tests.', textClass: 'text-[#00488d]', bgClass: 'bg-[#eef5fc] border-[#00488d]/10' },
+              { id: 'duedate', icon: Baby, label: 'Pregnancy Due Date', desc: 'Track expected delivery date & crucial ANC test intervals.', textClass: 'text-[#f15a22]', bgClass: 'bg-[#fff0eb] border-[#f15a22]/10' },
+              { id: 'water', icon: Droplets, label: 'Water Intake', desc: 'Estimate ideal daily hydration targets based on weight.', textClass: 'text-[#00488d]', bgClass: 'bg-[#eef5fc] border-[#00488d]/10' },
             ].map(calc => {
               const IconComponent = calc.icon;
               return (
                 <Link
                   key={calc.id}
                   to={`/health-calculators`}
-                  className={`bg-white/5 border border-white/5 backdrop-blur-md rounded-2xl p-5 text-left transition-all duration-300 group hover:-translate-y-1 ${calc.bgClass}`}
+                  className={`bg-white border border-slate-200 rounded-2xl p-5 text-left transition-all duration-500 group hover:-translate-y-2 hover:shadow-xl hover:border-[#00488d]/30 relative`}
                 >
                   <div className="flex items-center justify-between mb-4">
-                    <div className={`w-10 h-10 rounded-xl ${calc.bgClass.split(' ')[0]} flex items-center justify-center group-hover:scale-110 transition-transform duration-300`}>
+                    <div className={`w-10 h-10 rounded-xl ${calc.bgClass} flex items-center justify-center group-hover:scale-125 transition-all duration-500 shadow-sm border`}>
                       <IconComponent className={`w-5 h-5 ${calc.textClass}`} />
                     </div>
-                    <span className="text-[10px] font-black text-slate-500 group-hover:text-white uppercase tracking-widest transition-colors">Start →</span>
+                    <span className="text-[10px] font-black text-[#f15a22] uppercase tracking-widest transition-colors duration-300">Start →</span>
                   </div>
-                  <h4 className="text-white font-extrabold text-sm mb-1.5">{calc.label}</h4>
-                  <p className="text-slate-400 text-[11px] leading-relaxed font-semibold">{calc.desc}</p>
+                  <h4 className="text-slate-800 font-extrabold text-sm mb-1.5">{calc.label}</h4>
+                  <p className="text-slate-500 text-[11px] leading-relaxed font-semibold">{calc.desc}</p>
                 </Link>
               );
             })}
@@ -1269,15 +1257,15 @@ Question: ${userMsg}
             {/* View All Card filler */}
             <Link
               to="/health-calculators"
-              className="bg-white/5 border border-white/5 hover:border-white/10 backdrop-blur-md rounded-2xl p-5 text-left transition-all duration-300 group hover:-translate-y-1 flex flex-col justify-between"
+              className="bg-[#00488d] border border-[#00366b] hover:bg-[#00366b] rounded-2xl p-5 text-left transition-all duration-300 group hover:-translate-y-1 flex flex-col justify-between"
             >
               <div className="flex items-center justify-between">
-                <span className="text-[10px] font-black text-emerald-400 uppercase tracking-widest">Interactive Tools</span>
+                <span className="text-[10px] font-black text-[#f15a22] uppercase tracking-widest">Interactive Tools</span>
                 <span className="text-white font-black text-sm">🧮</span>
               </div>
               <div>
                 <h4 className="text-white font-extrabold text-sm mt-4 mb-1">Explore All Tools</h4>
-                <p className="text-slate-400 text-[11px] font-semibold leading-relaxed">Access the full clinical wellness suite of free tools.</p>
+                <p className="text-blue-200 text-[11px] font-semibold leading-relaxed">Access the full clinical wellness suite of free tools.</p>
               </div>
             </Link>
           </div>
