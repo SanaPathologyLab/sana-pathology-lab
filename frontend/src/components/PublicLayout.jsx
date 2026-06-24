@@ -4,7 +4,7 @@ import { useLanguage } from '../context/LanguageContext';
 import {
   Phone, MapPin, Menu, X, User, Download, ChevronDown,
   Clock, MessageCircle, Upload, Stethoscope, FlaskConical,
-  Heart, Building2, BookOpen, Calculator, Home
+  Heart, Building2, BookOpen, Calculator, Home, Search
 } from 'lucide-react';
 import Logo from './Logo';
 import WhatsAppIcon from './WhatsAppIcon';
@@ -220,6 +220,23 @@ const PublicLayout = ({ children }) => {
 
           {/* Right Actions */}
           <div className="flex items-center gap-2">
+            {/* Search Bar */}
+            <form 
+              onSubmit={(e) => {
+                e.preventDefault();
+                const q = e.target.search.value;
+                if(q.trim()) navigate(`/tests-catalog?q=${encodeURIComponent(q)}`);
+              }}
+              className="hidden md:flex items-center bg-slate-100 rounded-full px-3 py-1.5 mr-2 border border-slate-200 focus-within:border-[#1D9E75] focus-within:ring-2 focus-within:ring-[#1D9E75]/20 transition-all"
+            >
+              <Search size={14} className="text-slate-400 shrink-0" />
+              <input 
+                type="text" 
+                name="search"
+                placeholder="Search tests..." 
+                className="bg-transparent border-none outline-none text-xs w-28 focus:w-40 transition-all ml-2 text-slate-700 placeholder-slate-400 font-semibold"
+              />
+            </form>
             {/* Language Toggle */}
             <button
               onClick={toggleLanguage}
