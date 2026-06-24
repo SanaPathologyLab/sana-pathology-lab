@@ -2174,25 +2174,29 @@ function LiveChatWidget() {
                         try { recognitionRef.current?.abort(); setIsListening(false); window.speechSynthesis.cancel(); } catch {}
                       }
                     }}
-                    className={`absolute left-8 top-1/2 -translate-y-1/2 flex items-center gap-1.5 px-2.5 py-1 rounded-full transition-all text-[10px] font-bold tracking-wide ${
+                    className={`absolute left-[3.25rem] top-1/2 -translate-y-1/2 flex items-center gap-1.5 px-3 py-1.5 rounded-full transition-all duration-500 font-bold z-10 ${
                       isLiveMode 
-                        ? 'bg-red-500 text-white shadow-[0_0_8px_rgba(239,68,68,0.7)] hover:bg-red-600' 
-                        : 'bg-white border border-gray-200 text-gray-500 hover:border-[#00488d] hover:text-[#00488d] shadow-sm hover:shadow-md'
+                        ? 'bg-gradient-to-r from-rose-500 via-pink-500 to-purple-600 text-white shadow-[0_4px_15px_rgba(236,72,153,0.5)] border border-white/40 scale-105' 
+                        : 'bg-white border border-gray-200 text-gray-500 hover:border-pink-400 hover:text-pink-500 hover:bg-pink-50/50 shadow-sm'
                     }`}
                     title={isHindi ? 'लगातार बात करें (Live)' : 'Continuous Live Talk'}
                   >
                     {isLiveMode ? (
                       <>
-                        <span className="relative flex h-2 w-2">
-                          <span className="animate-ping absolute inline-flex h-full w-full rounded-full bg-white opacity-75"></span>
-                          <span className="relative inline-flex rounded-full h-2 w-2 bg-white"></span>
-                        </span>
-                        <span>LIVE</span>
+                        <div className="relative flex items-center justify-center w-4 h-4 ml-0.5">
+                          <span className="absolute inline-flex h-6 w-6 rounded-full bg-pink-300 opacity-40 animate-ping" style={{ animationDuration: '2s' }}></span>
+                          <div className="flex items-center gap-[2px] h-2.5 z-10">
+                            <span className="w-[2px] bg-white rounded-full animate-pulse h-[80%]" style={{ animationDuration: '0.6s' }}></span>
+                            <span className="w-[2.5px] bg-white rounded-full animate-pulse h-full" style={{ animationDuration: '0.8s' }}></span>
+                            <span className="w-[2px] bg-white rounded-full animate-pulse h-[60%]" style={{ animationDuration: '0.5s' }}></span>
+                          </div>
+                        </div>
+                        <span className="uppercase text-[10px] tracking-[0.15em] ml-0.5 font-extrabold drop-shadow-sm">Live</span>
                       </>
                     ) : (
                       <>
-                        <Radio className="w-3 h-3" />
-                        <span>Live Talk</span>
+                        <Mic className="w-3.5 h-3.5" />
+                        <span className="text-[11px] tracking-wide">Live Talk</span>
                       </>
                     )}
                   </button>
