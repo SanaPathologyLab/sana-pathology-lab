@@ -182,7 +182,7 @@ const PublicLayout = ({ children }) => {
       >
         <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 h-[68px] flex items-center justify-between">
           {/* Logo */}
-          <Link to="/" className="flex items-center gap-3 cursor-pointer shrink-0">
+          <Link to="/" className="flex items-center gap-5 cursor-pointer shrink-0">
             <Logo className="w-11 h-11 drop-shadow-md" />
             <div>
               <h1 className="text-xl font-heading text-[#1D9E75] tracking-tight leading-none">

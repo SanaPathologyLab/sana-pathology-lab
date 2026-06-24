@@ -1,12 +1,16 @@
 import React, { useState, useEffect } from 'react';
-import { useNavigate } from 'react-router-dom';
+import { useNavigate, useLocation } from 'react-router-dom';
 import PublicLayout from '../components/PublicLayout';
 import { TESTS_DATA, HEALTH_PACKAGES_DATA } from '../data/testsData';
 import { Search, Info, Plus, Check, ShoppingCart } from 'lucide-react';
 
 const TestsCatalog = () => {
   const navigate = useNavigate();
-  const [search, setSearch] = useState('');
+  const location = useLocation();
+  const [search, setSearch] = useState(() => {
+    const params = new URLSearchParams(location.search);
+    return params.get('q') || '';
+  });
   const [activeCategory, setActiveCategory] = useState('All');
   const [cart, setCart] = useState(() => {
     try {

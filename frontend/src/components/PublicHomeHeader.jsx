@@ -67,7 +67,7 @@ const PublicHomeHeader = ({ cartCount: propCartCount }) => {
       <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 h-20 flex items-center justify-between">
         {/* Logo */}
         <div
-          className="flex items-center gap-3 cursor-pointer group"
+          className="flex items-center gap-5 cursor-pointer group"
           onClick={() => { navigate('/'); window.scrollTo({ top: 0, behavior: 'smooth' }); }}
         >
           <div className="relative">
@@ -117,6 +117,26 @@ const PublicHomeHeader = ({ cartCount: propCartCount }) => {
 
         {/* Right Actions */}
         <div className="flex items-center gap-2 md:gap-3">
+          {/* Search Bar */}
+          <form 
+            onSubmit={(e) => {
+              e.preventDefault();
+              const q = e.target.search.value;
+              if(q.trim()) {
+                navigate(`/tests-catalog?q=${encodeURIComponent(q)}`);
+                window.scrollTo(0, 0);
+              }
+            }}
+            className="hidden md:flex items-center bg-slate-100 rounded-2xl px-3 py-2.5 border border-slate-200 focus-within:border-primary focus-within:ring-2 focus-within:ring-primary/20 transition-all shadow-inner"
+          >
+            <Search size={16} className="text-slate-400 shrink-0" />
+            <input 
+              type="text" 
+              name="search"
+              placeholder="Search tests..." 
+              className="bg-transparent border-none outline-none text-xs w-28 focus:w-48 lg:focus:w-56 transition-all ml-2 text-slate-700 placeholder-slate-400 font-bold"
+            />
+          </form>
           {/* Language Toggle */}
           <button
             onClick={toggleLanguage}
