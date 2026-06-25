@@ -2,18 +2,23 @@ import React from 'react';
 import { useNavigate } from 'react-router-dom';
 import { Users, User, HeartPulse, Activity, Award } from 'lucide-react';
 
-const imageMap = {
-  'family': '/assets/packages/family.png',
-  'couple': '/assets/packages/couple.png',
-  'family-large': '/assets/packages/family-large.png',
-  'family-extended': '/assets/packages/family-extended.png',
-  'group': '/assets/packages/group.png',
-  'female': '/assets/packages/female.png',
-  'female-professional': '/assets/packages/female-professional.png',
-  'couple-active': '/assets/packages/couple-active.png'
+const getAssetUrl = (path) => {
+  const base = import.meta.env.BASE_URL || '/';
+  return `${base.replace(/\/$/, '')}/${path.replace(/^\//, '')}`;
 };
 
-const defaultImage = '/assets/packages/family.png';
+const imageMap = {
+  'family': getAssetUrl('assets/packages/family.png'),
+  'couple': getAssetUrl('assets/packages/couple.png'),
+  'family-large': getAssetUrl('assets/packages/family-large.png'),
+  'family-extended': getAssetUrl('assets/packages/family-extended.png'),
+  'group': getAssetUrl('assets/packages/group.png'),
+  'female': getAssetUrl('assets/packages/female.png'),
+  'female-professional': getAssetUrl('assets/packages/female-professional.png'),
+  'couple-active': getAssetUrl('assets/packages/couple-active.png')
+};
+
+const defaultImage = getAssetUrl('assets/packages/family.png');
 
 const iconMap = {
   'family': { Icon: Users, color: 'from-blue-500 to-cyan-500' },
