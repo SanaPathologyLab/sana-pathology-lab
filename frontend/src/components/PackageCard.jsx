@@ -8,17 +8,17 @@ const getAssetUrl = (path) => {
 };
 
 const imageMap = {
-  'family': getAssetUrl('assets/packages/family.png'),
-  'couple': getAssetUrl('assets/packages/couple.png'),
-  'family-large': getAssetUrl('assets/packages/family-large.png'),
-  'family-extended': getAssetUrl('assets/packages/family-extended.png'),
-  'group': getAssetUrl('assets/packages/group.png'),
-  'female': getAssetUrl('assets/packages/female.png'),
-  'female-professional': getAssetUrl('assets/packages/female-professional.png'),
-  'couple-active': getAssetUrl('assets/packages/couple-active.png')
+  'family': getAssetUrl('assets/packages/family.webp'),
+  'couple': getAssetUrl('assets/packages/couple.webp'),
+  'family-large': getAssetUrl('assets/packages/family-large.webp'),
+  'family-extended': getAssetUrl('assets/packages/family-extended.webp'),
+  'group': getAssetUrl('assets/packages/group.webp'),
+  'female': getAssetUrl('assets/packages/female.webp'),
+  'female-professional': getAssetUrl('assets/packages/female-professional.webp'),
+  'couple-active': getAssetUrl('assets/packages/couple-active.webp')
 };
 
-const defaultImage = getAssetUrl('assets/packages/family.png');
+const defaultImage = getAssetUrl('assets/packages/family.webp');
 
 const iconMap = {
   'family': { Icon: Users, color: 'from-blue-500 to-cyan-500' },

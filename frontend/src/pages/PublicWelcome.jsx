@@ -59,9 +59,9 @@ const TICKER_TESTS = TESTS_DATA.slice(0, 20).map(t => ({ name: t.testCode || t.t
 
 // Hero Slides
 const slides = [
-  "https://images.unsplash.com/photo-1579684385127-1ef15d508118?auto=format&fit=crop&q=80&w=2000",
-  "https://images.unsplash.com/photo-1581056771107-24ca5f033842?auto=format&fit=crop&q=80&w=2000",
-  "https://images.unsplash.com/photo-1519494026892-80bbd2d6fd0d?auto=format&fit=crop&q=80&w=2000"
+  "https://images.unsplash.com/photo-1579684385127-1ef15d508118?auto=format&fit=crop&q=60&w=1200",
+  "https://images.unsplash.com/photo-1581056771107-24ca5f033842?auto=format&fit=crop&q=60&w=1200",
+  "https://images.unsplash.com/photo-1519494026892-80bbd2d6fd0d?auto=format&fit=crop&q=60&w=1200"
 ];
 
 const PublicWelcome = () => {
