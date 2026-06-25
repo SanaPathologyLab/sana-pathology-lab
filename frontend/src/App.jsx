@@ -51,6 +51,7 @@ const BookOnlinePage = lazy(() => import('./pages/BookOnlinePage'));
 const FaqPage = lazy(() => import('./pages/FaqPage'));
 const ContactPage = lazy(() => import('./pages/ContactPage'));
 
+import ScrollToTop from './components/ScrollToTop';
 import Loader from './components/Loader';
 import { syncOfflineRequests } from './utils/offlineSync';
 
@@ -74,6 +75,7 @@ const AppContent = () => {
 
   return (
     <Suspense fallback={<Spinner />}>
+      <ScrollToTop />
       <Routes>
         {/* Public Routes */}
         <Route path="/" element={<PublicWelcome />} />

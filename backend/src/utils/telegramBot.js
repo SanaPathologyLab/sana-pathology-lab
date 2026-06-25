@@ -54,9 +54,11 @@ const startTelegramBot = () => {
         }
       }
     } catch (err) {
-      console.error("Error in Telegram bot polling loop:", err.message);
+      if (!err.message.includes('fetch failed')) {
+        console.error("Error in Telegram bot polling loop:", err.message);
+      }
     }
-    setTimeout(poll, 3000);
+    setTimeout(poll, 10000); // Wait 10 seconds before retrying to prevent spam
   };
 
   const sendTextMessage = async (chatId, text) => {

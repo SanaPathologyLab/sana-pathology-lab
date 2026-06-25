@@ -3,6 +3,8 @@ import { useNavigate, useLocation } from 'react-router-dom';
 import PublicLayout from '../components/PublicLayout';
 import { TESTS_DATA, HEALTH_PACKAGES_DATA } from '../data/testsData';
 import { Search, Info, Plus, Check, ShoppingCart } from 'lucide-react';
+import PackageCard from '../components/PackageCard';
+import PackageDetailsModal from '../components/PackageDetailsModal';
 
 const TestsCatalog = () => {
   const navigate = useNavigate();
@@ -12,6 +14,7 @@ const TestsCatalog = () => {
     return params.get('q') || '';
   });
   const [activeCategory, setActiveCategory] = useState('All');
+  const [selectedPackageDetails, setSelectedPackageDetails] = useState(null);
   const [cart, setCart] = useState(() => {
     try {
       const saved = localStorage.getItem('sana_cart');
@@ -37,7 +40,7 @@ const TestsCatalog = () => {
   });
 
   const toggleCartItem = (test, isPackage = false) => {
-    const itemKey = isPackage ? test.code : test.code;
+    const itemKey = test.code;
     const exists = cart.some(item => item.testCode === itemKey);
     
     if (exists) {
@@ -53,6 +56,21 @@ const TestsCatalog = () => {
       };
       setCart(prev => [...prev, newItem]);
     }
+  };
+
+  const handleBookNow = (pkg) => {
+    if (!isInCart(pkg.code)) {
+      setCart(prev => [...prev, {
+        id: pkg.id || Date.now(),
+        testCode: pkg.code,
+        name: pkg.name,
+        price: pkg.price,
+        sampleType: pkg.sampleType || 'Blood',
+        category: 'Package'
+      }]);
+    }
+    navigate('/book-online');
+    window.scrollTo(0, 0);
   };
 
   const isInCart = (code) => {
@@ -109,49 +127,20 @@ const TestsCatalog = () => {
             </div>
           </div>
 
-          {/* Suggested Health Packages section (to attract people) */}
           <div className="mb-12">
             <h2 className="text-2xl font-black text-[#085041] mb-6 font-heading">Suggested Health Packages</h2>
-            <div className="grid grid-cols-1 md:grid-cols-3 gap-6">
-              {HEALTH_PACKAGES_DATA.map(pkg => {
-                const selected = isInCart(pkg.code);
-                return (
-                  <div 
-                    key={pkg.code} 
-                    className={`bg-white rounded-3xl p-6 border transition-all duration-300 flex flex-col justify-between ${
-                      selected 
-                        ? 'border-[#1D9E75] shadow-[#1D9E75]/10 shadow-xl scale-[1.01]' 
-                        : 'border-slate-100 shadow-md hover:shadow-xl hover:scale-[1.01]'
-                    }`}
-                  >
-                    <div className="space-y-3">
-                      {pkg.badge && (
-                        <span className="bg-[#BA7517]/10 text-[#BA7517] text-[10px] font-black uppercase px-2.5 py-1 rounded border border-[#BA7517]/20">
-                          {pkg.badge}
-                        </span>
-                      )}
-                      <h3 className="text-xl font-black text-slate-800">{pkg.name}</h3>
-                      <p className="text-xs text-slate-500 leading-relaxed">{pkg.desc}</p>
-                      <div className="flex items-baseline gap-2 pt-2">
-                        <span className="text-2xl font-black text-[#1D9E75]">₹{pkg.price}</span>
-                        <span className="text-xs text-slate-400 line-through">₹{pkg.originalPrice}</span>
-                      </div>
-                    </div>
-                    
-                    <button
-                      onClick={() => toggleCartItem(pkg, true)}
-                      className={`w-full mt-6 py-3 rounded-xl font-bold text-xs transition-all flex items-center justify-center gap-1.5 ${
-                        selected
-                          ? 'bg-emerald-50 text-emerald-700 border border-emerald-200'
-                          : 'bg-[#1D9E75] text-white hover:bg-[#1D9E75]/95 shadow-md shadow-[#1D9E75]/10'
-                      }`}
-                    >
-                      {selected ? <Check size={14} /> : <Plus size={14} />}
-                      {selected ? 'Added to Cart' : 'Select Package'}
-                    </button>
-                  </div>
-                );
-              })}
+            <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-6">
+              {HEALTH_PACKAGES_DATA.slice(0, 4).map(pkg => (
+                <PackageCard 
+                  key={pkg.code} 
+                  pkg={pkg} 
+                  isAdded={isInCart(pkg.code)}
+                  onAdd={() => toggleCartItem(pkg, true)}
+                  onKnowMore={(p) => setSelectedPackageDetails(p)}
+                  onBookNow={handleBookNow}
+                  onWhatsApp={(msg) => window.open(`https://wa.me/916396786939?text=${encodeURIComponent(msg)}`, '_blank')}
+                />
+              ))}
             </div>
           </div>
 
@@ -224,6 +213,16 @@ const TestsCatalog = () => {
 
         </div>
       </div>
+      
+      <PackageDetailsModal 
+        pkg={selectedPackageDetails}
+        onClose={() => setSelectedPackageDetails(null)}
+        onBookNow={(p) => {
+          setSelectedPackageDetails(null);
+          handleBookNow(p);
+        }}
+        isAdded={selectedPackageDetails ? isInCart(selectedPackageDetails.code) : false}
+      />
     </PublicLayout>
   );
 };

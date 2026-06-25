@@ -25,7 +25,7 @@ import ExitIntentPopup from '../components/ExitIntentPopup';
 import PinCodeChecker from '../components/PinCodeChecker';
 import SymptomFinder from '../components/SymptomFinder';
 import DynamicPackageBuilder from '../components/DynamicPackageBuilder';
-import GiftHealthTest from '../components/GiftHealthTest';
+
 import WhatsAppIcon from '../components/WhatsAppIcon';
 import SubscriptionPlans from '../components/SubscriptionPlans';
 import TestimonialVideoSection from '../components/TestimonialVideoSection';
@@ -54,6 +54,13 @@ const HEALTH_TIPS = [
 
 // Test Ticker Items
 const TICKER_TESTS = TESTS_DATA.slice(0, 20).map(t => ({ name: t.testCode || t.testName, price: t.price }));
+
+// Hero Slides
+const slides = [
+  "https://images.unsplash.com/photo-1579684385127-1ef15d508118?auto=format&fit=crop&q=80&w=2000",
+  "https://images.unsplash.com/photo-1581056771107-24ca5f033842?auto=format&fit=crop&q=80&w=2000",
+  "https://images.unsplash.com/photo-1519494026892-80bbd2d6fd0d?auto=format&fit=crop&q=80&w=2000"
+];
 
 const PublicWelcome = () => {
   const navigate = useNavigate();
@@ -779,7 +786,7 @@ Question: ${userMsg}
             <div className="bg-slate-100 p-1.5 rounded-2xl flex w-full max-w-lg border border-slate-200">
               <button
                 type="button"
-                onClick={() => { setSearchType('report'); setAppointmentResults([]); setSearchError(''); setQuery(''); }}
+                onClick={() => { setSearchType('report'); setAppointmentResults([]); setSearchError(''); setSearchQuery(''); }}
                 className={`flex-1 py-2.5 rounded-xl text-xs md:text-sm font-extrabold transition-all ${
                   searchType === 'report' ? 'bg-white text-primary shadow-md' : 'text-slate-500 hover:text-primary'
                 }`}
@@ -788,7 +795,7 @@ Question: ${userMsg}
               </button>
               <button
                 type="button"
-                onClick={() => { setSearchType('mobile'); setAppointmentResults([]); setSearchError(''); setQuery(''); }}
+                onClick={() => { setSearchType('mobile'); setAppointmentResults([]); setSearchError(''); setSearchQuery(''); }}
                 className={`flex-1 py-2.5 rounded-xl text-xs md:text-sm font-extrabold transition-all ${
                   searchType === 'mobile' ? 'bg-white text-primary shadow-md' : 'text-slate-500 hover:text-primary'
                 }`}
@@ -797,7 +804,7 @@ Question: ${userMsg}
               </button>
               <button
                 type="button"
-                onClick={() => { setSearchType('appointment'); setAppointmentResults([]); setSearchError(''); setQuery(''); }}
+                onClick={() => { setSearchType('appointment'); setAppointmentResults([]); setSearchError(''); setSearchQuery(''); }}
                 className={`flex-1 py-2.5 rounded-xl text-xs md:text-sm font-extrabold transition-all ${
                   searchType === 'appointment' ? 'bg-white text-primary shadow-md' : 'text-slate-500 hover:text-primary'
                 }`}
@@ -1069,11 +1076,7 @@ Question: ${userMsg}
         </div>
       </section>
 
-      <section id="gift-health-test" className="py-20 bg-slate-50 border-b border-slate-200 px-4 sm:px-6 lg:px-8">
-        <div className="max-w-7xl mx-auto">
-          <GiftHealthTest />
-        </div>
-      </section>
+
 
       <section id="subscription-plans" className="py-20 bg-white px-4 sm:px-6 lg:px-8">
         <div className="max-w-7xl mx-auto">

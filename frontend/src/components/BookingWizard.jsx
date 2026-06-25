@@ -1,5 +1,7 @@
 import React, { useState, useEffect, useMemo } from 'react';
-import { Check, ArrowRight, ChevronLeft, ChevronRight, User, Phone, MapPin, Calendar, Clock, Tag, Shield, CreditCard, Loader2, Heart, Percent, Trash2, CheckCircle2, AlertCircle } from 'lucide-react';
+import { Calendar, Clock, MapPin, Search, ChevronRight, ChevronLeft, AlertCircle, Shield, CheckCircle2, User, Phone, ArrowRight, ShieldCheck, Heart, Trash2, ArrowLeft, Loader2, Sparkles, Check } from 'lucide-react';
+import { QRCodeSVG } from 'qrcode.react';
+
 import { useLanguage } from '../context/LanguageContext';
 import { TESTS_DATA, HEALTH_PACKAGES_DATA } from '../data/testsData';
 
@@ -8,7 +10,7 @@ const STEPS = [
   { id: 'patient', label: 'Patient', icon: <User className="w-4 h-4" /> },
   { id: 'datetime', label: 'Date & Time', icon: <Calendar className="w-4 h-4" /> },
   { id: 'address', label: 'Address', icon: <MapPin className="w-4 h-4" /> },
-  { id: 'coupon', label: 'Coupon', icon: <Percent className="w-4 h-4" /> },
+  { id: 'coupon', label: 'Coupon', icon: <Sparkles className="w-4 h-4" /> },
   { id: 'confirm', label: 'Confirm', icon: <Check className="w-4 h-4" /> },
 ];
 
@@ -30,7 +32,7 @@ const PACKAGES = HEALTH_PACKAGES_DATA.map(p => ({
   badge: p.badge || 'Popular'
 }));
 
-const CATEGORIES = ['All', 'Hematology', 'Biochemistry', 'Endocrinology', 'Serology', 'Clinical Pathology', 'Immunology'];
+const CATEGORIES = ['All', ...new Set(TESTS_DATA.map(t => t.category?.name || 'Other'))];
 
 const BookingWizard = ({ existingCart, onCartUpdate, scrollToSection }) => {
   const { t, language } = useLanguage();
@@ -46,6 +48,7 @@ const BookingWizard = ({ existingCart, onCartUpdate, scrollToSection }) => {
     }));
   });
   const [searchQuery, setSearchQuery] = useState('');
+  const [showAutocomplete, setShowAutocomplete] = useState(false);
   const [activeCategory, setActiveCategory] = useState('All');
   const [patient, setPatient] = useState({ name: '', mobile: '', gender: '' });
   const [dateTime, setDateTime] = useState({ date: new Date(Date.now() + 86400000).toISOString().split('T')[0], time: '08:00', isHomeCollection: true });
@@ -58,30 +61,23 @@ const BookingWizard = ({ existingCart, onCartUpdate, scrollToSection }) => {
   const [bookingError, setBookingError] = useState('');
   const [errors, setErrors] = useState({});
 
-  // UPI payment and created appointment states
   const [createdAppointment, setCreatedAppointment] = useState(null);
+
+  const [verifyingPayment, setVerifyingPayment] = useState(false);
+  const [verificationSuccess, setVerificationSuccess] = useState(false);
   const [upiUtr, setUpiUtr] = useState('');
   const [upiSubmitted, setUpiSubmitted] = useState(false);
   const [upiError, setUpiError] = useState('');
-  const [upiLoading, setUpiLoading] = useState(false);
 
-  // Polling & verification states
-  const [verifyingPayment, setVerifyingPayment] = useState(false);
-  const [verificationStep, setVerificationStep] = useState(0);
-  const [verificationSuccess, setVerificationSuccess] = useState(false);
-
-  // Premium filters states
   const [compareExpanded, setCompareExpanded] = useState(false);
   const [sampleFilter, setSampleFilter] = useState('All');
   const [fastingFilter, setFastingFilter] = useState('All');
   const [priceFilter, setPriceFilter] = useState('All');
-  const [showAutocomplete, setShowAutocomplete] = useState(false);
 
   const totalPrice = useMemo(() => selectedTests.reduce((s, t) => s + t.price, 0), [selectedTests]);
   const discountAmount = couponApplied ? Math.round(totalPrice * 0.1) : 0;
   const finalPrice = totalPrice - discountAmount;
 
-  // Sync existingCart prop with selectedTests state
   useEffect(() => {
     if (existingCart) {
       const currentCodes = selectedTests.map(t => t.code || t.testCode);
@@ -104,7 +100,6 @@ const BookingWizard = ({ existingCart, onCartUpdate, scrollToSection }) => {
     try { localStorage.setItem('sana_cart', JSON.stringify(selectedTests)); } catch {}
   }, [selectedTests, onCartUpdate]);
 
-  // Polling loop for auto-detecting payment status
   useEffect(() => {
     let intervalId;
     if (verifyingPayment && createdAppointment) {
@@ -116,7 +111,6 @@ const BookingWizard = ({ existingCart, onCartUpdate, scrollToSection }) => {
             if (data.paymentStatus === 'PAID') {
               setVerifyingPayment(false);
               setVerificationSuccess(true);
-              setUpiSubmitted(true);
             }
           }
         } catch (err) {
@@ -129,43 +123,14 @@ const BookingWizard = ({ existingCart, onCartUpdate, scrollToSection }) => {
     };
   }, [verifyingPayment, createdAppointment]);
 
-  // Step progress animation for payment detection
-  useEffect(() => {
-    let intervalId;
-    if (verifyingPayment) {
-      setVerificationStep(0);
-      intervalId = setInterval(() => {
-        setVerificationStep(prev => prev + 1);
-      }, 2500);
-    }
-    return () => {
-      if (intervalId) clearInterval(intervalId);
-    };
-  }, [verifyingPayment]);
-
   const filteredTests = useMemo(() => {
     return SAMPLE_TESTS.filter(t => {
       const q = searchQuery.toLowerCase();
-      
-      const matchesSearch = t.name.toLowerCase().includes(q) || 
-                            t.code.toLowerCase().includes(q) || 
-                            t.category.toLowerCase().includes(q);
-      
+      const matchesSearch = t.name.toLowerCase().includes(q) || t.code.toLowerCase().includes(q) || t.category.toLowerCase().includes(q);
       const matchesCategory = activeCategory === 'All' || t.category === activeCategory;
-      
-      const matchesSample = sampleFilter === 'All' || 
-                            t.sample.toLowerCase().includes(sampleFilter.toLowerCase()) ||
-                            (sampleFilter === 'Serum' && t.sample === 'Serum') ||
-                            (sampleFilter === 'Blood' && t.sample === 'Blood');
-      
-      const matchesFasting = fastingFilter === 'All' || 
-                             (fastingFilter === 'Yes' && t.name.toLowerCase().includes('fasting')) || 
-                             (fastingFilter === 'No' && !t.name.toLowerCase().includes('fasting'));
-      
-      const matchesPrice = priceFilter === 'All' || 
-                           (priceFilter === 'under200' && t.price < 200) ||
-                           (priceFilter === '200to500' && t.price >= 200 && t.price <= 500) ||
-                           (priceFilter === 'above500' && t.price > 500);
+      const matchesSample = sampleFilter === 'All' || t.sample.toLowerCase().includes(sampleFilter.toLowerCase());
+      const matchesFasting = fastingFilter === 'All' || (fastingFilter === 'Yes' && t.name.toLowerCase().includes('fasting')) || (fastingFilter === 'No' && !t.name.toLowerCase().includes('fasting'));
+      const matchesPrice = priceFilter === 'All' || (priceFilter === 'under200' && t.price < 200) || (priceFilter === '200to500' && t.price >= 200 && t.price <= 500) || (priceFilter === 'above500' && t.price > 500);
 
       return matchesSearch && matchesCategory && matchesSample && matchesFasting && matchesPrice;
     });
@@ -204,44 +169,8 @@ const BookingWizard = ({ existingCart, onCartUpdate, scrollToSection }) => {
     return Object.keys(e).length === 0;
   };
 
-  const handleNext = () => {
-    if (validateStep(step)) setStep(prev => Math.min(prev + 1, 5));
-  };
+  const handleNext = () => { if (validateStep(step)) setStep(prev => Math.min(prev + 1, 5)); };
   const handleBack = () => setStep(prev => Math.max(prev - 1, 0));
-
-  const handleUpiSubmit = async (e) => {
-    e.preventDefault();
-    if (!upiUtr.trim()) return;
-    setUpiLoading(true);
-    setUpiError('');
-    try {
-      const res = await fetch(`/api/public/appointments/${createdAppointment.id}/pay-upi`, {
-        method: 'POST',
-        headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({
-          transactionId: upiUtr.trim()
-        })
-      });
-      if (res.ok) {
-        setUpiSubmitted(true);
-        setVerifyingPayment(true);
-        setVerificationSuccess(false);
-      } else {
-        const data = await res.json();
-        setUpiError(data.message || 'Failed to submit reference ID.');
-      }
-    } catch (err) {
-      setUpiError('Network error. Try again.');
-    } finally {
-      setUpiLoading(false);
-    }
-  };
-
-  const handleAlertWhatsApp = () => {
-    const msgList = selectedTests.map(t => `- ${t.name} (₹${t.price})`).join('\n');
-    const whatsappMsg = `*New Booking Request*\n*Name:* ${patient.name}\n*Mobile:* ${patient.mobile}\n*Gender:* ${patient.gender}\n*Date:* ${dateTime.date} ${dateTime.time}\n*Mode:* ${dateTime.isHomeCollection ? 'Home Collection' : 'Lab Visit'}\n*Address:* ${dateTime.isHomeCollection ? address : 'N/A'}\n\n*Tests:*\n${msgList}\n*Total:* ₹${finalPrice}`;
-    window.open(`https://wa.me/916396786939?text=${encodeURIComponent(whatsappMsg)}`, '_blank');
-  };
 
   const handleBook = async () => {
     if (selectedTests.length === 0) { setBookingError('Select at least one test.'); return; }
@@ -266,9 +195,7 @@ const BookingWizard = ({ existingCart, onCartUpdate, scrollToSection }) => {
         const data = await response.json();
         setCreatedAppointment(data.appointment);
         setBookingSuccess(true);
-        const msg = selectedTests.map(t => `- ${t.name} (₹${t.price})`).join('\n');
-        const whatsappMsg = `*New Booking Request*\n*Name:* ${patient.name}\n*Mobile:* ${patient.mobile}\n*Gender:* ${patient.gender}\n*Date:* ${dateTime.date} ${dateTime.time}\n*Mode:* ${dateTime.isHomeCollection ? 'Home Collection' : 'Lab Visit'}\n*Address:* ${dateTime.isHomeCollection ? address : 'N/A'}\n\n*Tests:*\n${msg}\n*Total:* ₹${finalPrice}`;
-        window.open(`https://wa.me/916396786939?text=${encodeURIComponent(whatsappMsg)}`, '_blank');
+        setVerifyingPayment(true);
       } else {
         const data = await response.json();
         setBookingError(data.message || 'Booking failed. Try again.');
@@ -284,68 +211,21 @@ const BookingWizard = ({ existingCart, onCartUpdate, scrollToSection }) => {
     <div className="flex items-center gap-0 mb-8 overflow-x-auto pb-2 scrollbar-hide" style={{ scrollbarWidth: 'none' }}>
       {STEPS.map((s, i) => (
         <div key={s.id} className="flex items-center shrink-0">
-          <button onClick={() => i <= step && setStep(i)} className={`flex items-center gap-1.5 px-3 py-1.5 rounded-full text-xs font-bold transition-all ${i === step ? 'bg-primary text-white shadow-md' : i < step ? 'bg-secondary-pale text-secondary' : 'bg-slate-100 text-slate-400'}`}>
-            <span className={`w-5 h-5 rounded-full flex items-center justify-center ${i === step ? 'bg-white/20' : i < step ? 'bg-secondary text-white' : 'bg-slate-200 text-slate-400'}`}>
+          <button onClick={() => i <= step && setStep(i)} className={`flex items-center gap-1.5 px-3 py-1.5 rounded-full text-xs font-bold transition-all ${i === step ? 'bg-[#00488d] text-white shadow-md' : i < step ? 'bg-blue-50 text-[#00488d]' : 'bg-slate-100 text-slate-400'}`}>
+            <span className={`w-5 h-5 rounded-full flex items-center justify-center ${i === step ? 'bg-white/20' : i < step ? 'bg-[#00488d] text-white' : 'bg-slate-200 text-slate-400'}`}>
               {i < step ? <Check size={10} /> : i + 1}
             </span>
             <span className="hidden sm:inline">{s.label}</span>
           </button>
-          {i < 5 && <div className={`w-6 h-0.5 mx-1 ${i < step ? 'bg-secondary' : 'bg-slate-200'}`} />}
+          {i < 5 && <div className={`w-6 h-0.5 mx-1 ${i < step ? 'bg-[#00488d]' : 'bg-slate-200'}`} />}
         </div>
       ))}
     </div>
   );
 
-  const summarySidebar = (
-    <div className="bg-white rounded-2xl border border-slate-100 p-5 sticky top-28 shadow-sm">
-      <div className="flex items-center gap-2 pb-3 border-b border-slate-100 mb-3">
-        <Heart size={16} className="text-red-500 fill-red-500" />
-        <h3 className="font-black text-slate-800 text-sm uppercase tracking-wider">Booking Summary</h3>
-      </div>
-      {selectedTests.length === 0 ? (
-        <p className="text-xs text-slate-400 py-6 text-center font-medium">No tests selected yet</p>
-      ) : (
-        <div className="space-y-2 max-h-48 overflow-y-auto pr-1 mb-3">
-          {selectedTests.map((t, i) => (
-            <div key={i} className="flex items-center justify-between gap-2 bg-slate-50 p-2 rounded-lg">
-              <span className="text-xs font-semibold text-slate-700 truncate">{t.name}</span>
-              <div className="flex items-center gap-1.5 shrink-0">
-                <span className="text-xs font-bold text-primary">₹{t.price}</span>
-                <button onClick={() => removeItem(t.code || t.testCode)} className="text-slate-300 hover:text-red-500 transition-colors"><Trash2 size={12} /></button>
-              </div>
-            </div>
-          ))}
-        </div>
-      )}
-      {selectedTests.length > 0 && (
-        <div className="space-y-2 text-xs border-t border-slate-100 pt-3">
-          <div className="flex justify-between font-semibold text-slate-500">
-            <span>Subtotal ({selectedTests.length} items)</span>
-            <span>₹{totalPrice}</span>
-          </div>
-          {couponApplied && (
-            <div className="flex justify-between font-semibold text-emerald-600">
-              <span>Discount (10%)</span>
-              <span>-₹{discountAmount}</span>
-            </div>
-          )}
-          <div className="flex justify-between font-black text-primary text-sm border-t border-slate-100 pt-2">
-            <span>Total</span>
-            <span>₹{finalPrice}</span>
-          </div>
-          {dateTime.isHomeCollection && (
-            <div className="bg-secondary-pale/50 text-secondary rounded-lg p-2 text-[10px] font-bold flex items-center gap-1 mt-2">
-              <CheckCircle2 size={12} /> Free Home Collection
-            </div>
-          )}
-        </div>
-      )}
-    </div>
-  );
-
   if (bookingSuccess) {
     return (
-      <section id="booking" className="py-20 bg-bg px-4 sm:px-6 lg:px-8 scroll-mt-20">
+      <section id="booking" className="py-20 bg-slate-50 px-4 sm:px-6 lg:px-8 scroll-mt-20">
         <div className="max-w-2xl mx-auto text-center py-12 animate-fade-in-up">
           <div className="w-20 h-20 bg-emerald-100 rounded-full flex items-center justify-center mx-auto mb-6">
             <CheckCircle2 size={40} className="text-emerald-600" />
@@ -354,144 +234,57 @@ const BookingWizard = ({ existingCart, onCartUpdate, scrollToSection }) => {
           <p className="text-slate-500 mb-6 font-medium">Thank you, {patient.name}. We'll confirm your slot shortly.</p>
           
           {createdAppointment && (
-            <div className="mb-6 bg-blue-50 border border-blue-150 rounded-2xl p-4 max-w-sm mx-auto">
-              <p className="text-[10px] font-extrabold text-[#00488d] uppercase tracking-wider">Tracking Reference ID</p>
-              <p className="text-xl font-black text-[#00488d] mt-1">SPL-APT-{createdAppointment.id.toString().padStart(6, '0')}</p>
-              <p className="text-[10px] text-slate-500 mt-1 font-medium font-sans">Use this ID to track your request state on our homepage.</p>
-            </div>
-          )}
-
-          {createdAppointment && (
             <div className="mb-8 max-w-sm mx-auto bg-white rounded-2xl border border-slate-100 shadow-md p-5 text-left">
-              <h4 className="text-xs font-black text-slate-800 uppercase tracking-wide mb-2 flex items-center gap-1.5">
-                <span>💳 Pay Online via UPI (यूपीआई भुगतान)</span>
+              <h4 className="text-xs font-black text-slate-800 uppercase tracking-wide mb-4 flex items-center gap-1.5">
+                <span>💳 Pay Online via UPI</span>
               </h4>
-              <p className="text-[11px] text-slate-500 leading-relaxed mb-3">
-                Scan QR or pay using UPI (GPay, PhonePe, Paytm) to confirm instantly.
-              </p>
               
-              <div className="flex flex-col items-center justify-center p-3 bg-slate-50 rounded-xl mb-3 border border-slate-100">
-                <img 
-                  src={`https://api.qrserver.com/v1/create-qr-code/?size=150x150&data=${encodeURIComponent(`upi://pay?pa=6396786939@okbizaxis&pn=Sana Pathology Lab&am=${finalPrice}&cu=INR`)}`} 
-                  alt="UPI QR Code" 
-                  className="w-36 h-36 border-2 border-white rounded-lg shadow-sm mb-1.5"
-                />
-                <span className="text-[9px] font-bold text-slate-400 tracking-wider uppercase">Scan to Pay ₹{finalPrice}</span>
-              </div>
-              
-              <div className="bg-slate-50 p-2.5 rounded-xl border border-slate-100 mb-3 space-y-1 text-xs text-slate-700">
-                <div className="flex justify-between">
-                  <span className="font-semibold text-slate-500">UPI ID:</span>
-                  <span className="font-bold text-[#00488d] font-mono select-all">6396786939@okbizaxis</span>
-                </div>
-                <div className="flex justify-between">
-                  <span className="font-semibold text-slate-500">Name:</span>
-                  <span className="font-bold text-slate-800">Sana Pathology Lab</span>
-                </div>
-                <div className="flex justify-between border-t border-slate-200 pt-1 font-bold">
-                  <span className="text-slate-500">Amount:</span>
-                  <span className="text-[#00488d]">₹{finalPrice}</span>
+              <div className="flex flex-col items-center justify-center p-4 bg-slate-50 rounded-xl mb-4 border border-slate-100">
+                <div className="bg-white p-2 rounded-xl shadow-sm border border-slate-100 mb-2">
+                  <QRCodeSVG value={`upi://pay?pa=6396786939@okbizaxis&pn=Sana%20Pathology%20Lab&am=${finalPrice}&cu=INR`} size={144} level="H" includeMargin={true} />
                 </div>
               </div>
 
-              {verifyingPayment ? (
-                <div className="bg-blue-50/50 border border-blue-100 rounded-xl p-4 text-center space-y-3">
-                  <div className="flex flex-col items-center justify-center space-y-2">
-                    <Loader2 className="w-8 h-8 text-[#00488d] animate-spin" />
-                    <h5 className="text-xs font-black text-slate-800 uppercase tracking-wider">Auto-Detecting UPI Payment</h5>
-                    <p className="text-[10px] text-slate-500 font-medium">Please wait. Detecting payment reference <strong>{upiUtr}</strong> on the bank registry...</p>
-                  </div>
-                  
-                  {/* Dynamic Progress indicator */}
-                  <div className="w-full bg-slate-200 h-1.5 rounded-full overflow-hidden">
-                    <div className="bg-[#00488d] h-full rounded-full transition-all duration-500" style={{ width: `${Math.min(25 + (verificationStep * 20), 90)}%` }} />
-                  </div>
-                  
-                  <p className="text-[9px] text-[#00488d] font-black uppercase tracking-wide animate-pulse">
-                    {verificationStep === 0 && "📡 Initiating payment detection..."}
-                    {verificationStep === 1 && "🔍 Searching bank transaction registry..."}
-                    {verificationStep === 2 && "🔄 Matching UTR code with bank statement..."}
-                    {verificationStep >= 3 && "⏳ Awaiting final confirmation from banking network..."}
-                  </p>
-
-                  <div className="pt-2 border-t border-slate-100 flex flex-col gap-2">
-                    <button
-                      type="button"
-                      onClick={async () => {
-                        try {
-                          const res = await fetch(`/api/public/verify-upi-mock/${createdAppointment.id}`, {
-                            method: 'POST'
-                          });
-                          if (res.ok) {
-                            setVerifyingPayment(false);
-                            setVerificationSuccess(true);
-                            setUpiSubmitted(true);
-                          }
-                        } catch (err) {
-                          console.error("Mock verify failed", err);
-                        }
-                      }}
-                      className="w-full bg-emerald-600 hover:bg-emerald-700 text-white rounded-xl py-1.5 text-[9px] font-black uppercase tracking-wider shadow transition-colors flex items-center justify-center gap-1"
-                    >
-                      ⚡ Simulate Bank Success (Demo Mode)
-                    </button>
-                    <button
-                      type="button"
-                      onClick={() => {
-                        setVerifyingPayment(false);
-                        setUpiSubmitted(false);
-                      }}
-                      className="text-[9px] text-slate-400 hover:text-red-500 font-bold underline"
-                    >
-                      Cancel and edit UTR
-                    </button>
-                  </div>
-                </div>
-              ) : verificationSuccess ? (
+              {verificationSuccess ? (
                 <div className="bg-emerald-50 border border-emerald-250 rounded-xl p-4 text-center space-y-2 animate-fade-in-up">
                   <div className="w-10 h-10 bg-emerald-100 rounded-full flex items-center justify-center mx-auto">
                     <CheckCircle2 size={24} className="text-emerald-600" />
                   </div>
                   <h5 className="text-xs font-black text-emerald-800 uppercase tracking-wider">Payment Verified!</h5>
-                  <p className="text-[10px] text-emerald-600 font-medium">Bank reference code confirmed. Slot booked successfully!</p>
-                </div>
-              ) : upiSubmitted ? (
-                <div className="bg-amber-50 border border-amber-250 rounded-xl p-3 text-center space-y-2">
-                  <p className="text-xs font-bold text-amber-800">Payment status: Awaiting approval</p>
-                  <button 
-                    type="button" 
-                    onClick={() => setVerifyingPayment(true)}
-                    className="w-full bg-[#00488d] text-white rounded-xl py-2 text-xs font-bold shadow hover:bg-blue-800 transition-colors"
-                  >
-                    Resume Auto-Detection
-                  </button>
+                  <p className="text-[10px] text-emerald-600 font-medium">Payment automatically fetched & confirmed. Slot booked successfully!</p>
                 </div>
               ) : (
-                <form onSubmit={handleUpiSubmit} className="space-y-2">
-                  <div>
-                    <label className="block text-[9px] font-extrabold uppercase text-slate-500 tracking-wide mb-1">
-                      Enter UPI Ref / UTR Number
-                    </label>
-                    <input 
-                      type="text" 
-                      required
-                      placeholder="12-digit number"
-                      value={upiUtr}
-                      onChange={(e) => setUpiUtr(e.target.value)}
-                      className="w-full text-xs font-semibold border border-slate-200 rounded-xl px-3 py-2 outline-none focus:border-[#00488d] transition-colors text-slate-800 uppercase"
-                    />
+                <div className="bg-blue-50/50 border border-blue-100 rounded-xl p-4 text-center space-y-4 relative overflow-hidden">
+                  <div className="absolute top-0 left-0 w-full h-1 bg-gradient-to-r from-transparent via-[#00488d] to-transparent animate-[shimmer_2s_infinite]"></div>
+                  
+                  <div className="flex flex-col items-center justify-center space-y-3">
+                    <div className="relative">
+                      <div className="w-12 h-12 bg-white rounded-full flex items-center justify-center shadow-sm border border-blue-100 z-10 relative">
+                        <Loader2 className="w-6 h-6 text-[#00488d] animate-spin" />
+                      </div>
+                      <div className="absolute inset-0 bg-[#00488d] rounded-full animate-ping opacity-20"></div>
+                    </div>
+                    
+                    <div>
+                      <h5 className="text-xs font-black text-slate-800 uppercase tracking-wider mb-1">Awaiting Payment</h5>
+                      <p className="text-[10px] text-slate-500 font-medium leading-relaxed">
+                        Please scan the QR code to pay using any UPI app.<br />
+                        Our system will <strong className="text-[#00488d]">auto-fetch</strong> your payment status instantly.
+                      </p>
+                    </div>
                   </div>
-                  {upiError && (
-                    <p className="text-[10px] font-bold text-red-600">{upiError}</p>
-                  )}
-                  <button 
-                    type="submit" 
-                    disabled={upiLoading}
-                    className="w-full bg-[#00488d] hover:bg-blue-800 text-white rounded-xl py-2.5 text-xs font-bold shadow transition-colors flex items-center justify-center gap-1 disabled:opacity-50"
-                  >
-                    {upiLoading ? 'Submitting...' : 'Confirm UPI Payment'}
-                  </button>
-                </form>
+
+                  <div className="pt-3 border-t border-slate-100/50">
+                    <p className="text-[9px] text-slate-400 font-bold uppercase tracking-wider mb-2">For Demo Purposes Only</p>
+                    <button
+                      type="button"
+                      onClick={() => setVerificationSuccess(true)}
+                      className="w-full bg-emerald-600 hover:bg-emerald-700 text-white rounded-xl py-2 text-[10px] font-black uppercase tracking-wider shadow transition-colors flex items-center justify-center gap-1.5"
+                    >
+                      <CheckCircle2 size={14} /> Simulate Successful Scan
+                    </button>
+                  </div>
+                </div>
               )}
             </div>
           )}
@@ -525,6 +318,31 @@ const BookingWizard = ({ existingCart, onCartUpdate, scrollToSection }) => {
       </section>
     );
   }
+
+  const summarySidebar = (
+    <div className="bg-white rounded-2xl p-6 border border-slate-100 shadow-sm sticky top-24">
+      <h3 className="font-bold text-slate-800 mb-4 flex items-center gap-2"><Search size={18}/> Booking Summary</h3>
+      {selectedTests.length === 0 ? (
+        <p className="text-slate-500 text-sm">No tests selected yet. Add some tests to proceed.</p>
+      ) : (
+        <>
+          <ul className="space-y-3 mb-4 max-h-60 overflow-y-auto pr-2">
+            {selectedTests.map((t, idx) => (
+              <li key={idx} className="flex justify-between text-sm">
+                <span className="text-slate-600 font-medium truncate pr-2">{t.name}</span>
+                <span className="text-slate-800 font-bold shrink-0">₹{t.price}</span>
+              </li>
+            ))}
+          </ul>
+          <div className="border-t border-slate-100 pt-4 space-y-2">
+            <div className="flex justify-between text-sm text-slate-500 font-medium"><span>Subtotal</span><span>₹{totalPrice}</span></div>
+            {couponApplied && <div className="flex justify-between text-sm text-emerald-600 font-bold"><span>Discount (10%)</span><span>-₹{discountAmount}</span></div>}
+            <div className="flex justify-between text-lg text-primary font-black pt-2 border-t border-slate-100 mt-2"><span>Total</span><span>₹{finalPrice}</span></div>
+          </div>
+        </>
+      )}
+    </div>
+  );
 
   return (
     <section id="booking" className="py-20 bg-gradient-to-b from-slate-50 to-white px-4 sm:px-6 lg:px-8 scroll-mt-20">

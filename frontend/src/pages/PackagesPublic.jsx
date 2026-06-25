@@ -1,4 +1,5 @@
 import React, { useState, useEffect, useMemo, useCallback } from 'react';
+import { useNavigate } from 'react-router-dom';
 import PublicLayout from '../components/PublicLayout';
 import { HEALTH_PACKAGES_DATA, TESTS_DATA } from '../data/testsData';
 import {
@@ -6,6 +7,8 @@ import {
   TrendingDown, Award, Sparkles,
   ChevronDown, ChevronUp, MessageCircle, ArrowRight
 } from 'lucide-react';
+import PackageCard from '../components/PackageCard';
+import PackageDetailsModal from '../components/PackageDetailsModal';
 
 const PHONE = '916396786939';
 
@@ -15,6 +18,7 @@ const getTestName = (code) => {
 };
 
 const PackagesPublic = () => {
+  const navigate = useNavigate();
   const [cart, setCart] = useState(() => {
     try {
       const saved = localStorage.getItem('sana_cart');
@@ -26,6 +30,7 @@ const PackagesPublic = () => {
 
   const [openFaq, setOpenFaq] = useState(null);
   const [customTests, setCustomTests] = useState({});
+  const [selectedPackageDetails, setSelectedPackageDetails] = useState(null);
 
   useEffect(() => {
     localStorage.setItem('sana_cart', JSON.stringify(cart));
@@ -72,6 +77,19 @@ const PackagesPublic = () => {
         isPackage: true
       });
     }
+  };
+
+  const handleBookNow = (pkg) => {
+    if (!isInCart(pkg.code)) {
+      addToCart({
+        name: pkg.name,
+        price: pkg.price,
+        testCode: pkg.code,
+        isPackage: true
+      });
+    }
+    navigate('/book-online');
+    window.scrollTo(0, 0);
   };
 
   const toggleCustomTest = (code) => {
@@ -206,87 +224,18 @@ const PackagesPublic = () => {
             </p>
           </div>
 
-          <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6 lg:gap-8">
-            {HEALTH_PACKAGES_DATA.map((pkg) => {
-              const added = isInCart(pkg.code);
-              const savings = pkg.originalPrice - pkg.price;
-              return (
-                <div
-                  key={pkg.code}
-                  className="bg-white rounded-3xl shadow-sm border border-gray-100 overflow-hidden flex flex-col transition-all duration-300 hover:shadow-lg hover:-translate-y-1"
-                >
-                  <div className="relative">
-                    {pkg.badge && (
-                      <span className={`absolute top-4 left-4 z-10 text-[10px] font-bold px-3 py-1 rounded-full border inline-flex items-center gap-1 ${badgeStyle(pkg.badge)}`}>
-                        {badgeIcon(pkg.badge)}
-                        {pkg.badge}
-                      </span>
-                    )}
-                    <div className="h-32 bg-gradient-to-br from-[#085041] to-[#0F6E56] flex items-center justify-center">
-                      <Award className="w-14 h-14 text-emerald-300/60" />
-                    </div>
-                  </div>
-
-                  <div className="p-5 md:p-6 flex-1 flex flex-col">
-                    <h3 className="text-lg font-bold text-gray-900 mb-2">{pkg.name}</h3>
-                    <p className="text-sm text-gray-500 mb-4 leading-relaxed">{pkg.desc}</p>
-
-                    <div className="flex items-baseline gap-2 mb-3">
-                      <span className="text-3xl font-black text-[#1D9E75]">₹{pkg.price}</span>
-                      <span className="text-gray-400 line-through text-sm font-bold">₹{pkg.originalPrice}</span>
-                      <span className="text-emerald-600 text-xs font-bold bg-emerald-50 px-2 py-0.5 rounded-full">
-                        Save ₹{savings}
-                      </span>
-                    </div>
-
-                    <div className="mb-5 flex-1">
-                      <p className="text-xs font-bold text-gray-600 uppercase tracking-wider mb-2 flex items-center gap-1">
-                        <Check className="w-3.5 h-3.5 text-[#1D9E75]" />
-                        Included Tests ({pkg.tests.length})
-                      </p>
-                      <ul className="space-y-1">
-                        {pkg.tests.map((code) => (
-                          <li key={code} className="text-xs text-gray-600 flex items-center gap-1.5">
-                            <span className="w-1 h-1 rounded-full bg-[#1D9E75] shrink-0"></span>
-                            {getTestName(code)}
-                          </li>
-                        ))}
-                      </ul>
-                    </div>
-
-                    <div className="space-y-2.5 mt-auto">
-                      <button
-                        onClick={() => handlePackageToggle(pkg)}
-                        className={`w-full py-3 rounded-2xl font-bold text-sm transition-all flex items-center justify-center gap-2 ${
-                          added
-                            ? 'bg-emerald-50 text-emerald-700 border-2 border-emerald-500'
-                            : 'bg-[#1D9E75] text-white hover:bg-[#187a5a] shadow-md shadow-emerald-200 active:scale-[0.98]'
-                        }`}
-                      >
-                        {added ? (
-                          <>
-                            <Check className="w-5 h-5" />
-                            Added
-                          </>
-                        ) : (
-                          <>
-                            <ShoppingCart className="w-5 h-5" />
-                            Add to Cart
-                          </>
-                        )}
-                      </button>
-                      <button
-                        onClick={() => handleWhatsApp(`Hi Sana Pathology, I want to book ${pkg.name} (₹${pkg.price}). Please call me back.`)}
-                        className="w-full py-3 rounded-2xl font-bold text-sm border border-gray-200 text-gray-700 hover:bg-gray-50 transition-all flex items-center justify-center gap-2 active:scale-[0.98]"
-                      >
-                        <MessageCircle className="w-5 h-5 text-[#25D366]" />
-                        WhatsApp to Book
-                      </button>
-                    </div>
-                  </div>
-                </div>
-              );
-            })}
+          <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-6">
+            {HEALTH_PACKAGES_DATA.map((pkg) => (
+              <PackageCard 
+                key={pkg.code} 
+                pkg={pkg} 
+                isAdded={isInCart(pkg.code)}
+                onAdd={handlePackageToggle}
+                onKnowMore={(p) => setSelectedPackageDetails(p)}
+                onBookNow={handleBookNow}
+                onWhatsApp={(msg) => handleWhatsApp(msg)}
+              />
+            ))}
           </div>
         </div>
       </section>
@@ -444,6 +393,15 @@ const PackagesPublic = () => {
 
       {/* Spacer for sticky bar */}
       {cart.length > 0 && <div className="h-20 md:h-24"></div>}
+      <PackageDetailsModal 
+        pkg={selectedPackageDetails}
+        onClose={() => setSelectedPackageDetails(null)}
+        onBookNow={(p) => {
+          setSelectedPackageDetails(null);
+          handleBookNow(p);
+        }}
+        isAdded={selectedPackageDetails ? isInCart(selectedPackageDetails.code) : false}
+      />
     </PublicLayout>
   );
 };
