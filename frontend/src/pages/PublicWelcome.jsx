@@ -25,6 +25,8 @@ import ExitIntentPopup from '../components/ExitIntentPopup';
 import PinCodeChecker from '../components/PinCodeChecker';
 import SymptomFinder from '../components/SymptomFinder';
 import DynamicPackageBuilder from '../components/DynamicPackageBuilder';
+import PackageCard from '../components/PackageCard';
+import PackageDetailsModal from '../components/PackageDetailsModal';
 
 import WhatsAppIcon from '../components/WhatsAppIcon';
 import SubscriptionPlans from '../components/SubscriptionPlans';
@@ -80,6 +82,7 @@ const PublicWelcome = () => {
   const [categories, setCategories] = useState(['All']);
   const [selectedCategory, setSelectedCategory] = useState('All');
   const [searchQueryTest, setSearchQueryTest] = useState('');
+  const [selectedPackageDetails, setSelectedPackageDetails] = useState(null);
   const [selectedTests, setSelectedTests] = useState(() => {
     try {
       const saved = localStorage.getItem('sana_cart');
@@ -162,6 +165,26 @@ const PublicWelcome = () => {
   const [chatMessages, setChatMessages] = useState([]);
   const [chatInput, setChatInput] = useState('');
   const [aiChatLoading, setAiChatLoading] = useState(false);
+
+  // Package Handlers
+  const isInCart = (code) => selectedTests.some(t => (t.testCode || t.code) === code);
+  
+  const handlePackageToggle = (pkg) => {
+    setSelectedTests(prev => {
+      if (isInCart(pkg.code)) return prev.filter(p => (p.testCode || p.code) !== pkg.code);
+      return [...prev, { name: pkg.name, testCode: pkg.code, price: pkg.price, isPackage: true }];
+    });
+  };
+
+  const handleBookNow = (pkg) => {
+    if (!isInCart(pkg.code)) handlePackageToggle(pkg);
+    scrollToSection('booking');
+  };
+
+  const handleWhatsAppPkg = (msg) => {
+    const labPhone = "916396786939"; 
+    window.open(`https://wa.me/${labPhone}?text=${encodeURIComponent(msg)}`, '_blank');
+  };
 
   // Helper to resolve test info with fallbacks
   const getTestInfo = (testCode) => {
@@ -1050,8 +1073,49 @@ Question: ${userMsg}
       </section>
 
       {/* Curated Health & Wellness Packages */}
+      <section id="packages" className="py-20 px-4 sm:px-6 lg:px-8 bg-gray-50">
+        <div className="max-w-7xl mx-auto">
+          <div className="text-center mb-12">
+            <span className="text-xs font-black tracking-widest text-[#1D9E75] uppercase bg-emerald-50 px-4 py-1.5 rounded-full">
+              {language === 'hi' ? 'हेल्थ पैकेजेस' : 'Health Packages'}
+            </span>
+            <h2 className="text-3xl md:text-4xl font-black text-gray-900 mt-4 mb-2">
+              {language === 'hi' ? 'अपना हेल्थ पैकेज चुनें' : 'Choose Your Health Package'}
+            </h2>
+            <p className="text-gray-500 max-w-xl mx-auto">
+              {language === 'hi' ? 'अपनी जरूरत के अनुसार हमारे विशेष हेल्थ पैकेज चुनें' : 'Select from our curated health packages designed for every need'}
+            </p>
+          </div>
 
+          <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-6">
+            {HEALTH_PACKAGES.slice(0, 4).map((pkg) => (
+              <PackageCard 
+                key={pkg.code} 
+                pkg={pkg} 
+                isAdded={isInCart(pkg.code)}
+                onAdd={handlePackageToggle}
+                onKnowMore={(p) => setSelectedPackageDetails(p)}
+                onBookNow={handleBookNow}
+                onWhatsApp={(msg) => handleWhatsAppPkg(msg)}
+              />
+            ))}
+          </div>
+          
+          <div className="mt-12 text-center">
+            <Link to="/packages" className="inline-flex items-center gap-2 bg-white text-primary border border-primary hover:bg-primary hover:text-white transition-colors px-8 py-3.5 rounded-2xl font-bold shadow-sm">
+              View All Packages <ArrowRight size={18} />
+            </Link>
+          </div>
+        </div>
+      </section>
 
+      {/* Package Details Modal */}
+      {selectedPackageDetails && (
+        <PackageDetailsModal 
+          pkg={selectedPackageDetails} 
+          onClose={() => setSelectedPackageDetails(null)} 
+        />
+      )}
       <section id="symptom-finder" className="py-20 bg-slate-50 border-b border-slate-200 px-4 sm:px-6 lg:px-8">
         <div className="max-w-7xl mx-auto">
           <SymptomFinder />
