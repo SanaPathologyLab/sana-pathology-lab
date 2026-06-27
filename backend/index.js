@@ -241,6 +241,36 @@ app.post('/api/public/book-appointment', async (req, res) => {
   }
 });
 
+// ─── PUBLIC: Submit UTR for Appointment Payment ───
+app.post('/api/public/submit-utr', async (req, res) => {
+  try {
+    const { appointmentId, utr } = req.body;
+    
+    if (!appointmentId || !utr) {
+      return res.status(400).json({ message: 'Appointment ID and UTR are required.' });
+    }
+    
+    if (String(appointmentId).startsWith('offline-')) {
+       return res.status(200).json({ message: 'UTR submitted for offline booking.', paymentStatus: 'PENDING_VERIFICATION' });
+    }
+
+    const numericId = parseInt(appointmentId, 10);
+    
+    const updated = await prisma.appointment.update({
+      where: { id: numericId },
+      data: {
+        transactionId: utr,
+        paymentStatus: 'PENDING_VERIFICATION'
+      }
+    });
+
+    return res.status(200).json({ message: 'UTR submitted successfully.', paymentStatus: updated.paymentStatus });
+  } catch (err) {
+    console.error('Submit UTR error:', err.message);
+    return res.status(500).json({ message: 'Server error while submitting UTR.' });
+  }
+});
+
 // ─── PUBLIC: Get Payment Status for an Appointment ───
 app.get('/api/public/payment-status/:id', async (req, res) => {
   try {

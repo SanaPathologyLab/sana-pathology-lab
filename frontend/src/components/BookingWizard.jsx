@@ -247,8 +247,11 @@ const BookingWizard = ({ existingCart, onCartUpdate, scrollToSection }) => {
           <p className="text-slate-500 mb-6 font-medium">Thank you, {patient.name}. We'll confirm your slot shortly.</p>
           
           {createdAppointment && (
-            <div className="mb-8 max-w-sm mx-auto bg-white rounded-2xl border border-slate-100 shadow-md p-5 text-left">
-              <h4 className="text-xs font-black text-slate-800 uppercase tracking-wide mb-4 flex items-center gap-1.5">
+            <div className="mb-8 max-w-sm mx-auto bg-white rounded-2xl border border-slate-100 shadow-md p-5 text-left relative overflow-hidden">
+              <div className="absolute top-0 right-0 bg-emerald-50 text-emerald-700 px-3 py-1.5 rounded-bl-xl font-black text-[10px] uppercase tracking-wider border-b border-l border-emerald-100 shadow-sm flex items-center gap-1">
+                <CheckCircle2 size={12} /> {createdAppointment?.appointmentId || createdAppointment?.id || 'APT-XXXX'}
+              </div>
+              <h4 className="text-xs font-black text-slate-800 uppercase tracking-wide mb-4 flex items-center gap-1.5 mt-2">
                 <span>💳 Pay Online via UPI</span>
               </h4>
               
@@ -263,53 +266,72 @@ const BookingWizard = ({ existingCart, onCartUpdate, scrollToSection }) => {
                   <div className="w-10 h-10 bg-emerald-100 rounded-full flex items-center justify-center mx-auto">
                     <CheckCircle2 size={24} className="text-emerald-600" />
                   </div>
-                  <h5 className="text-xs font-black text-emerald-800 uppercase tracking-wider">Payment Verified!</h5>
-                  <p className="text-[10px] text-emerald-600 font-medium">Payment automatically fetched & confirmed. Slot booked successfully!</p>
+                  <h5 className="text-xs font-black text-emerald-800 uppercase tracking-wider">Payment Submitted!</h5>
+                  <p className="text-[10px] text-emerald-600 font-medium">Your reference number has been received. Our team will verify it shortly.</p>
                   <div className="mt-4 bg-white border border-emerald-200 rounded-xl py-2 px-4 inline-block shadow-sm">
                     <span className="text-[10px] font-bold text-emerald-600 uppercase tracking-wider block mb-0.5">Booking No.</span>
                     <span className="text-lg font-black text-emerald-800 tracking-wider">{createdAppointment?.appointmentId || createdAppointment?.id || 'APT-XXXXXX'}</span>
                   </div>
                 </div>
               ) : (
-                <div className="bg-blue-50/50 border border-blue-100 rounded-xl p-4 text-center space-y-3 relative overflow-hidden">
-                  <div className="absolute top-0 left-0 w-full h-1 bg-gradient-to-r from-transparent via-[#00488d] to-transparent animate-[shimmer_2s_infinite]"></div>
-
-                  {/* Status header */}
-                  <div className="flex items-center justify-center gap-2">
-                    <div className="relative">
-                      <div className="w-8 h-8 bg-white rounded-full flex items-center justify-center shadow-sm border border-blue-100 z-10 relative">
-                        <Loader2 className="w-4 h-4 text-[#00488d] animate-spin" />
-                      </div>
-                      <div className="absolute inset-0 bg-[#00488d] rounded-full animate-ping opacity-15"></div>
-                    </div>
-                    <div className="text-left">
-                      <h5 className="text-xs font-black text-slate-800">Awaiting Your Payment</h5>
-                      <p className="text-[10px] text-slate-500">Auto-checking every 5 seconds</p>
-                    </div>
+                <div className="bg-slate-50 border border-slate-200 rounded-xl p-4 space-y-3">
+                  <div className="text-center">
+                    <h5 className="text-xs font-black text-slate-800">Submit Payment Details</h5>
+                    <p className="text-[10px] text-slate-500 font-medium mt-1 leading-relaxed">
+                      Scan the QR code to pay via UPI.<br />
+                      Then enter the 12-digit UTR / Reference No. below.
+                    </p>
+                  </div>
+                  
+                  <div className="space-y-1.5">
+                    <input 
+                      type="text" 
+                      placeholder="e.g. 312456789012" 
+                      value={upiUtr}
+                      onChange={(e) => {
+                        setUpiUtr(e.target.value.replace(/\D/g, ''));
+                        setUpiError('');
+                      }}
+                      maxLength={12}
+                      className={`w-full px-3 py-2 border rounded-lg text-sm font-semibold outline-none transition-all text-center tracking-widest ${upiError ? 'border-red-300 bg-red-50 focus:border-red-500' : 'border-slate-200 focus:border-[#00488d] focus:ring-1 focus:ring-[#00488d]'}`} 
+                    />
+                    {upiError && <p className="text-[10px] font-bold text-red-500 text-center">{upiError}</p>}
                   </div>
 
-                  {/* Countdown */}
-                  <div className="bg-white rounded-xl p-2 border border-blue-100 flex items-center justify-between text-[10px] font-bold">
-                    <span className="text-slate-400 uppercase tracking-wider">Next check in</span>
-                    <span className="text-[#00488d] font-black text-sm tabular-nums">{pollCountdown}s</span>
-                    <span className="text-slate-400">• Auto-detecting</span>
-                  </div>
-
-                  <p className="text-[10px] text-slate-500 font-medium leading-relaxed">
-                    Scan the QR code above with Google Pay, PhonePe, or Paytm.<br />
-                    Our system will <strong className="text-[#00488d]">automatically confirm</strong> once payment is detected.
-                  </p>
-
-                  <div className="pt-2 border-t border-slate-100/50">
-                    <p className="text-[9px] text-slate-400 font-bold uppercase tracking-wider mb-2">Demo Only</p>
-                    <button
-                      type="button"
-                      onClick={() => setVerificationSuccess(true)}
-                      className="w-full bg-emerald-600 hover:bg-emerald-700 text-white rounded-xl py-2 text-[10px] font-black uppercase tracking-wider shadow transition-colors flex items-center justify-center gap-1.5"
-                    >
-                      <CheckCircle2 size={14} /> Simulate Payment Confirmed
-                    </button>
-                  </div>
+                  <button
+                    type="button"
+                    disabled={verifyingPayment || upiUtr.length < 12}
+                    onClick={async () => {
+                      if (upiUtr.length !== 12) {
+                        setUpiError('UTR must be 12 digits');
+                        return;
+                      }
+                      setVerifyingPayment(true);
+                      setUpiError('');
+                      try {
+                        const response = await fetch('/api/public/submit-utr', {
+                          method: 'POST',
+                          headers: { 'Content-Type': 'application/json' },
+                          body: JSON.stringify({ appointmentId: createdAppointment?.id || 'offline-0', utr: upiUtr })
+                        });
+                        if (response.ok) {
+                          setVerificationSuccess(true);
+                          setUpiSubmitted(true);
+                        } else {
+                          const data = await response.json();
+                          setUpiError(data.message || 'Failed to submit UTR');
+                        }
+                      } catch (err) {
+                        setUpiError('Network error. Try again.');
+                      } finally {
+                        setVerifyingPayment(false);
+                      }
+                    }}
+                    className="w-full bg-[#00488d] hover:bg-blue-800 disabled:opacity-50 text-white rounded-lg py-2.5 text-[10px] font-black uppercase tracking-wider shadow-sm transition-colors flex items-center justify-center gap-1.5"
+                  >
+                    {verifyingPayment ? <Loader2 size={14} className="animate-spin" /> : <CheckCircle2 size={14} />}
+                    {verifyingPayment ? 'Submitting...' : 'Submit Reference No.'}
+                  </button>
                 </div>
               )}
             </div>
