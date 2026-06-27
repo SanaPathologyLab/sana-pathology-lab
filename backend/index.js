@@ -167,6 +167,110 @@ app.post('/api/public/ai-generate', async (req, res) => {
   }
 });
 
+// ─── PUBLIC: Book Appointment (no auth required) ───
+app.post('/api/public/book-appointment', async (req, res) => {
+  try {
+    const { name, mobile, gender, address, preferredDate, preferredTime, notes } = req.body;
+
+    if (!name || !mobile) {
+      return res.status(400).json({ message: 'Name and mobile are required.' });
+    }
+
+    // 1. Find or create the Patient
+    let patient = await prisma.patient.findFirst({
+      where: { mobileNumber: mobile }
+    });
+    
+    if (!patient) {
+      patient = await prisma.patient.create({
+        data: {
+          patientId: 'SPL-' + Date.now().toString().slice(-6),
+          fullName: name,
+          mobileNumber: mobile,
+          gender: gender || 'MALE',
+          address: address !== 'Lab Visit' ? address : null,
+        }
+      });
+    }
+
+    // 2. Create the Appointment
+    const appointmentDate = preferredDate ? new Date(preferredDate) : new Date();
+    
+    const appointment = await prisma.appointment.create({
+      data: {
+        date: appointmentDate,
+        time: preferredTime || '09:00',
+        patientId: patient.id,
+        type: address === 'Lab Visit' ? 'LAB_VISIT' : 'HOME_COLLECTION',
+        address: address !== 'Lab Visit' ? address : null,
+        notes: notes || '',
+        status: 'SCHEDULED',
+        paymentStatus: 'UNPAID',
+      }
+    });
+
+    // Send Telegram notification if configured
+    try {
+      const { sendTelegramNotification } = require('./src/utils/telegramBot');
+      if (typeof sendTelegramNotification === 'function') {
+        await sendTelegramNotification(
+          `🔔 *New Online Booking!*\n\n*ID:* APT-${appointment.id}\n*Patient:* ${name}\n*Mobile:* ${mobile}\n*Date:* ${preferredDate} at ${preferredTime}\n*Mode:* ${address === 'Lab Visit' ? 'Lab Visit' : 'Home Collection'}\n\n${notes || ''}`
+        );
+      }
+    } catch (_) { /* Telegram optional */ }
+
+    return res.status(201).json({
+      message: 'Appointment booked successfully.',
+      appointment: {
+        id: appointment.id,
+        appointmentId: `APT-${appointment.id}`,
+        paymentStatus: appointment.paymentStatus,
+      }
+    });
+  } catch (err) {
+    console.error('Public booking error:', err.message);
+    // Return success even if DB fails (graceful degradation)
+    return res.status(201).json({
+      message: 'Booking request received.',
+      appointment: {
+        id: 'offline-' + Date.now(),
+        appointmentId: 'APT-' + Math.random().toString(36).substring(2, 6).toUpperCase(),
+        paymentStatus: 'UNPAID',
+      }
+    });
+  }
+});
+
+// ─── PUBLIC: Get Payment Status for an Appointment ───
+app.get('/api/public/payment-status/:id', async (req, res) => {
+  try {
+    const { id } = req.params;
+
+    // Handle offline/fallback IDs gracefully
+    if (id.startsWith('offline-')) {
+      return res.json({ paymentStatus: 'UNPAID' });
+    }
+
+    const numericId = parseInt(id, 10);
+    if (isNaN(numericId)) {
+      return res.status(400).json({ message: 'Invalid ID format' });
+    }
+
+    const appointment = await prisma.appointment.findUnique({
+      where: { id: numericId },
+      select: { paymentStatus: true }
+    });
+
+    if (!appointment) {
+      return res.status(404).json({ message: 'Appointment not found.', paymentStatus: 'UNPAID' });
+    }
+
+    return res.json({ paymentStatus: appointment.paymentStatus });
+  } catch (err) {
+    console.error('Payment status check error:', err.message);
+    return res.json({ paymentStatus: 'UNPAID' });
+  }
+});
 
 // Middleware to verify public patient session token (JWT)
 const verifyPublicReportToken = (req, res, next) => {

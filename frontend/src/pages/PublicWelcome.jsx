@@ -37,6 +37,7 @@ import UpsellRecommendations from '../components/UpsellRecommendations';
 import BloodTube3D from '../components/BloodTube3D';
 import BookingWizard from '../components/BookingWizard';
 import EmergencyWidget from '../components/EmergencyWidget';
+import TestimonialsCarousel from '../components/TestimonialsCarousel';
 
 const API = import.meta.env.VITE_API_URL || 'http://localhost:5000/api';
 
@@ -659,24 +660,80 @@ Question: ${userMsg}
               India's leading diagnostic network now in your neighborhood. Get free home sample collection and verified pathologist reports.
             </p>
 
-            {/* Quick Search Bar within Hero (Lal style) */}
+            {/* Quick Search Bar within Hero (Lal style) with Live Autocomplete */}
             <div className="bg-white p-3 rounded-2xl shadow-[0_15px_40px_rgba(0,72,141,0.12)] border border-slate-100 flex flex-col sm:flex-row gap-3 max-w-xl relative">
-               <input 
-                 type="text" 
-                 placeholder="Search for Test or Health Package..." 
-                 className="flex-1 px-4 py-3.5 border border-slate-200 rounded-xl focus:border-[#00488d] focus:ring-2 focus:ring-[#00488d]/10 outline-none text-slate-800 font-bold"
-                 value={searchQueryTest}
-                 onChange={(e) => setSearchQueryTest(e.target.value)}
-                 onKeyDown={(e) => {
-                   if (e.key === 'Enter') {
-                     scrollToSection('search-section');
-                   }
-                 }}
-               />
+               <div className="relative flex-1">
+                 <input 
+                   type="text" 
+                   placeholder="Search for Test or Health Package..." 
+                   className="w-full px-4 py-3.5 border border-slate-200 rounded-xl focus:border-[#00488d] focus:ring-2 focus:ring-[#00488d]/10 outline-none text-slate-800 font-bold"
+                   value={searchQueryTest}
+                   onChange={(e) => setSearchQueryTest(e.target.value)}
+                   onKeyDown={(e) => {
+                     if (e.key === 'Enter') scrollToSection('search-section');
+                   }}
+                   onFocus={() => setSearchQueryTest(prev => prev)}
+                   autoComplete="off"
+                 />
+                 {/* Live Autocomplete Dropdown */}
+                 {searchQueryTest.trim().length >= 2 && (
+                   <div className="absolute top-full left-0 right-0 mt-2 bg-white rounded-2xl shadow-2xl border border-slate-100 z-50 overflow-hidden max-h-72 overflow-y-auto">
+                     {/* Matching tests */}
+                     {TESTS_DATA.filter(t => 
+                       t.testName.toLowerCase().includes(searchQueryTest.toLowerCase()) ||
+                       t.testCode.toLowerCase().includes(searchQueryTest.toLowerCase())
+                     ).slice(0, 6).map((test, idx) => (
+                       <div 
+                         key={idx}
+                         className="flex items-center justify-between px-4 py-3 hover:bg-blue-50 cursor-pointer border-b border-slate-50 last:border-0 group"
+                         onClick={() => {
+                           scrollToSection('booking');
+                           setSearchQueryTest('');
+                         }}
+                       >
+                         <div>
+                           <p className="text-sm font-bold text-slate-800 group-hover:text-[#00488d]">{test.testName}</p>
+                           <p className="text-[10px] text-slate-400 font-medium">{test.category?.name} • {test.sampleType}</p>
+                         </div>
+                         <div className="flex items-center gap-2 shrink-0 ml-3">
+                           <span className="text-sm font-black text-[#00488d]">₹{test.price}</span>
+                           <span className="text-[10px] bg-[#00488d] text-white px-2 py-0.5 rounded-full font-bold opacity-0 group-hover:opacity-100 transition-opacity">Book</span>
+                         </div>
+                       </div>
+                     ))}
+                     {/* Matching packages */}
+                     {HEALTH_PACKAGES.filter(p =>
+                       p.name.toLowerCase().includes(searchQueryTest.toLowerCase())
+                     ).slice(0, 3).map((pkg, idx) => (
+                       <div 
+                         key={`pkg-${idx}`}
+                         className="flex items-center justify-between px-4 py-3 hover:bg-emerald-50 cursor-pointer border-b border-slate-50 last:border-0 group"
+                         onClick={() => {
+                           scrollToSection('packages');
+                           setSearchQueryTest('');
+                         }}
+                       >
+                         <div>
+                           <p className="text-sm font-bold text-slate-800 group-hover:text-emerald-700">📦 {pkg.name}</p>
+                           <p className="text-[10px] text-slate-400 font-medium">{pkg.parameterCount} parameters • Health Package</p>
+                         </div>
+                         <div className="flex items-center gap-2 shrink-0 ml-3">
+                           <span className="text-sm font-black text-emerald-600">₹{pkg.price}</span>
+                           <span className="text-[10px] bg-emerald-600 text-white px-2 py-0.5 rounded-full font-bold opacity-0 group-hover:opacity-100 transition-opacity">View</span>
+                         </div>
+                       </div>
+                     ))}
+                     {TESTS_DATA.filter(t => t.testName.toLowerCase().includes(searchQueryTest.toLowerCase())).length === 0 &&
+                      HEALTH_PACKAGES.filter(p => p.name.toLowerCase().includes(searchQueryTest.toLowerCase())).length === 0 && (
+                       <div className="px-4 py-6 text-center text-sm text-slate-400">
+                         No results for "<strong>{searchQueryTest}</strong>". Try another name.
+                       </div>
+                     )}
+                   </div>
+                 )}
+               </div>
                <button 
-                 onClick={() => {
-                   scrollToSection('search-section');
-                 }}
+                 onClick={() => { scrollToSection('search-section'); }}
                  className="bg-[#f15a22] hover:bg-[#e04c1a] text-white px-8 py-3.5 rounded-xl font-bold flex items-center justify-center gap-2 transition-colors whitespace-nowrap shadow-md shadow-[#f15a22]/20"
                >
                  <Search size={18} /> Search Test
@@ -1134,11 +1191,8 @@ Question: ${userMsg}
 
 
 
-      <section id="testimonial-video" className="py-20 bg-white px-4 sm:px-6 lg:px-8">
-        <div className="max-w-7xl mx-auto">
-          <TestimonialVideoSection />
-        </div>
-      </section>
+      {/* Testimonials Carousel */}
+      <TestimonialsCarousel language={language} />
 
 
 

@@ -9,6 +9,7 @@ import {
 import Logo from './Logo';
 import WhatsAppIcon from './WhatsAppIcon';
 import EmergencyWidget from './EmergencyWidget';
+import StickyWhatsAppBook from './StickyWhatsAppBook';
 
 /* ─────────────────────────────────────────────────
    TOP UTILITY BAR
@@ -478,8 +479,11 @@ const PublicLayout = ({ children }) => {
         </div>
       </footer>
 
-      {/* Emergency Floating Widget (replaces old phone+whatsapp buttons) */}
+      {/* Emergency Floating Widget */}
       <EmergencyWidget />
+
+      {/* Sticky WhatsApp Booking Button */}
+      <StickyWhatsAppBook />
     </div>
   );
 };

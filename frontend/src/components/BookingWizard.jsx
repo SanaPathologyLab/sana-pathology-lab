@@ -51,7 +51,9 @@ const BookingWizard = ({ existingCart, onCartUpdate, scrollToSection }) => {
   const [showAutocomplete, setShowAutocomplete] = useState(false);
   const [activeCategory, setActiveCategory] = useState('All');
   const [patient, setPatient] = useState({ name: '', mobile: '', gender: '' });
-  const [dateTime, setDateTime] = useState({ date: new Date(Date.now() + 86400000).toISOString().split('T')[0], time: '08:00', isHomeCollection: true });
+  const todayStr = new Date().toISOString().split('T')[0];
+  const tomorrowStr = new Date(Date.now() + 86400000).toISOString().split('T')[0];
+  const [dateTime, setDateTime] = useState({ date: tomorrowStr, time: '08:00', isHomeCollection: true });
   const [address, setAddress] = useState('');
   const [coupon, setCoupon] = useState('');
   const [couponApplied, setCouponApplied] = useState(false);
@@ -68,6 +70,8 @@ const BookingWizard = ({ existingCart, onCartUpdate, scrollToSection }) => {
   const [upiUtr, setUpiUtr] = useState('');
   const [upiSubmitted, setUpiSubmitted] = useState(false);
   const [upiError, setUpiError] = useState('');
+  const [upiLoading, setUpiLoading] = useState(false);
+  const [pollCountdown, setPollCountdown] = useState(5);
 
   const [compareExpanded, setCompareExpanded] = useState(false);
   const [sampleFilter, setSampleFilter] = useState('All');
@@ -101,9 +105,17 @@ const BookingWizard = ({ existingCart, onCartUpdate, scrollToSection }) => {
   }, [selectedTests, onCartUpdate]);
 
   useEffect(() => {
-    let intervalId;
+    let pollInterval;
+    let countdownInterval;
     if (verifyingPayment && createdAppointment) {
-      intervalId = setInterval(async () => {
+      // Countdown timer UI
+      setPollCountdown(5);
+      countdownInterval = setInterval(() => {
+        setPollCountdown(prev => (prev <= 1 ? 5 : prev - 1));
+      }, 1000);
+
+      // Poll payment status every 5s
+      pollInterval = setInterval(async () => {
         try {
           const res = await fetch(`/api/public/payment-status/${createdAppointment.id}`);
           if (res.ok) {
@@ -111,15 +123,18 @@ const BookingWizard = ({ existingCart, onCartUpdate, scrollToSection }) => {
             if (data.paymentStatus === 'PAID') {
               setVerifyingPayment(false);
               setVerificationSuccess(true);
+              clearInterval(pollInterval);
+              clearInterval(countdownInterval);
             }
           }
         } catch (err) {
-          console.error('Polling payment status error:', err);
+          // silently ignore network errors during polling
         }
-      }, 3000);
+      }, 5000);
     }
     return () => {
-      if (intervalId) clearInterval(intervalId);
+      if (pollInterval) clearInterval(pollInterval);
+      if (countdownInterval) clearInterval(countdownInterval);
     };
   }, [verifyingPayment, createdAppointment]);
 
@@ -223,10 +238,8 @@ const BookingWizard = ({ existingCart, onCartUpdate, scrollToSection }) => {
     </div>
   );
 
-  if (bookingSuccess) {
-    return (
-      <section id="booking" className="py-20 bg-slate-50 px-4 sm:px-6 lg:px-8 scroll-mt-20">
-        <div className="max-w-2xl mx-auto text-center py-12 animate-fade-in-up">
+  const successContent = (
+        <div className="max-w-2xl mx-auto text-center py-4 animate-fade-in-up">
           <div className="w-20 h-20 bg-emerald-100 rounded-full flex items-center justify-center mx-auto mb-6">
             <CheckCircle2 size={40} className="text-emerald-600" />
           </div>
@@ -241,7 +254,7 @@ const BookingWizard = ({ existingCart, onCartUpdate, scrollToSection }) => {
               
               <div className="flex flex-col items-center justify-center p-4 bg-slate-50 rounded-xl mb-4 border border-slate-100">
                 <div className="bg-white p-2 rounded-xl shadow-sm border border-slate-100 mb-2">
-                  <QRCodeSVG value={`upi://pay?pa=6396786939@okbizaxis&pn=Sana%20Pathology%20Lab&am=${finalPrice}&cu=INR`} size={144} level="H" includeMargin={true} />
+                  <QRCodeSVG value={`upi://pay?pa=6397240575@ptaxis&pn=Sana%20Pathology%20Lab&am=${finalPrice}&cu=INR`} size={144} level="H" includeMargin={true} />
                 </div>
               </div>
 
@@ -252,36 +265,49 @@ const BookingWizard = ({ existingCart, onCartUpdate, scrollToSection }) => {
                   </div>
                   <h5 className="text-xs font-black text-emerald-800 uppercase tracking-wider">Payment Verified!</h5>
                   <p className="text-[10px] text-emerald-600 font-medium">Payment automatically fetched & confirmed. Slot booked successfully!</p>
+                  <div className="mt-4 bg-white border border-emerald-200 rounded-xl py-2 px-4 inline-block shadow-sm">
+                    <span className="text-[10px] font-bold text-emerald-600 uppercase tracking-wider block mb-0.5">Booking No.</span>
+                    <span className="text-lg font-black text-emerald-800 tracking-wider">{createdAppointment?.appointmentId || createdAppointment?.id || 'APT-XXXXXX'}</span>
+                  </div>
                 </div>
               ) : (
-                <div className="bg-blue-50/50 border border-blue-100 rounded-xl p-4 text-center space-y-4 relative overflow-hidden">
+                <div className="bg-blue-50/50 border border-blue-100 rounded-xl p-4 text-center space-y-3 relative overflow-hidden">
                   <div className="absolute top-0 left-0 w-full h-1 bg-gradient-to-r from-transparent via-[#00488d] to-transparent animate-[shimmer_2s_infinite]"></div>
-                  
-                  <div className="flex flex-col items-center justify-center space-y-3">
+
+                  {/* Status header */}
+                  <div className="flex items-center justify-center gap-2">
                     <div className="relative">
-                      <div className="w-12 h-12 bg-white rounded-full flex items-center justify-center shadow-sm border border-blue-100 z-10 relative">
-                        <Loader2 className="w-6 h-6 text-[#00488d] animate-spin" />
+                      <div className="w-8 h-8 bg-white rounded-full flex items-center justify-center shadow-sm border border-blue-100 z-10 relative">
+                        <Loader2 className="w-4 h-4 text-[#00488d] animate-spin" />
                       </div>
-                      <div className="absolute inset-0 bg-[#00488d] rounded-full animate-ping opacity-20"></div>
+                      <div className="absolute inset-0 bg-[#00488d] rounded-full animate-ping opacity-15"></div>
                     </div>
-                    
-                    <div>
-                      <h5 className="text-xs font-black text-slate-800 uppercase tracking-wider mb-1">Awaiting Payment</h5>
-                      <p className="text-[10px] text-slate-500 font-medium leading-relaxed">
-                        Please scan the QR code to pay using any UPI app.<br />
-                        Our system will <strong className="text-[#00488d]">auto-fetch</strong> your payment status instantly.
-                      </p>
+                    <div className="text-left">
+                      <h5 className="text-xs font-black text-slate-800">Awaiting Your Payment</h5>
+                      <p className="text-[10px] text-slate-500">Auto-checking every 5 seconds</p>
                     </div>
                   </div>
 
-                  <div className="pt-3 border-t border-slate-100/50">
-                    <p className="text-[9px] text-slate-400 font-bold uppercase tracking-wider mb-2">For Demo Purposes Only</p>
+                  {/* Countdown */}
+                  <div className="bg-white rounded-xl p-2 border border-blue-100 flex items-center justify-between text-[10px] font-bold">
+                    <span className="text-slate-400 uppercase tracking-wider">Next check in</span>
+                    <span className="text-[#00488d] font-black text-sm tabular-nums">{pollCountdown}s</span>
+                    <span className="text-slate-400">• Auto-detecting</span>
+                  </div>
+
+                  <p className="text-[10px] text-slate-500 font-medium leading-relaxed">
+                    Scan the QR code above with Google Pay, PhonePe, or Paytm.<br />
+                    Our system will <strong className="text-[#00488d]">automatically confirm</strong> once payment is detected.
+                  </p>
+
+                  <div className="pt-2 border-t border-slate-100/50">
+                    <p className="text-[9px] text-slate-400 font-bold uppercase tracking-wider mb-2">Demo Only</p>
                     <button
                       type="button"
                       onClick={() => setVerificationSuccess(true)}
                       className="w-full bg-emerald-600 hover:bg-emerald-700 text-white rounded-xl py-2 text-[10px] font-black uppercase tracking-wider shadow transition-colors flex items-center justify-center gap-1.5"
                     >
-                      <CheckCircle2 size={14} /> Simulate Successful Scan
+                      <CheckCircle2 size={14} /> Simulate Payment Confirmed
                     </button>
                   </div>
                 </div>
@@ -291,21 +317,26 @@ const BookingWizard = ({ existingCart, onCartUpdate, scrollToSection }) => {
  
           <div className="flex flex-col sm:flex-row gap-3 justify-center max-w-sm mx-auto">
             <button
-              onClick={handleAlertWhatsApp}
+              onClick={() => {
+                const testListStr = selectedTests.map(t => `${t.name} (₹${t.price})`).join(', ');
+                const msg = `Hi Sana Pathology Lab! 🙏\n\nI just booked a test online.\n\n*Name:* ${patient.name}\n*Mobile:* ${patient.mobile}\n*Gender:* ${patient.gender}\n*Date:* ${dateTime.date} at ${dateTime.time}\n*Mode:* ${dateTime.isHomeCollection ? 'Home Collection' : 'Lab Visit'}\n*Tests:* ${testListStr}\n*Total:* ₹${finalPrice}\n\nPlease confirm my slot. Thank you!`;
+                window.open(`https://wa.me/916396786939?text=${encodeURIComponent(msg)}`, '_blank');
+              }}
               className="bg-[#25D366] text-white hover:bg-[#128C7E] px-6 py-2.5 rounded-xl font-bold text-xs shadow-md transition-all flex items-center justify-center gap-1.5"
             >
-              <span>WhatsApp Alert</span>
+              <svg viewBox="0 0 32 32" className="w-4 h-4 fill-white shrink-0"><path d="M16 3C8.8 3 3 8.8 3 16c0 2.3.6 4.5 1.7 6.4L3 29l6.8-1.7C11.5 28.4 13.7 29 16 29c7.2 0 13-5.8 13-13S23.2 3 16 3zm5.9 18.6c-.3-.2-1.8-.9-2.1-1s-.5-.2-.7.2-.8 1-.9 1.2-.4.2-.7.1a8.4 8.4 0 0 1-2.5-1.5 9.4 9.4 0 0 1-1.7-2.1c-.2-.3 0-.5.1-.7l.5-.6.3-.5v-.5l-.9-2.2c-.2-.6-.5-.5-.7-.5h-.6c-.2 0-.5.1-.8.4-.3.3-1 1-1 2.4s1 2.8 1.2 3a10 10 0 0 0 4.2 3.6c.6.2 1 .4 1.4.5.6.2 1.1.2 1.5.1.5-.1 1.5-.6 1.7-1.2.2-.5.2-1 .1-1.2z"/></svg>
+              Send WhatsApp Alert
             </button>
-            <button 
-              onClick={() => { 
-                setStep(0); 
-                setBookingSuccess(false); 
-                setSelectedTests([]); 
-                setPatient({ name: '', mobile: '', gender: '' }); 
-                setCreatedAppointment(null); 
-                setUpiUtr(''); 
-                setUpiSubmitted(false); 
-                setUpiError(''); 
+            <button
+              onClick={() => {
+                setStep(0);
+                setBookingSuccess(false);
+                setSelectedTests([]);
+                setPatient({ name: '', mobile: '', gender: '' });
+                setCreatedAppointment(null);
+                setUpiUtr('');
+                setUpiSubmitted(false);
+                setUpiError('');
                 setVerifyingPayment(false);
                 setVerificationSuccess(false);
               }}
@@ -315,29 +346,83 @@ const BookingWizard = ({ existingCart, onCartUpdate, scrollToSection }) => {
             </button>
           </div>
         </div>
-      </section>
-    );
-  }
+  );
 
   const summarySidebar = (
-    <div className="bg-white rounded-2xl p-6 border border-slate-100 shadow-sm sticky top-24">
-      <h3 className="font-bold text-slate-800 mb-4 flex items-center gap-2"><Search size={18}/> Booking Summary</h3>
+    <div className="bg-white rounded-2xl p-5 border border-slate-100 shadow-sm sticky top-24">
+      {/* Header */}
+      <div className="flex items-center justify-between mb-4">
+        <h3 className="font-black text-slate-800 flex items-center gap-2 text-sm">
+          <Search size={16} className="text-[#00488d]" /> Booking Summary
+        </h3>
+        {selectedTests.length > 0 && (
+          <button
+            onClick={() => setSelectedTests([])}
+            className="text-[10px] font-bold text-red-400 hover:text-red-600 transition-colors uppercase tracking-wider"
+          >
+            Clear All
+          </button>
+        )}
+      </div>
+
       {selectedTests.length === 0 ? (
-        <p className="text-slate-500 text-sm">No tests selected yet. Add some tests to proceed.</p>
+        <div className="py-6 text-center">
+          <div className="w-12 h-12 bg-slate-50 rounded-full flex items-center justify-center mx-auto mb-3 border border-slate-100">
+            <ShieldCheck size={20} className="text-slate-300" />
+          </div>
+          <p className="text-slate-400 text-xs font-medium">No tests selected yet.</p>
+          <p className="text-slate-400 text-[11px] mt-0.5">Add tests to get started.</p>
+        </div>
       ) : (
         <>
-          <ul className="space-y-3 mb-4 max-h-60 overflow-y-auto pr-2">
+          {/* Test list with remove */}
+          <ul className="space-y-2 mb-4 max-h-64 overflow-y-auto pr-1">
             {selectedTests.map((t, idx) => (
-              <li key={idx} className="flex justify-between text-sm">
-                <span className="text-slate-600 font-medium truncate pr-2">{t.name}</span>
-                <span className="text-slate-800 font-bold shrink-0">₹{t.price}</span>
+              <li
+                key={idx}
+                className="group flex items-start justify-between gap-2 bg-slate-50 hover:bg-blue-50/50 border border-slate-100 hover:border-blue-100 rounded-xl px-3 py-2.5 transition-all"
+              >
+                <div className="min-w-0 flex-1">
+                  <div className="flex items-center gap-1.5 flex-wrap">
+                    {t.isPackage && (
+                      <span className="text-[9px] font-black bg-emerald-100 text-emerald-700 px-1.5 py-0.5 rounded-full uppercase tracking-wider shrink-0">
+                        Pkg
+                      </span>
+                    )}
+                    <span className="text-xs font-bold text-slate-700 leading-tight truncate">
+                      {t.name}
+                    </span>
+                  </div>
+                  <span className="text-xs font-black text-[#00488d] mt-0.5 block">₹{t.price}</span>
+                </div>
+                <button
+                  onClick={() => removeItem(t.code || t.testCode)}
+                  className="shrink-0 w-5 h-5 rounded-full bg-slate-200 hover:bg-red-100 text-slate-400 hover:text-red-500 flex items-center justify-center transition-all mt-0.5 opacity-0 group-hover:opacity-100"
+                  title={`Remove ${t.name}`}
+                  aria-label={`Remove ${t.name}`}
+                >
+                  <Trash2 size={11} />
+                </button>
               </li>
             ))}
           </ul>
-          <div className="border-t border-slate-100 pt-4 space-y-2">
-            <div className="flex justify-between text-sm text-slate-500 font-medium"><span>Subtotal</span><span>₹{totalPrice}</span></div>
-            {couponApplied && <div className="flex justify-between text-sm text-emerald-600 font-bold"><span>Discount (10%)</span><span>-₹{discountAmount}</span></div>}
-            <div className="flex justify-between text-lg text-primary font-black pt-2 border-t border-slate-100 mt-2"><span>Total</span><span>₹{finalPrice}</span></div>
+
+          {/* Price breakdown */}
+          <div className="border-t border-slate-100 pt-3 space-y-1.5">
+            <div className="flex justify-between text-xs text-slate-500 font-medium">
+              <span>{selectedTests.length} {selectedTests.length === 1 ? 'item' : 'items'}</span>
+              <span>₹{totalPrice}</span>
+            </div>
+            {couponApplied && (
+              <div className="flex justify-between text-xs text-emerald-600 font-bold">
+                <span>Discount (10%)</span>
+                <span>-₹{discountAmount}</span>
+              </div>
+            )}
+            <div className="flex justify-between text-base text-[#00488d] font-black pt-2 border-t border-slate-100 mt-1">
+              <span>Total</span>
+              <span>₹{finalPrice}</span>
+            </div>
           </div>
         </>
       )}
@@ -356,7 +441,7 @@ const BookingWizard = ({ existingCart, onCartUpdate, scrollToSection }) => {
         <div className="flex flex-col lg:flex-row gap-8 items-start">
           {/* Main Form */}
           <div className="flex-1 w-full bg-white rounded-3xl shadow-lg border border-slate-100 p-6 md:p-8">
-            {stepIndicator}
+            {step === 0 && stepIndicator}
 
             {/* Step 0: Select Tests */}
             {step === 0 && (
@@ -680,14 +765,74 @@ const BookingWizard = ({ existingCart, onCartUpdate, scrollToSection }) => {
                 
                 <div className="flex justify-end pt-4 border-t border-slate-100">
                   <button onClick={handleNext} className="bg-[#00488d] hover:bg-blue-800 text-white px-8 py-3 rounded-xl font-bold text-sm shadow-md flex items-center gap-2 transition-all">
-                    Continue to Patient <ArrowRight size={16} />
+                    Complete Booking <ArrowRight size={16} />
                   </button>
                 </div>
               </div>
             )}
+          </div>
+
+          {/* Right sidebar for Step 0 on the main page */}
+          <div className="w-full lg:w-80 hidden lg:block shrink-0">
+            {step === 0 && (
+              <>
+                {summarySidebar}
+                <div className="mt-4 bg-secondary-pale rounded-2xl p-4 border border-secondary/20">
+                  <p className="text-xs font-bold text-secondary uppercase tracking-wider mb-2">Why choose us?</p>
+                  <ul className="space-y-1.5">
+                    <li className="text-xs text-slate-600 flex items-center gap-2"><CheckCircle2 size={12} className="text-secondary shrink-0" />Free home collection above ₹500</li>
+                    <li className="text-xs text-slate-600 flex items-center gap-2"><CheckCircle2 size={12} className="text-secondary shrink-0" />Reports in 12-24 hours</li>
+                    <li className="text-xs text-slate-600 flex items-center gap-2"><CheckCircle2 size={12} className="text-secondary shrink-0" />NABL accredited lab</li>
+                    <li className="text-xs text-slate-600 flex items-center gap-2"><CheckCircle2 size={12} className="text-secondary shrink-0" />Certified phlebotomists</li>
+                    <li className="text-xs text-slate-600 flex items-center gap-2"><CheckCircle2 size={12} className="text-secondary shrink-0" />Pay at time of collection</li>
+                  </ul>
+                </div>
+              </>
+            )}
+          </div>
+        </div>
+      </div>
+
+      {/* --- MODAL FOR STEPS 1 to 5 & SUCCESS --- */}
+      {(step > 0 || bookingSuccess) && (
+        <div className="fixed inset-0 z-[100] bg-slate-900/60 backdrop-blur-sm flex items-center justify-center p-4 sm:p-6 lg:p-8 animate-fade-in">
+          <div className="bg-white w-full max-w-5xl rounded-3xl shadow-2xl overflow-hidden flex flex-col md:flex-row relative max-h-[90vh] animate-scale-in">
+            <button onClick={() => {
+                if (bookingSuccess) {
+                  setBookingSuccess(false);
+                  setStep(0);
+                  setSelectedTests([]);
+                  setPatient({ name: '', mobile: '', gender: '' });
+                  setCreatedAppointment(null);
+                  setVerificationSuccess(false);
+                } else {
+                  setStep(0);
+                }
+              }} className="absolute top-4 right-4 z-20 p-2 bg-slate-100 rounded-full hover:bg-red-100 hover:text-red-600 text-slate-500 transition-colors hidden md:block">
+              <ArrowLeft size={20} />
+            </button>
+            <div className="flex-1 p-6 sm:p-10 overflow-y-auto relative">
+              <button onClick={() => {
+                if (bookingSuccess) {
+                  setBookingSuccess(false);
+                  setStep(0);
+                  setSelectedTests([]);
+                  setPatient({ name: '', mobile: '', gender: '' });
+                  setCreatedAppointment(null);
+                  setVerificationSuccess(false);
+                } else {
+                  setStep(0);
+                }
+              }} className="absolute top-6 right-6 z-20 p-2 bg-slate-100 rounded-full hover:bg-red-100 hover:text-red-600 text-slate-500 transition-colors md:hidden">
+                <ArrowLeft size={20} />
+              </button>
+              
+              {!bookingSuccess && stepIndicator}
+              
+              {bookingSuccess && successContent}
 
             {/* Step 1: Patient Details */}
-            {step === 1 && (
+            {!bookingSuccess && step === 1 && (
               <div className="animate-fade-in-up space-y-6">
                 <div>
                   <h3 className="text-lg font-black text-slate-800 mb-1">2. Patient Details</h3>
@@ -722,7 +867,7 @@ const BookingWizard = ({ existingCart, onCartUpdate, scrollToSection }) => {
             )}
 
             {/* Step 2: Date & Time */}
-            {step === 2 && (
+            {!bookingSuccess && step === 2 && (
               <div className="animate-fade-in-up space-y-6">
                 <div>
                   <h3 className="text-lg font-black text-slate-800 mb-1">3. Date & Time</h3>
@@ -755,7 +900,7 @@ const BookingWizard = ({ existingCart, onCartUpdate, scrollToSection }) => {
             )}
 
             {/* Step 3: Address */}
-            {step === 3 && (
+            {!bookingSuccess && step === 3 && (
               <div className="animate-fade-in-up space-y-6">
                 <div>
                   <h3 className="text-lg font-black text-slate-800 mb-1">4. Address</h3>
@@ -783,8 +928,8 @@ const BookingWizard = ({ existingCart, onCartUpdate, scrollToSection }) => {
               </div>
             )}
 
-            {/* Step 4: Coupon */}
-            {step === 4 && (
+            {/* Step 4: Coupons */}
+            {!bookingSuccess && step === 4 && (
               <div className="animate-fade-in-up space-y-6">
                 <div>
                   <h3 className="text-lg font-black text-slate-800 mb-1">5. Coupon Code</h3>
@@ -807,7 +952,7 @@ const BookingWizard = ({ existingCart, onCartUpdate, scrollToSection }) => {
             )}
 
             {/* Step 5: Confirmation */}
-            {step === 5 && (
+            {!bookingSuccess && step === 5 && (
               <div className="animate-fade-in-up space-y-6">
                 <div>
                   <h3 className="text-lg font-black text-slate-800 mb-1">6. Confirmation</h3>
@@ -838,32 +983,41 @@ const BookingWizard = ({ existingCart, onCartUpdate, scrollToSection }) => {
                   </div>
                 </div>
                 {bookingError && <p className="text-xs font-bold text-red-500 bg-red-50 p-3 rounded-xl flex items-center gap-1"><AlertCircle size={14} />{bookingError}</p>}
-                <div className="flex justify-between pt-4 border-t border-slate-100">
-                  <button onClick={handleBack} className="px-5 py-3 border border-slate-200 rounded-xl text-sm font-bold text-slate-600 hover:bg-slate-50 transition-all flex items-center gap-2"><ChevronLeft size={16} /> Back</button>
-                  <button onClick={handleBook} disabled={bookingLoading} className="bg-gradient-to-r from-secondary to-secondary-light hover:from-secondary-light hover:to-secondary text-white px-10 py-3.5 rounded-xl font-bold text-base shadow-lg shadow-secondary/20 disabled:opacity-50 transition-all flex items-center gap-2">
-                    {bookingLoading ? <><Loader2 size={18} className="animate-spin" /> Booking...</> : <><Shield size={18} /> Confirm Booking - ₹{finalPrice}</>}
+                <div className="flex flex-col sm:flex-row justify-between gap-3 pt-4 border-t border-slate-100">
+                  <button onClick={handleBack} className="px-5 py-3 border border-slate-200 rounded-xl text-sm font-bold text-slate-600 hover:bg-slate-50 transition-all flex items-center justify-center gap-2 shrink-0"><ChevronLeft size={16} /> Back</button>
+                  <button
+                    onClick={handleBook}
+                    disabled={bookingLoading}
+                    className="w-full sm:w-auto bg-gradient-to-r from-emerald-600 to-teal-600 hover:from-emerald-700 hover:to-teal-700 text-white px-8 py-3.5 rounded-xl font-black text-sm shadow-lg shadow-emerald-600/25 disabled:opacity-50 transition-all flex items-center justify-center gap-2"
+                  >
+                    {bookingLoading
+                      ? <><Loader2 size={18} className="animate-spin" /> Booking...</>
+                      : <><CheckCircle2 size={18} /> Confirm &amp; Book — ₹{finalPrice}</>
+                    }
                   </button>
                 </div>
               </div>
             )}
-          </div>
+            </div>
 
-          {/* Summary Sidebar */}
-          <div className="w-full lg:w-80 shrink-0 hidden lg:block">
-            {summarySidebar}
-            <div className="mt-4 bg-secondary-pale rounded-2xl p-4 border border-secondary/20">
-              <p className="text-xs font-bold text-secondary uppercase tracking-wider mb-2">Why choose us?</p>
-              <ul className="space-y-1.5">
-                <li className="text-xs text-slate-600 flex items-center gap-2"><CheckCircle2 size={12} className="text-secondary shrink-0" />Free home collection above ₹500</li>
-                <li className="text-xs text-slate-600 flex items-center gap-2"><CheckCircle2 size={12} className="text-secondary shrink-0" />Reports in 12-24 hours</li>
-                <li className="text-xs text-slate-600 flex items-center gap-2"><CheckCircle2 size={12} className="text-secondary shrink-0" />NABL accredited lab</li>
-                <li className="text-xs text-slate-600 flex items-center gap-2"><CheckCircle2 size={12} className="text-secondary shrink-0" />Certified phlebotomists</li>
-                <li className="text-xs text-slate-600 flex items-center gap-2"><CheckCircle2 size={12} className="text-secondary shrink-0" />Pay at time of collection</li>
-              </ul>
+            {/* Right Side of Modal: Summary Sidebar */}
+            <div className="w-full md:w-80 bg-slate-50 p-6 sm:p-10 border-l border-slate-200 overflow-y-auto hidden md:block shrink-0">
+              {summarySidebar}
+              <div className="mt-4 bg-secondary-pale rounded-2xl p-4 border border-secondary/20">
+                <p className="text-xs font-bold text-secondary uppercase tracking-wider mb-2">Why choose us?</p>
+                <ul className="space-y-1.5">
+                  <li className="text-xs text-slate-600 flex items-center gap-2"><CheckCircle2 size={12} className="text-secondary shrink-0" />Free home collection above ₹500</li>
+                  <li className="text-xs text-slate-600 flex items-center gap-2"><CheckCircle2 size={12} className="text-secondary shrink-0" />Reports in 12-24 hours</li>
+                  <li className="text-xs text-slate-600 flex items-center gap-2"><CheckCircle2 size={12} className="text-secondary shrink-0" />NABL accredited lab</li>
+                  <li className="text-xs text-slate-600 flex items-center gap-2"><CheckCircle2 size={12} className="text-secondary shrink-0" />Certified phlebotomists</li>
+                  <li className="text-xs text-slate-600 flex items-center gap-2"><CheckCircle2 size={12} className="text-secondary shrink-0" />Pay at time of collection</li>
+                </ul>
+              </div>
             </div>
           </div>
         </div>
-      </div>
+      )}
+
     </section>
   );
 };
