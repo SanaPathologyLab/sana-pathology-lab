@@ -52,8 +52,7 @@ const PackagesPage = () => {
         localStorage.setItem('sana_cart', JSON.stringify(newCart));
       }
     }
-    navigate('/book-online');
-    window.scrollTo(0, 0);
+    window.dispatchEvent(new CustomEvent('open-booking-modal', { detail: { step: 1 } }));
   };
 
   return (

@@ -5,12 +5,13 @@ import {
   Phone, MapPin, Menu, X, User, Download, ChevronDown,
   Clock, MessageCircle, Upload, Stethoscope, FlaskConical,
   Heart, Building2, BookOpen, Calculator, Home, Search,
-  Activity, Droplets
+  Activity, Droplets, ShoppingCart
 } from 'lucide-react';
 import Logo from './Logo';
 import WhatsAppIcon from './WhatsAppIcon';
 import EmergencyWidget from './EmergencyWidget';
 import StickyWhatsAppBook from './StickyWhatsAppBook';
+import BookingModal from './BookingModal';
 
 /* ─────────────────────────────────────────────────
    TOP UTILITY BAR
@@ -150,10 +151,38 @@ const PublicLayout = ({ children }) => {
   const navigate = useNavigate();
   const location = useLocation();
 
+  const [bookingModalOpen, setBookingModalOpen] = useState(false);
+  const [bookingModalInitialStep, setBookingModalInitialStep] = useState(0);
+  const [cartCount, setCartCount] = useState(0);
+
   useEffect(() => {
     const handleScroll = () => setScrolled(window.scrollY > 10);
     window.addEventListener('scroll', handleScroll);
     return () => window.removeEventListener('scroll', handleScroll);
+  }, []);
+
+  useEffect(() => {
+    const handleOpenModal = (e) => {
+      setBookingModalInitialStep(e.detail?.step || 0);
+      setBookingModalOpen(true);
+    };
+    const updateCartCount = () => {
+      try {
+        const cart = JSON.parse(localStorage.getItem('sana_cart')) || [];
+        setCartCount(cart.length);
+      } catch (e) {
+        setCartCount(0);
+      }
+    };
+    
+    updateCartCount();
+    window.addEventListener('open-booking-modal', handleOpenModal);
+    window.addEventListener('cart-updated', updateCartCount);
+    
+    return () => {
+      window.removeEventListener('open-booking-modal', handleOpenModal);
+      window.removeEventListener('cart-updated', updateCartCount);
+    };
   }, []);
 
   // Inject Google Analytics
@@ -290,6 +319,22 @@ const PublicLayout = ({ children }) => {
               title="Switch Language"
             >
               {language === 'en' ? 'HI' : 'EN'}
+            </button>
+
+            {/* Cart Button */}
+            <button
+              onClick={() => {
+                window.dispatchEvent(new CustomEvent('open-booking-modal', { detail: { step: 0 } }));
+              }}
+              className="relative flex items-center justify-center w-9 h-9 text-rose-500 bg-rose-50 hover:bg-rose-100 transition-all rounded-full border border-rose-105 shadow-sm shrink-0 active:scale-95 group"
+              title="Your Booking Cart"
+            >
+              <ShoppingCart className="w-4 h-4 text-rose-450 group-hover:text-rose-650 transition-all" />
+              {cartCount > 0 && (
+                <span className="absolute -top-1.5 -right-1.5 bg-rose-600 text-white text-[8px] font-black w-4.5 h-4.5 rounded-full flex items-center justify-center border border-white">
+                  {cartCount}
+                </span>
+              )}
             </button>
 
             {/* Portal Dropdown */}
@@ -496,6 +541,13 @@ const PublicLayout = ({ children }) => {
 
       {/* Sticky WhatsApp Booking Button */}
       <StickyWhatsAppBook />
+
+      {/* Global Booking Modal */}
+      <BookingModal 
+        isOpen={bookingModalOpen} 
+        onClose={() => setBookingModalOpen(false)} 
+        initialStep={bookingModalInitialStep} 
+      />
     </div>
   );
 };

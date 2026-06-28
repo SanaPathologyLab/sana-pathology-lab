@@ -61,10 +61,7 @@ const OfferBanner = ({ offers = DEFAULT_OFFERS }) => {
   };
 
   const handleBookNow = () => {
-    const el = document.getElementById('booking');
-    if (el) {
-      el.scrollIntoView({ behavior: 'smooth' });
-    }
+    window.dispatchEvent(new CustomEvent('open-booking-modal', { detail: { step: 0 } }));
   };
 
   const formatExpiry = (dateStr) => {

@@ -88,8 +88,7 @@ const PackagesPublic = () => {
         isPackage: true
       });
     }
-    navigate('/book-online');
-    window.scrollTo(0, 0);
+    window.dispatchEvent(new CustomEvent('open-booking-modal', { detail: { step: 1 } }));
   };
 
   const toggleCustomTest = (code) => {

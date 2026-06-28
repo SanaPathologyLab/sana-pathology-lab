@@ -35,9 +35,10 @@ import LiveChatWidget from '../components/LiveChatWidget';
 import CouponSystem from '../components/CouponSystem';
 import UpsellRecommendations from '../components/UpsellRecommendations';
 import BloodTube3D from '../components/BloodTube3D';
-import BookingWizard from '../components/BookingWizard';
 import EmergencyWidget from '../components/EmergencyWidget';
 import TestimonialsCarousel from '../components/TestimonialsCarousel';
+import BookingModal from '../components/BookingModal';
+import BookingWizard from '../components/BookingWizard';
 
 const API = import.meta.env.VITE_API_URL || 'http://localhost:5000/api';
 
@@ -93,9 +94,23 @@ const PublicWelcome = () => {
     }
   });
 
+  const [bookingModalOpen, setBookingModalOpen] = useState(false);
+  const [bookingModalStep, setBookingModalStep] = useState(0);
+
   useEffect(() => {
     localStorage.setItem('sana_cart', JSON.stringify(selectedTests));
+    // Dispatch a cart updated event so other page headers stay in sync
+    window.dispatchEvent(new Event('cart-updated'));
   }, [selectedTests]);
+
+  useEffect(() => {
+    const handleOpenModal = (e) => {
+      setBookingModalStep(e.detail?.step || 0);
+      setBookingModalOpen(true);
+    };
+    window.addEventListener('open-booking-modal', handleOpenModal);
+    return () => window.removeEventListener('open-booking-modal', handleOpenModal);
+  }, []);
 
   // Handle hash scrolling on load
   useEffect(() => {
@@ -193,7 +208,7 @@ const PublicWelcome = () => {
 
   const handleBookNow = (pkg) => {
     if (!isInCart(pkg.code)) handlePackageToggle(pkg);
-    scrollToSection('booking');
+    window.dispatchEvent(new CustomEvent('open-booking-modal', { detail: { step: 1 } }));
   };
 
   const handleWhatsAppPkg = (msg) => {
@@ -322,7 +337,9 @@ const PublicWelcome = () => {
     alert(language === 'hi' ? 'चुने गए टेस्ट सफलतापूर्वक कार्ट में जोड़े गए!' : 'Selected tests added to cart successfully!');
     handleResetAIAssessment();
     setIsAiModalOpen(false);
-    setTimeout(() => scrollToSection('booking'), 100);
+    setTimeout(() => {
+      window.dispatchEvent(new CustomEvent('open-booking-modal', { detail: { step: 1 } }));
+    }, 100);
   };
 
   const handleResetAIAssessment = () => {
@@ -2318,6 +2335,13 @@ Question: ${userMsg}
       )}
 
       <ExitIntentPopup />
+
+      {/* Global Booking Modal overlay */}
+      <BookingModal 
+        isOpen={bookingModalOpen} 
+        onClose={() => setBookingModalOpen(false)} 
+        initialStep={bookingModalStep} 
+      />
     </div>
   );
 };

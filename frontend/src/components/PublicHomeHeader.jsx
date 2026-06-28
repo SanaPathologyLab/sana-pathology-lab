@@ -153,7 +153,9 @@ const PublicHomeHeader = ({ cartCount: propCartCount }) => {
 
           {/* Cart */}
           <button
-            onClick={() => { navigate('/test-finder'); window.scrollTo(0, 0); }}
+            onClick={() => {
+              window.dispatchEvent(new CustomEvent('open-booking-modal', { detail: { step: 0 } }));
+            }}
             className="relative flex items-center justify-center w-12 h-12 text-rose-500 bg-gradient-to-br from-rose-100 via-pink-100 to-rose-50 hover:from-rose-500 hover:via-pink-500 hover:to-rose-500 transition-all duration-300 rounded-2xl border-2 border-rose-200 hover:border-rose-400 shadow-lg shadow-rose-200/40 hover:shadow-xl hover:shadow-rose-300/50 active:scale-90 group"
             title="Your Booking Cart"
           >
