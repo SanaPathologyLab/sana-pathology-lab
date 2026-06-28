@@ -50,6 +50,8 @@ const TestFinderPage = lazy(() => import('./pages/TestFinderPage'));
 const BookOnlinePage = lazy(() => import('./pages/BookOnlinePage'));
 const FaqPage = lazy(() => import('./pages/FaqPage'));
 const ContactPage = lazy(() => import('./pages/ContactPage'));
+const ReportAnalyzer = lazy(() => import('./pages/ReportAnalyzer'));
+const SampleGuide = lazy(() => import('./pages/SampleGuide'));
 
 import ScrollToTop from './components/ScrollToTop';
 import Loader from './components/Loader';
@@ -85,6 +87,8 @@ const AppContent = () => {
         <Route path="/book-online" element={<BookOnlinePage />} />
         <Route path="/faq" element={<FaqPage />} />
         <Route path="/contact" element={<ContactPage />} />
+        <Route path="/report-analyzer" element={<ReportAnalyzer />} />
+        <Route path="/sample-guide" element={<SampleGuide />} />
         <Route path="/login" element={user ? <Navigate to="/dashboard" /> : <Login />} />
         <Route path="/book-appointment" element={<PublicAppointment />} />
         <Route path="/report-lookup" element={<ReportLookup />} />

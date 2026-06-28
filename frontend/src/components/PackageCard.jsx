@@ -50,28 +50,65 @@ const PackageCard = ({ pkg, onAdd, isAdded, onWhatsApp, onKnowMore, onBookNow })
           <div className="absolute inset-0 bg-white/10 mix-blend-overlay"></div>
           <Icon className="w-20 h-20 text-white/90 drop-shadow-md relative z-10" />
           <div className="absolute bottom-0 left-0 right-0 h-2/3 bg-gradient-to-t from-white/90 via-transparent to-transparent z-20"></div>
+          
+          {pkg.badge && (
+            <div className={`absolute top-0 right-0 px-3 py-1 text-[9px] font-black uppercase tracking-wider rounded-bl-xl text-white z-30 ${
+              pkg.badge === 'Recommended' ? 'bg-indigo-600' : pkg.badge === 'Best Value' ? 'bg-amber-500' : 'bg-rose-500'
+            }`}>
+              {pkg.badge}
+            </div>
+          )}
         </div>
       ) : (
         <div className="relative h-44 bg-slate-50 w-full overflow-hidden">
           <img 
             src={imageUrl} 
-            alt={pkg.name} 
+            alt={`${pkg.name} image`} 
             className="w-full h-full object-cover mix-blend-multiply opacity-90 transition-opacity duration-500"
             loading="lazy"
             onError={() => setImageFailed(true)}
           />
           <div className="absolute bottom-0 left-0 right-0 h-2/3 bg-gradient-to-t from-white/90 via-transparent to-transparent z-20"></div>
+          
+          {pkg.badge && (
+            <div className={`absolute top-0 right-0 px-3 py-1 text-[9px] font-black uppercase tracking-wider rounded-bl-xl text-white z-30 ${
+              pkg.badge === 'Recommended' ? 'bg-indigo-600' : pkg.badge === 'Best Value' ? 'bg-amber-500' : 'bg-rose-500'
+            }`}>
+              {pkg.badge}
+            </div>
+          )}
         </div>
       )}
 
       <div className="p-5 flex-1 flex flex-col">
         {/* Title & Subtitle */}
+        <p className="text-[10px] font-extrabold uppercase tracking-widest text-slate-400 mb-1">Premium Package</p>
         <h3 className="font-bold text-slate-900 text-[15px] leading-snug tracking-tight mb-1 uppercase">
           {pkg.name}
         </h3>
-        <p className="text-[13px] text-slate-500 mb-4">
-          {pkg.parameterCount} Parameters Included
-        </p>
+        {pkg.desc && (
+          <p className="text-xs text-slate-500 mb-2 h-8 overflow-hidden line-clamp-2">
+            {pkg.desc}
+          </p>
+        )}
+        
+        {/* Details */}
+        <div className="space-y-1.5 text-[11px] text-slate-600 border-b border-slate-100 pb-3 mb-3">
+          <div className="flex items-center gap-2">
+            <span className="w-1.5 h-1.5 rounded-full bg-[#00488d] shrink-0" />
+            <span>Includes <strong className="text-slate-800">{pkg.parameterCount}</strong> Parameters</span>
+          </div>
+          {(pkg.sample || pkg.fasting) && (
+            <div className="flex items-center gap-2">
+              <span className="w-1.5 h-1.5 rounded-full bg-[#00488d] shrink-0" />
+              <span>
+                {pkg.sample && <>Sample: <strong className="text-slate-800">{pkg.sample}</strong></>}
+                {pkg.sample && pkg.fasting && <span className="mx-1">|</span>}
+                {pkg.fasting && <strong className="text-slate-800">{pkg.fasting}</strong>}
+              </span>
+            </div>
+          )}
+        </div>
 
         {/* Pricing Dotted Box */}
         <div className="border-[1.5px] border-dashed border-slate-300 rounded-lg p-3 flex items-center gap-3 mb-5">

@@ -97,6 +97,20 @@ const PublicWelcome = () => {
     localStorage.setItem('sana_cart', JSON.stringify(selectedTests));
   }, [selectedTests]);
 
+  // Handle hash scrolling on load
+  useEffect(() => {
+    if (window.location.hash) {
+      setTimeout(() => {
+        const id = window.location.hash.replace('#', '');
+        const element = document.getElementById(id);
+        if (element) {
+          const y = element.getBoundingClientRect().top + window.scrollY - 100;
+          window.scrollTo({ top: y, behavior: 'smooth' });
+        }
+      }, 300);
+    }
+  }, []);
+
   const [loadingTests, setLoadingTests] = useState(true);
 
   // Booking Form States
@@ -1181,11 +1195,13 @@ Question: ${userMsg}
 
       {/* Direct Online Booking Form */}
       {/* Booking Wizard Section */}
-      <BookingWizard 
-        existingCart={selectedTests} 
-        onCartUpdate={setSelectedTests} 
-        scrollToSection={scrollToSection} 
-      />
+      <div id="booking">
+        <BookingWizard 
+          existingCart={selectedTests} 
+          onCartUpdate={setSelectedTests} 
+          scrollToSection={scrollToSection} 
+        />
+      </div>
 
       {/* Pathologists Panel & Trust Panel Removed as per request */}
 

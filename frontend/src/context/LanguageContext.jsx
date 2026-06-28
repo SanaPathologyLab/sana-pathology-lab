@@ -12,8 +12,11 @@ const translations = {
     bookOnline: "Book Online",
     faq: "FAQ",
     contact: "Contact",
+    reportAnalyzer: "AI Analyzer",
+    sampleGuide: "Tube Guide",
+    portalLogin: "Portal Login",
     staffLogin: "Staff Login",
-
+    
     // Hero Section
     welcome: "Accurate Diagnostics, Trusted by Thousands",
     welcomeSub: "Advanced pathology lab equipped with automated analyzers and expert pathologists for precise, timely results.",
@@ -303,6 +306,9 @@ const translations = {
     bookOnline: "ऑनलाइन बुक करें",
     faq: "सामान्य प्रश्न",
     contact: "संपर्क करें",
+    reportAnalyzer: "एआई विश्लेषक",
+    sampleGuide: "ट्यूब गाइड",
+    portalLogin: "पोर्टल लॉगिन",
     staffLogin: "स्टाफ लॉगिन",
 
     // Hero Section

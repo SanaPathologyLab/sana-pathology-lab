@@ -4,7 +4,8 @@ import { useLanguage } from '../context/LanguageContext';
 import {
   Phone, MapPin, Menu, X, User, Download, ChevronDown,
   Clock, MessageCircle, Upload, Stethoscope, FlaskConical,
-  Heart, Building2, BookOpen, Calculator, Home, Search
+  Heart, Building2, BookOpen, Calculator, Home, Search,
+  Activity, Droplets
 } from 'lucide-react';
 import Logo from './Logo';
 import WhatsAppIcon from './WhatsAppIcon';
@@ -105,8 +106,43 @@ const NavDropdown = ({ label, items }) => {
 };
 
 /* ─────────────────────────────────────────────────
+   PORTAL DROPDOWN COMPONENT
+   ───────────────────────────────────────────────── */
+const PortalDropdown = ({ label, items }) => {
+  const [open, setOpen] = useState(false);
+  const navigate = useNavigate();
+  return (
+    <div
+      className="relative shrink-0"
+      onMouseEnter={() => setOpen(true)}
+      onMouseLeave={() => setOpen(false)}
+    >
+      <button className="flex items-center gap-1.5 text-xs font-bold text-white bg-[#1D9E75] hover:bg-[#0F6E56] transition-all px-4 py-2.5 rounded-full shadow-md shadow-[#1D9E75]/20">
+        <User size={14} />
+        <span>{label}</span>
+        <ChevronDown size={12} className={`transition-transform duration-200 ${open ? 'rotate-180' : ''}`} />
+      </button>
+      {open && (
+        <div className="absolute top-full right-0 mt-1.5 w-52 bg-white rounded-2xl shadow-2xl shadow-slate-900/15 border border-gray-100 py-2 z-50 animate-fade-in-up">
+          {items.map((item) => (
+            <button
+              key={item.label}
+              onClick={() => { setOpen(false); navigate(item.href); }}
+              className="w-full text-left px-4 py-2.5 text-xs text-slate-700 hover:bg-[#E1F5EE] hover:text-[#0F6E56] transition-colors flex items-center gap-2.5 font-bold"
+            >
+              {item.icon}
+              <span>{item.label}</span>
+            </button>
+          ))}
+        </div>
+      )}
+    </div>
+  );
+};
+
+/* ─────────────────────────────────────────────────
    PUBLIC LAYOUT
-───────────────────────────────────────────────── */
+   ───────────────────────────────────────────────── */
 const PublicLayout = ({ children }) => {
   const { language, toggleLanguage, t } = useLanguage();
   const [mobileMenuOpen, setMobileMenuOpen] = useState(false);
@@ -159,12 +195,21 @@ const PublicLayout = ({ children }) => {
     { label: 'Health Calculators', href: '/health-calculators', icon: <Calculator size={14} /> },
     { label: 'Tests Catalog', href: '/tests-catalog', icon: <FlaskConical size={14} /> },
     { label: 'Upload Prescription', href: '/upload-prescription', icon: <Upload size={14} /> },
+    { label: 'Download Report', href: '/report-lookup', icon: <Download size={14} /> },
+    { label: 'AI Report Analyzer', href: '/report-analyzer', icon: <Activity size={14} /> },
+    { label: 'Sample Tube Guide', href: '/sample-guide', icon: <Droplets size={14} /> },
   ];
   const cityItems = [
     { label: 'Blood Test Sambhal', href: '/blood-test-sambhal', icon: <MapPin size={14} /> },
     { label: 'Blood Test Chandausi', href: '/blood-test-chandausi', icon: <MapPin size={14} /> },
     { label: 'Blood Test Bahjoi', href: '/blood-test-bahjoi', icon: <MapPin size={14} /> },
     { label: 'Home Collection Sambhal', href: '/home-collection-sambhal', icon: <Home size={14} /> },
+  ];
+
+  const portalItems = [
+    { label: 'My Health Account', href: '/my-health', icon: <Heart size={14} className="text-rose-500" /> },
+    { label: 'Doctor Portal', href: '/doctor/dashboard', icon: <Stethoscope size={14} className="text-blue-500" /> },
+    { label: 'Staff Portal', href: '/login', icon: <User size={14} className="text-emerald-500" /> },
   ];
 
   return (
@@ -196,7 +241,7 @@ const PublicLayout = ({ children }) => {
           </Link>
 
           {/* Desktop Nav */}
-          <div className="hidden lg:flex items-center gap-5 mr-2">
+          <div className="hidden lg:flex items-center gap-3 xl:gap-5 mr-2">
             <NavDropdown label="Services" items={servicesItems} />
             <Link to="/health-packages" className="text-sm font-bold text-slate-600 hover:text-[#1D9E75] transition-colors">
               Packages
@@ -220,7 +265,7 @@ const PublicLayout = ({ children }) => {
           </div>
 
           {/* Right Actions */}
-          <div className="flex items-center gap-2">
+          <div className="flex items-center gap-1.5 md:gap-2">
             {/* Search Bar */}
             <form 
               onSubmit={(e) => {
@@ -228,65 +273,32 @@ const PublicLayout = ({ children }) => {
                 const q = e.target.search.value;
                 if(q.trim()) navigate(`/tests-catalog?q=${encodeURIComponent(q)}`);
               }}
-              className="hidden md:flex items-center bg-slate-100 rounded-full px-3 py-1.5 mr-2 border border-slate-200 focus-within:border-[#1D9E75] focus-within:ring-2 focus-within:ring-[#1D9E75]/20 transition-all"
+              className="hidden xl:flex items-center bg-slate-100 rounded-full px-3 py-1.5 mr-1 border border-slate-200 focus-within:border-[#1D9E75] focus-within:ring-2 focus-within:ring-[#1D9E75]/20 transition-all"
             >
               <Search size={14} className="text-slate-400 shrink-0" />
               <input 
                 type="text" 
                 name="search"
                 placeholder="Search tests..." 
-                className="bg-transparent border-none outline-none text-xs w-28 focus:w-40 transition-all ml-2 text-slate-700 placeholder-slate-400 font-semibold"
+                className="bg-transparent border-none outline-none text-xs w-24 focus:w-36 transition-all ml-2 text-slate-700 placeholder-slate-400 font-semibold"
               />
             </form>
             {/* Language Toggle */}
             <button
               onClick={toggleLanguage}
-              className="hidden md:flex items-center justify-center font-bold text-slate-600 bg-gray-100 hover:bg-gray-200 transition-colors w-9 h-9 rounded-full shadow-inner text-xs"
+              className="hidden lg:flex items-center justify-center font-bold text-slate-600 bg-gray-100 hover:bg-gray-200 transition-colors w-9 h-9 rounded-full shadow-inner text-xs shrink-0"
               title="Switch Language"
             >
               {language === 'en' ? 'HI' : 'EN'}
             </button>
 
-            {/* Track Report */}
-            <button
-              onClick={() => navigate('/report-lookup')}
-              className="hidden sm:flex items-center gap-1.5 bg-[#1D9E75]/10 hover:bg-[#1D9E75]/20 text-[#1D9E75] text-xs font-bold px-3.5 py-2 rounded-full transition-all border border-[#1D9E75]/20 whitespace-nowrap"
-            >
-              <Download size={13} />
-              My Report
-            </button>
-
-            {/* Upload Prescription */}
-            <button
-              onClick={() => navigate('/upload-prescription')}
-              className="hidden md:flex items-center gap-1.5 bg-amber-500 hover:bg-amber-600 text-white text-xs font-bold px-3.5 py-2 rounded-full transition-all shadow-md shadow-amber-500/25 whitespace-nowrap"
-            >
-              <Upload size={13} />
-              Upload Rx
-            </button>
-
-            {/* My Health Account */}
-            <button
-              onClick={() => navigate('/my-health')}
-              className="hidden sm:flex items-center gap-1.5 bg-gradient-to-r from-indigo-500 to-purple-600 hover:from-indigo-600 hover:to-purple-700 text-white text-xs font-bold px-3.5 py-2 rounded-full transition-all shadow-md shadow-indigo-500/25 whitespace-nowrap"
-            >
-              <Heart size={13} />
-              My Health
-            </button>
-
-            {/* Staff Login */}
-            <button
-              onClick={() => navigate('/login')}
-              className="flex items-center gap-1.5 text-xs font-bold text-white bg-[#1D9E75] hover:bg-[#0F6E56] transition-all px-4 py-2.5 rounded-full shadow-lg shadow-[#1D9E75]/30 whitespace-nowrap"
-            >
-              <User size={14} />
-              {t('staffLogin')}
-            </button>
+            {/* Portal Dropdown */}
+            <PortalDropdown label={t('portalLogin')} items={portalItems} />
 
             {/* Mobile menu trigger */}
             <button
               onClick={() => setMobileMenuOpen(!mobileMenuOpen)}
-              className="lg:hidden text-slate-600 p-2 hover:bg-gray-100 rounded-full transition-colors"
+              className="lg:hidden text-slate-600 p-2 hover:bg-gray-100 rounded-full transition-colors shrink-0"
               aria-label="Toggle Navigation"
             >
               {mobileMenuOpen ? <X size={22} /> : <Menu size={22} />}

@@ -67,6 +67,7 @@ const BookingWizard = ({ existingCart, onCartUpdate, scrollToSection }) => {
 
   const [verifyingPayment, setVerifyingPayment] = useState(false);
   const [verificationSuccess, setVerificationSuccess] = useState(false);
+  const [paymentMethod, setPaymentMethod] = useState('UPI');
   const [upiUtr, setUpiUtr] = useState('');
   const [upiSubmitted, setUpiSubmitted] = useState(false);
   const [upiError, setUpiError] = useState('');
@@ -252,28 +253,52 @@ const BookingWizard = ({ existingCart, onCartUpdate, scrollToSection }) => {
                 <CheckCircle2 size={12} /> {createdAppointment?.appointmentId || createdAppointment?.id || 'APT-XXXX'}
               </div>
               <h4 className="text-xs font-black text-slate-800 uppercase tracking-wide mb-4 flex items-center gap-1.5 mt-2">
-                <span>💳 Pay Online via UPI</span>
+                <span>Payment Method</span>
               </h4>
-              
-              <div className="flex flex-col items-center justify-center p-4 bg-slate-50 rounded-xl mb-4 border border-slate-100">
-                <div className="bg-white p-2 rounded-xl shadow-sm border border-slate-100 mb-2">
-                  <QRCodeSVG value={`upi://pay?pa=6397240575@ptaxis&pn=Sana%20Pathology%20Lab&am=${finalPrice}&cu=INR`} size={144} level="H" includeMargin={true} />
-                </div>
-              </div>
 
+              {!verificationSuccess && (
+                <div className="flex bg-slate-100 p-1 rounded-lg mb-6">
+                  <button
+                    onClick={() => setPaymentMethod('UPI')}
+                    className={`flex-1 py-2 text-xs font-bold rounded-md transition-all ${paymentMethod === 'UPI' ? 'bg-white shadow-sm text-emerald-600' : 'text-slate-500 hover:text-slate-700'}`}
+                  >
+                    Pay Online (UPI)
+                  </button>
+                  <button
+                    onClick={() => setPaymentMethod('OFFLINE')}
+                    className={`flex-1 py-2 text-xs font-bold rounded-md transition-all ${paymentMethod === 'OFFLINE' ? 'bg-white shadow-sm text-blue-600' : 'text-slate-500 hover:text-slate-700'}`}
+                  >
+                    Pay Offline
+                  </button>
+                </div>
+              )}
+              
               {verificationSuccess ? (
                 <div className="bg-emerald-50 border border-emerald-250 rounded-xl p-4 text-center space-y-2 animate-fade-in-up">
                   <div className="w-10 h-10 bg-emerald-100 rounded-full flex items-center justify-center mx-auto">
                     <CheckCircle2 size={24} className="text-emerald-600" />
                   </div>
-                  <h5 className="text-xs font-black text-emerald-800 uppercase tracking-wider">Payment Submitted!</h5>
-                  <p className="text-[10px] text-emerald-600 font-medium">Your reference number has been received. Our team will verify it shortly.</p>
+                  <h5 className="text-xs font-black text-emerald-800 uppercase tracking-wider">
+                    {paymentMethod === 'UPI' ? 'Payment Submitted!' : 'Booking Confirmed!'}
+                  </h5>
+                  <p className="text-[10px] text-emerald-600 font-medium">
+                    {paymentMethod === 'UPI' 
+                      ? 'Your reference number has been received. Our team will verify it shortly.' 
+                      : `Please pay at the time of ${dateTime.isHomeCollection ? 'home collection' : 'lab visit'}.`}
+                  </p>
                   <div className="mt-4 bg-white border border-emerald-200 rounded-xl py-2 px-4 inline-block shadow-sm">
                     <span className="text-[10px] font-bold text-emerald-600 uppercase tracking-wider block mb-0.5">Booking No.</span>
                     <span className="text-lg font-black text-emerald-800 tracking-wider">{createdAppointment?.appointmentId || createdAppointment?.id || 'APT-XXXXXX'}</span>
                   </div>
                 </div>
-              ) : (
+              ) : paymentMethod === 'UPI' ? (
+                <>
+                  <div className="flex flex-col items-center justify-center p-4 bg-slate-50 rounded-xl mb-4 border border-slate-100">
+                    <div className="bg-white p-2 rounded-xl shadow-sm border border-slate-100 mb-2">
+                      <QRCodeSVG value={`upi://pay?pa=6397240575@ptaxis&pn=Sana%20Pathology%20Lab&am=${finalPrice}&cu=INR`} size={144} level="H" includeMargin={true} />
+                    </div>
+                  </div>
+
                 <div className="bg-slate-50 border border-slate-200 rounded-xl p-4 space-y-3">
                   <div className="text-center">
                     <h5 className="text-xs font-black text-slate-800">Submit Payment Details</h5>
@@ -309,20 +334,33 @@ const BookingWizard = ({ existingCart, onCartUpdate, scrollToSection }) => {
                       setVerifyingPayment(true);
                       setUpiError('');
                       try {
+                        const controller = new AbortController();
+                        const timeoutId = setTimeout(() => controller.abort(), 10000); // 10s timeout
                         const response = await fetch('/api/public/submit-utr', {
                           method: 'POST',
                           headers: { 'Content-Type': 'application/json' },
-                          body: JSON.stringify({ appointmentId: createdAppointment?.id || 'offline-0', utr: upiUtr })
+                          body: JSON.stringify({ appointmentId: createdAppointment?.id || 'offline-0', utr: upiUtr }),
+                          signal: controller.signal
                         });
+                        clearTimeout(timeoutId);
+                        
                         if (response.ok) {
                           setVerificationSuccess(true);
                           setUpiSubmitted(true);
                         } else {
-                          const data = await response.json();
-                          setUpiError(data.message || 'Failed to submit UTR');
+                          try {
+                            const data = await response.json();
+                            setUpiError(data.message || 'Failed to submit UTR');
+                          } catch(e) {
+                            setUpiError('Server error. Failed to parse response.');
+                          }
                         }
                       } catch (err) {
-                        setUpiError('Network error. Try again.');
+                        if (err.name === 'AbortError') {
+                          setUpiError('Request timed out. Please try again.');
+                        } else {
+                          setUpiError('Network error. Is the server running?');
+                        }
                       } finally {
                         setVerifyingPayment(false);
                       }
@@ -331,6 +369,25 @@ const BookingWizard = ({ existingCart, onCartUpdate, scrollToSection }) => {
                   >
                     {verifyingPayment ? <Loader2 size={14} className="animate-spin" /> : <CheckCircle2 size={14} />}
                     {verifyingPayment ? 'Submitting...' : 'Submit Reference No.'}
+                  </button>
+                </div>
+                </>
+              ) : (
+                <div className="bg-slate-50 border border-slate-200 rounded-xl p-5 space-y-4">
+                  <div className="text-center">
+                    <h5 className="text-xs font-black text-slate-800 mb-2">Pay Offline / Cash</h5>
+                    <p className="text-[10px] text-slate-500 font-medium leading-relaxed">
+                      You can pay via Cash, Card, or UPI directly to our phlebotomist at the time of {dateTime.isHomeCollection ? 'home collection' : 'your visit to the lab'}.
+                    </p>
+                  </div>
+                  <button
+                    type="button"
+                    onClick={() => {
+                      setVerificationSuccess(true);
+                    }}
+                    className="w-full bg-blue-600 hover:bg-blue-700 text-white rounded-lg py-3 text-[10px] font-black uppercase tracking-wider shadow-sm transition-colors flex items-center justify-center gap-1.5"
+                  >
+                    <CheckCircle2 size={14} /> Confirm Offline Payment
                   </button>
                 </div>
               )}
@@ -361,6 +418,7 @@ const BookingWizard = ({ existingCart, onCartUpdate, scrollToSection }) => {
                 setUpiError('');
                 setVerifyingPayment(false);
                 setVerificationSuccess(false);
+                setPaymentMethod('UPI');
               }}
               className="bg-primary hover:bg-primary-light text-white px-6 py-2.5 rounded-xl font-bold text-xs shadow-md transition-all"
             >
@@ -472,151 +530,8 @@ const BookingWizard = ({ existingCart, onCartUpdate, scrollToSection }) => {
                   <div className="flex items-center gap-1.5 mb-1">
                     <span className="text-[10px] font-black tracking-widest text-[#00488d] uppercase bg-blue-50 px-2.5 py-1 rounded-md border border-blue-100">Step 1 of 6</span>
                   </div>
-                  <h3 className="text-xl font-black text-slate-800">Select Packages & Tests</h3>
-                  <p className="text-xs text-slate-500 mt-0.5">Explore our central diagnostics offerings. Select packages or individual tests.</p>
-                </div>
-
-                {/* Premium Package Cards */}
-                <div className="grid grid-cols-1 md:grid-cols-3 gap-6 pt-2">
-                  {PACKAGES.map((pkg, i) => {
-                    const sel = selectedTests.some(t => t.code === pkg.code || t.testCode === pkg.code);
-                    const savings = pkg.originalPrice - pkg.price;
-                    const isRecommended = pkg.badge === 'Recommended';
-                    const isBestValue = pkg.badge === 'Best Value';
-                    const isPopular = pkg.badge === 'Popular';
-                    
-                    return (
-                      <div 
-                        key={i} 
-                        className={`relative rounded-2xl border-2 transition-all flex flex-col justify-between overflow-hidden shadow-sm bg-white ${
-                          sel ? 'border-[#00488d] ring-4 ring-blue-50' : 'border-slate-100 hover:border-slate-300 hover:shadow-md'
-                        }`}
-                      >
-                        {pkg.badge && (
-                          <div className={`absolute top-0 right-0 px-3 py-1 text-[9px] font-black uppercase tracking-wider rounded-bl-xl text-white ${
-                            isRecommended ? 'bg-indigo-600' : isBestValue ? 'bg-amber-500' : 'bg-rose-500'
-                          }`}>
-                            {pkg.badge}
-                          </div>
-                        )}
-                        <div className="p-5 pb-4">
-                          <p className="text-[10px] font-extrabold uppercase tracking-widest text-slate-400">Premium Package</p>
-                          <h4 className="text-base font-black text-slate-800 mt-1 mb-2 leading-tight">{pkg.name}</h4>
-                          <p className="text-xs text-slate-500 mb-4 h-10 overflow-hidden line-clamp-2">{pkg.desc}</p>
-                          
-                          {/* Details */}
-                          <div className="space-y-1.5 text-xs text-slate-600 border-t border-slate-100 pt-3 mb-2">
-                            <div className="flex items-center gap-2">
-                              <span className="w-1.5 h-1.5 rounded-full bg-[#00488d] shrink-0" />
-                              <span>Includes <strong>{pkg.code.includes('BASIC') ? '40+' : pkg.code.includes('COMP') ? '60+' : '50+'}</strong> Parameters</span>
-                            </div>
-                            <div className="flex items-center gap-2">
-                              <span className="w-1.5 h-1.5 rounded-full bg-[#00488d] shrink-0" />
-                              <span>Sample: <strong>Blood, Urine</strong></span>
-                            </div>
-                          </div>
-                        </div>
-                        
-                        {/* Price & Select CTA */}
-                        <div className="p-5 pt-0 mt-auto bg-slate-50 border-t border-slate-100/50 flex items-center justify-between gap-2">
-                          <div className="flex flex-col">
-                            <span className="text-[10px] font-bold text-slate-400 line-through">₹{pkg.originalPrice}</span>
-                            <div className="flex items-baseline gap-1.5">
-                              <span className="text-lg font-black text-[#00488d]">₹{pkg.price}</span>
-                              <span className="text-[10px] font-bold text-emerald-600">Save ₹{savings}</span>
-                            </div>
-                          </div>
-                          <button 
-                            type="button" 
-                            onClick={() => togglePackage(pkg)} 
-                            className={`px-4 py-2 rounded-xl text-xs font-black transition-all ${
-                              sel ? 'bg-secondary text-white hover:bg-secondary/90 shadow' : 'bg-[#00488d] hover:bg-blue-800 text-white shadow-sm'
-                            }`}
-                          >
-                            {sel ? 'Added ✓' : 'Add Package'}
-                          </button>
-                        </div>
-                      </div>
-                    );
-                  })}
-                </div>
-
-                {/* Package Comparison Table (Accordion style) */}
-                <div className="border border-slate-100 rounded-2xl overflow-hidden shadow-sm bg-white">
-                  <button 
-                    type="button"
-                    onClick={() => setCompareExpanded(!compareExpanded)}
-                    className="w-full px-5 py-3.5 bg-slate-50 hover:bg-slate-100/70 transition-colors flex justify-between items-center text-left"
-                  >
-                    <span className="text-xs font-black uppercase tracking-wider text-[#00488d] flex items-center gap-1.5">
-                      📊 Compare Premium Packages
-                    </span>
-                    <span className="text-xs font-bold text-slate-500">{compareExpanded ? 'Hide Details ▲' : 'Show Details ▼'}</span>
-                  </button>
-                  {compareExpanded && (
-                    <div className="overflow-x-auto p-4 border-t border-slate-100">
-                      <table className="w-full text-left border-collapse text-xs">
-                        <thead>
-                          <tr className="border-b border-slate-100 text-slate-400">
-                            <th className="py-2.5 px-4 font-bold">Parameters / Tests</th>
-                            <th className="py-2.5 px-4 font-bold text-center">Basic Care (₹999)</th>
-                            <th className="py-2.5 px-4 font-bold text-center">Comprehensive (₹1999)</th>
-                            <th className="py-2.5 px-4 font-bold text-center">Senior Citizen (₹1499)</th>
-                          </tr>
-                        </thead>
-                        <tbody className="divide-y divide-slate-50 text-slate-700">
-                          <tr>
-                            <td className="py-2 px-4 font-semibold">Complete Blood Count (CBC)</td>
-                            <td className="py-2 px-4 text-center text-emerald-600 font-bold">✓ Included</td>
-                            <td className="py-2 px-4 text-center text-emerald-600 font-bold">✓ Included</td>
-                            <td className="py-2 px-4 text-center text-emerald-600 font-bold">✓ Included</td>
-                          </tr>
-                          <tr>
-                            <td className="py-2 px-4 font-semibold">Liver Function Test (LFT)</td>
-                            <td className="py-2 px-4 text-center text-emerald-600 font-bold">✓ Included</td>
-                            <td className="py-2 px-4 text-center text-emerald-600 font-bold">✓ Included</td>
-                            <td className="py-2 px-4 text-center text-emerald-600 font-bold">✓ Included</td>
-                          </tr>
-                          <tr>
-                            <td className="py-2 px-4 font-semibold">Kidney Function Test (KFT)</td>
-                            <td className="py-2 px-4 text-center text-emerald-600 font-bold">✓ Included</td>
-                            <td className="py-2 px-4 text-center text-emerald-600 font-bold">✓ Included</td>
-                            <td className="py-2 px-4 text-center text-emerald-600 font-bold">✓ Included</td>
-                          </tr>
-                          <tr>
-                            <td className="py-2 px-4 font-semibold">Lipid Profile</td>
-                            <td className="py-2 px-4 text-center text-slate-300">—</td>
-                            <td className="py-2 px-4 text-center text-emerald-600 font-bold">✓ Included</td>
-                            <td className="py-2 px-4 text-center text-emerald-600 font-bold">✓ Included</td>
-                          </tr>
-                          <tr>
-                            <td className="py-2 px-4 font-semibold">Thyroid Profile (TFT)</td>
-                            <td className="py-2 px-4 text-center text-slate-300">—</td>
-                            <td className="py-2 px-4 text-center text-emerald-600 font-bold">✓ Included</td>
-                            <td className="py-2 px-4 text-center text-slate-300">—</td>
-                          </tr>
-                          <tr>
-                            <td className="py-2 px-4 font-semibold">Vitamin D</td>
-                            <td className="py-2 px-4 text-center text-slate-300">—</td>
-                            <td className="py-2 px-4 text-center text-emerald-600 font-bold">✓ Included</td>
-                            <td className="py-2 px-4 text-center text-slate-300">—</td>
-                          </tr>
-                          <tr>
-                            <td className="py-2 px-4 font-semibold">Urine Routine</td>
-                            <td className="py-2 px-4 text-center text-slate-300">—</td>
-                            <td className="py-2 px-4 text-center text-slate-300">—</td>
-                            <td className="py-2 px-4 text-center text-emerald-600 font-bold">✓ Included</td>
-                          </tr>
-                          <tr className="bg-slate-50/50">
-                            <td className="py-2.5 px-4 font-bold">Total Parameters</td>
-                            <td className="py-2.5 px-4 text-center font-black text-[#00488d]">40+ Params</td>
-                            <td className="py-2.5 px-4 text-center font-black text-[#00488d]">60+ Params</td>
-                            <td className="py-2.5 px-4 text-center font-black text-[#00488d]">50+ Params</td>
-                          </tr>
-                        </tbody>
-                      </table>
-                    </div>
-                  )}
+                  <h3 className="text-xl font-black text-slate-800">Search & Select Tests</h3>
+                  <p className="text-xs text-slate-500 mt-0.5">Explore our central diagnostics offerings and select individual tests.</p>
                 </div>
 
                 {/* Central Test Explorer & Finder */}

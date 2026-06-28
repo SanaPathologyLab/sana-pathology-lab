@@ -3,7 +3,7 @@ import { useNavigate, useLocation } from 'react-router-dom';
 import { useLanguage } from '../context/LanguageContext';
 import {
   Award, Package, Search, Calendar, MessageCircle, MapPin,
-  UserCircle, ShoppingCart, Menu, X
+  UserCircle, ShoppingCart, Menu, X, Activity, Droplets
 } from 'lucide-react';
 import Logo from './Logo';
 
@@ -11,7 +11,8 @@ const NAV_TABS = [
   { id: 'why-us', labelKey: 'whyUs', icon: Award, path: '/why-us' },
   { id: 'packages', labelKey: 'packages', icon: Package, path: '/packages' },
   { id: 'test-finder', labelKey: 'testFinder', icon: Search, path: '/test-finder' },
-  { id: 'book-online', labelKey: 'bookOnline', icon: Calendar, path: '/book-online' },
+  { id: 'report-analyzer', labelKey: 'reportAnalyzer', icon: Activity, path: '/report-analyzer' },
+  { id: 'sample-guide', labelKey: 'sampleGuide', icon: Droplets, path: '/sample-guide' },
   { id: 'faq', labelKey: 'faq', icon: MessageCircle, path: '/faq' },
   { id: 'contact', labelKey: 'contact', icon: MapPin, path: '/contact' },
 ];
@@ -91,8 +92,11 @@ const PublicHomeHeader = ({ cartCount: propCartCount }) => {
               return (
                 <button
                   key={tab.id}
-                  onClick={() => { navigate(tab.path); window.scrollTo(0, 0); }}
-                  className={`relative px-4 py-2.5 text-xs font-black rounded-xl transition-all duration-300 flex items-center gap-2 ${
+                  onClick={() => { 
+                    navigate(tab.path); 
+                    window.scrollTo(0, 0); 
+                  }}
+                  className={`relative px-2.5 xl:px-4 py-2.5 text-xs font-black rounded-xl transition-all duration-300 flex items-center gap-2 ${
                     isActive
                       ? 'text-white shadow-lg scale-105'
                       : 'text-slate-500 hover:text-slate-700 hover:bg-slate-200/40'
@@ -127,7 +131,7 @@ const PublicHomeHeader = ({ cartCount: propCartCount }) => {
                 window.scrollTo(0, 0);
               }
             }}
-            className="hidden md:flex items-center bg-slate-100 rounded-2xl px-3 py-2.5 border border-slate-200 focus-within:border-primary focus-within:ring-2 focus-within:ring-primary/20 transition-all shadow-inner"
+            className="hidden xl:flex items-center bg-slate-100 rounded-2xl px-3 py-2.5 border border-slate-200 focus-within:border-primary focus-within:ring-2 focus-within:ring-primary/20 transition-all shadow-inner"
           >
             <Search size={16} className="text-slate-400 shrink-0" />
             <input 
@@ -140,7 +144,7 @@ const PublicHomeHeader = ({ cartCount: propCartCount }) => {
           {/* Language Toggle */}
           <button
             onClick={toggleLanguage}
-            className="hidden sm:flex items-center justify-center font-black text-white bg-gradient-to-br from-primary via-primary-light to-emerald-400 hover:from-emerald-500 hover:via-primary-light hover:to-primary transition-all duration-300 w-12 h-12 rounded-2xl text-base border-2 border-white/30 shadow-xl shadow-primary/25 hover:shadow-2xl hover:shadow-primary/40 active:scale-90 animate-pulse-glow-teal relative overflow-hidden group"
+            className="hidden lg:flex items-center justify-center font-black text-white bg-gradient-to-br from-primary via-primary-light to-emerald-400 hover:from-emerald-500 hover:via-primary-light hover:to-primary transition-all duration-300 w-12 h-12 rounded-2xl text-base border-2 border-white/30 shadow-xl shadow-primary/25 hover:shadow-2xl hover:shadow-primary/40 active:scale-90 animate-pulse-glow-teal relative overflow-hidden group"
             title="Switch Language"
           >
             <span className="absolute inset-0 bg-white/10 translate-y-full group-hover:translate-y-0 transition-transform duration-300"></span>
@@ -149,7 +153,7 @@ const PublicHomeHeader = ({ cartCount: propCartCount }) => {
 
           {/* Cart */}
           <button
-            onClick={() => navigate('/book-online')}
+            onClick={() => { navigate('/test-finder'); window.scrollTo(0, 0); }}
             className="relative flex items-center justify-center w-12 h-12 text-rose-500 bg-gradient-to-br from-rose-100 via-pink-100 to-rose-50 hover:from-rose-500 hover:via-pink-500 hover:to-rose-500 transition-all duration-300 rounded-2xl border-2 border-rose-200 hover:border-rose-400 shadow-lg shadow-rose-200/40 hover:shadow-xl hover:shadow-rose-300/50 active:scale-90 group"
             title="Your Booking Cart"
           >
@@ -164,7 +168,7 @@ const PublicHomeHeader = ({ cartCount: propCartCount }) => {
           {/* Staff Login */}
           <button
             onClick={() => navigate('/login')}
-            className="hidden sm:flex items-center gap-1.5 text-xs font-bold text-white bg-primary hover:bg-primary-light transition-all px-4 py-2.5 rounded-xl shadow-lg shadow-primary/25 hover:shadow-xl hover:shadow-primary/30 active:scale-95"
+            className="hidden xl:flex items-center gap-1.5 text-xs font-bold text-white bg-primary hover:bg-primary-light transition-all px-4 py-2.5 rounded-xl shadow-lg shadow-primary/25 hover:shadow-xl hover:shadow-primary/30 active:scale-95"
           >
             <UserCircle size={16} />
             {t('staffLogin')}
@@ -191,7 +195,11 @@ const PublicHomeHeader = ({ cartCount: propCartCount }) => {
               return (
                 <button
                   key={tab.id}
-                  onClick={() => { navigate(tab.path); window.scrollTo(0, 0); setMobileOpen(false); }}
+                  onClick={() => { 
+                    navigate(tab.path); 
+                    window.scrollTo(0, 0); 
+                    setMobileOpen(false); 
+                  }}
                   className={`flex items-center gap-3 px-4 py-3.5 rounded-xl text-sm font-bold transition-all ${
                     isActive
                       ? 'bg-gradient-to-r from-primary/10 to-primary-light/10 text-primary border border-primary/20'
