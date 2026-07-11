@@ -136,16 +136,18 @@ exports.getReportById = async (req, res) => {
 
 exports.updateReport = async (req, res) => {
   try {
-    const { status, doctorId, results } = req.body;
+    const { status, doctorId, results, patientId } = req.body;
     
     const updateData = {};
     if (status !== undefined) updateData.status = status;
     if (doctorId !== undefined) updateData.doctorId = doctorId || null;
+    if (patientId !== undefined) updateData.patientId = patientId;
     if (req.userRole === 'TECHNICIAN') updateData.technicianId = req.userId;
 
     const report = await prisma.report.update({
       where: { id: parseInt(req.params.id) },
-      data: updateData
+      data: updateData,
+      include: { patient: true }
     });
     
     // Completely recreate results if provided, to support adding/removing tests

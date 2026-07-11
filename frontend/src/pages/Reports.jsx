@@ -23,13 +23,24 @@ const Reports = () => {
   const [editSummaries, setEditSummaries] = useState({});
   const [editStatus, setEditStatus] = useState('');
   const [editDoctor, setEditDoctor] = useState(null);
+  const [editPatient, setEditPatient] = useState(null);
+  const [patients, setPatients] = useState([]);
   const [saving, setSaving] = useState(false);
 
   useEffect(() => {
     fetchReports();
     fetchTests();
     fetchDoctors();
+    fetchPatients();
   }, []);
+
+  const fetchPatients = async () => {
+    try {
+      const res = await fetch(`${API}/patients`, { headers });
+      const data = await res.json();
+      if (Array.isArray(data)) setPatients(data);
+    } catch (err) { console.error(err); }
+  };
 
   const fetchReports = async () => {
     try {
@@ -117,6 +128,7 @@ const Reports = () => {
     setEditResults(finalResults.filter(r => r.groupName !== '__SUMMARY__'));
     setEditStatus(full.status);
     setEditDoctor(full.doctorId && full.doctor ? { value: full.doctorId, label: `${full.doctor.doctorId || 'DOC'} - ${full.doctor.name}` } : null);
+    setEditPatient(full.patient ? { value: full.patient.id, label: `${full.patient.fullName} - ${full.patient.patientId}` } : null);
     setShowEditModal(true);
   };
 
@@ -145,6 +157,7 @@ const Reports = () => {
       body: JSON.stringify({ 
         status: editStatus, 
         doctorId: editDoctor ? editDoctor.value : null,
+        patientId: editPatient ? editPatient.value : null,
         results: resultsToSave 
       }),
     });
@@ -418,7 +431,19 @@ const Reports = () => {
             <div className="flex items-center justify-between px-6 py-4 border-b border-gray-200 flex-shrink-0">
               <div>
                 <h2 className="text-lg font-bold text-[#00488d]">Edit Report — {editReport.reportNumber}</h2>
-                <p className="text-sm text-gray-500">{editReport.patient?.fullName} · {editReport.patient?.patientId}</p>
+                <div className="flex items-center gap-2 mt-1">
+                  {(user?.userType === 'STAFF' || user?.userType === 'ADMIN' || user?.role === 'ADMIN') ? (
+                    <Select
+                      options={patients.map(p => ({ value: p.id, label: `${p.fullName} - ${p.patientId}` }))}
+                      value={editPatient}
+                      onChange={setEditPatient}
+                      className="text-sm font-bold min-w-[300px]"
+                      placeholder="Select Patient"
+                    />
+                  ) : (
+                    <span className="text-sm text-gray-700 font-bold">{editPatient?.label || editReport.patient?.fullName}</span>
+                  )}
+                </div>
               </div>
               <button onClick={() => setShowEditModal(false)}><X className="w-6 h-6 text-gray-400 hover:text-gray-600" /></button>
             </div>
