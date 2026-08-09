@@ -595,6 +595,7 @@ Return ONLY the JSON. Do not include markdown code block formatting (no \`\`\`js
       });
 
       // ─── Auto-calculate CBC Haemogram (all 6 formulas) ───────────────────
+      // DB parameter names: HAEMOGLOBIN, HCT, RBC, MCV, MCH, MCHC
       // Formula 1: HB  = HCT ÷ 3
       // Formula 2: HCT = HB  × 3
       // Formula 3: RBC = HB  ÷ 3
@@ -606,26 +607,26 @@ Return ONLY the JSON. Do not include markdown code block formatting (no \`\`\`js
         const paramName = modifiedRow.parameterName;
         const tid = modifiedRow.testId;
 
-        if (paramName === 'HAEMOGLOBIN' || paramName === 'H.C.T.' || paramName === 'R.B.C. COUNT') {
+        if (paramName === 'HAEMOGLOBIN' || paramName === 'HCT' || paramName === 'RBC') {
           const get = (name) => {
             const row = newResults.find(tr => tr.testId === tid && tr.parameterName === name);
             return row && row.resultValue ? parseFloat(row.resultValue) : NaN;
           };
 
           let hb  = get('HAEMOGLOBIN');
-          let hct = get('H.C.T.');
-          let rbc = get('R.B.C. COUNT');
+          let hct = get('HCT');
+          let rbc = get('RBC');
 
           // ── Derive missing base values from the one that was just typed ──
           if (paramName === 'HAEMOGLOBIN' && !isNaN(hb)) {
             // Formula 2 & 3: HCT = HB×3,  RBC = HB÷3
             hct = hb * 3;
             rbc = hb / 3;
-          } else if (paramName === 'H.C.T.' && !isNaN(hct)) {
+          } else if (paramName === 'HCT' && !isNaN(hct)) {
             // Formula 1 & 3: HB = HCT÷3,  RBC = HB÷3
             hb  = hct / 3;
             rbc = hb  / 3;
-          } else if (paramName === 'R.B.C. COUNT' && !isNaN(rbc)) {
+          } else if (paramName === 'RBC' && !isNaN(rbc)) {
             // RBC entered manually — derive HB & HCT if missing
             if (isNaN(hb) && !isNaN(hct)) hb  = hct / 3;
             if (isNaN(hct) && !isNaN(hb))  hct = hb  * 3;
@@ -642,19 +643,19 @@ Return ONLY the JSON. Do not include markdown code block formatting (no \`\`\`js
 
               let updatedVal = null;
 
-              // Auto-fill derived base values
+              // Auto-fill derived base values (only when the other was typed)
               if (paramName === 'HAEMOGLOBIN') {
-                if (tr.parameterName === 'H.C.T.')       updatedVal = hct.toFixed(1);
-                if (tr.parameterName === 'R.B.C. COUNT') updatedVal = rbc.toFixed(2);
-              } else if (paramName === 'H.C.T.') {
-                if (tr.parameterName === 'HAEMOGLOBIN')  updatedVal = hb.toFixed(1);
-                if (tr.parameterName === 'R.B.C. COUNT') updatedVal = rbc.toFixed(2);
+                if (tr.parameterName === 'HCT') updatedVal = hct.toFixed(1);
+                if (tr.parameterName === 'RBC') updatedVal = rbc.toFixed(2);
+              } else if (paramName === 'HCT') {
+                if (tr.parameterName === 'HAEMOGLOBIN') updatedVal = hb.toFixed(1);
+                if (tr.parameterName === 'RBC')         updatedVal = rbc.toFixed(2);
               }
 
               // Always auto-fill indices
-              if (tr.parameterName === 'M.C.V.')   updatedVal = mcv.toFixed(1);
-              if (tr.parameterName === 'M.C.H.')   updatedVal = mch.toFixed(1);
-              if (tr.parameterName === 'M.C.H.C.') updatedVal = mchc.toFixed(1);
+              if (tr.parameterName === 'MCV')  updatedVal = mcv.toFixed(1);
+              if (tr.parameterName === 'MCH')  updatedVal = mch.toFixed(1);
+              if (tr.parameterName === 'MCHC') updatedVal = mchc.toFixed(1);
 
               if (updatedVal !== null) {
                 const autoFlag = autoCalculateFlag(updatedVal, tr.referenceRange);
