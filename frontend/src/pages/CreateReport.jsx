@@ -539,31 +539,43 @@ Return ONLY the JSON. Do not include markdown code block formatting (no \`\`\`js
   };
 
   const autoCalculateFlag = (valueStr, rangeStr) => {
-    if (!valueStr || !rangeStr) return '';
-    const val = parseFloat(valueStr.toString().replace(/,/g, ''));
-    if (isNaN(val)) return '';
+    if (!valueStr && valueStr !== 0) return '';
+    const strVal = valueStr.toString().trim();
+
+    // ── Qualitative / text result ────────────────────────────────────────────
+    const upper = strVal.toUpperCase();
+    if (['POSITIVE','REACTIVE','DETECTED','PRESENT','ABNORMAL'].some(k => upper.includes(k)))  return 'HIGH';
+    if (['NEGATIVE','NON-REACTIVE','NOT DETECTED','ABSENT','NORMAL'].some(k => upper.includes(k))) return '';
+
+    // ── Numeric result ────────────────────────────────────────────────────────
+    const val = parseFloat(strVal.replace(/,/g, ''));
+    if (isNaN(val) || !rangeStr) return '';
 
     const range = rangeStr.toString().trim().replace(/,/g, '');
-    
-    // Find exactly one numeric range "min - max" safely without lookbehinds
-    const rangePattern = /(?:^|[^\d\.])([\d\.]+)\s*-\s*([\d\.]+)(?:[^\d\.]|$)/g;
+
+    // Handle "min - max" pattern
+    const rangePattern = /(?:^|[^\d\.])(\d+\.?\d*)\s*-\s*(\d+\.?\d*)(?:[^\d.]|$)/g;
     const matches = [...range.matchAll(rangePattern)];
-    
-    if (matches.length === 1) {
+    if (matches.length >= 1) {
+      // If there are multiple ranges (e.g. M: 13-17, F: 12-16) just use the first
       const min = parseFloat(matches[0][1]);
       const max = parseFloat(matches[0][2]);
       if (val < min) return 'LOW';
       if (val > max) return 'HIGH';
-      return '';
+      return 'NORMAL';
     }
 
-    // Less than
-    const lessMatch = range.match(/<\s*([\d\.]+)/);
-    if (lessMatch && val > parseFloat(lessMatch[1])) return 'HIGH';
+    // Handle "< value" (e.g. < 200)
+    const lessMatch = range.match(/<\s*(\d+\.?\d*)/);
+    if (lessMatch) {
+      return val > parseFloat(lessMatch[1]) ? 'HIGH' : 'NORMAL';
+    }
 
-    // Greater than
-    const greaterMatch = range.match(/>\s*([\d\.]+)/);
-    if (greaterMatch && val < parseFloat(greaterMatch[1])) return 'LOW';
+    // Handle "> value" (e.g. > 60)
+    const greaterMatch = range.match(/>\s*(\d+\.?\d*)/);
+    if (greaterMatch) {
+      return val < parseFloat(greaterMatch[1]) ? 'LOW' : 'NORMAL';
+    }
 
     return '';
   };
@@ -574,57 +586,79 @@ Return ONLY the JSON. Do not include markdown code block formatting (no \`\`\`js
         if (tr.key === key) {
           const updated = { ...tr, [field]: value };
           if (field === 'resultValue') {
-            const autoFlag = autoCalculateFlag(value, tr.referenceRange);
-            if (autoFlag || value === '') updated.flag = autoFlag;
+            // Always auto-set flag for every parameter in every test
+            updated.flag = autoCalculateFlag(value, tr.referenceRange);
           }
           return updated;
         }
         return tr;
       });
 
-      // Auto-calculate CBC Parameters based on photo formulas
+      // ─── Auto-calculate CBC Haemogram (all 6 formulas) ───────────────────
+      // Formula 1: HB  = HCT ÷ 3
+      // Formula 2: HCT = HB  × 3
+      // Formula 3: RBC = HB  ÷ 3
+      // Formula 4: MCV  = (HCT × 10) ÷ RBC
+      // Formula 5: MCH  = (HB  × 10) ÷ RBC
+      // Formula 6: MCHC = (HB  × 100) ÷ HCT
       const modifiedRow = newResults.find(tr => tr.key === key);
       if (modifiedRow && field === 'resultValue') {
         const paramName = modifiedRow.parameterName;
-        if (paramName === 'HAEMOGLOBIN' || paramName === 'H.C.T.' || paramName === 'R.B.C. COUNT') {
-          const hbRow = newResults.find(tr => tr.testId === modifiedRow.testId && tr.parameterName === 'HAEMOGLOBIN');
-          let hb = hbRow && hbRow.resultValue ? parseFloat(hbRow.resultValue) : NaN;
-          
-          let hct = NaN, rbc = NaN;
+        const tid = modifiedRow.testId;
 
-          // If HB was just updated, auto-derive HCT and RBC
+        if (paramName === 'HAEMOGLOBIN' || paramName === 'H.C.T.' || paramName === 'R.B.C. COUNT') {
+          const get = (name) => {
+            const row = newResults.find(tr => tr.testId === tid && tr.parameterName === name);
+            return row && row.resultValue ? parseFloat(row.resultValue) : NaN;
+          };
+
+          let hb  = get('HAEMOGLOBIN');
+          let hct = get('H.C.T.');
+          let rbc = get('R.B.C. COUNT');
+
+          // ── Derive missing base values from the one that was just typed ──
           if (paramName === 'HAEMOGLOBIN' && !isNaN(hb)) {
+            // Formula 2 & 3: HCT = HB×3,  RBC = HB÷3
             hct = hb * 3;
             rbc = hb / 3;
-          } else {
-            const hctRow = newResults.find(tr => tr.testId === modifiedRow.testId && tr.parameterName === 'H.C.T.');
-            const rbcRow = newResults.find(tr => tr.testId === modifiedRow.testId && tr.parameterName === 'R.B.C. COUNT');
-            hct = hctRow && hctRow.resultValue ? parseFloat(hctRow.resultValue) : NaN;
-            rbc = rbcRow && rbcRow.resultValue ? parseFloat(rbcRow.resultValue) : NaN;
+          } else if (paramName === 'H.C.T.' && !isNaN(hct)) {
+            // Formula 1 & 3: HB = HCT÷3,  RBC = HB÷3
+            hb  = hct / 3;
+            rbc = hb  / 3;
+          } else if (paramName === 'R.B.C. COUNT' && !isNaN(rbc)) {
+            // RBC entered manually — derive HB & HCT if missing
+            if (isNaN(hb) && !isNaN(hct)) hb  = hct / 3;
+            if (isNaN(hct) && !isNaN(hb))  hct = hb  * 3;
           }
 
-          // If we have all three base values, calculate the indices
+          // ── Calculate indices if we have all three base values ──
           if (!isNaN(hb) && !isNaN(hct) && !isNaN(rbc) && rbc > 0 && hct > 0) {
-            const mcv = (hct * 10) / rbc;
-            const mch = (hb * 10) / rbc;
-            const mchc = (hb * 100) / hct;
+            const mcv  = (hct * 10)  / rbc;   // Formula 4
+            const mch  = (hb  * 10)  / rbc;   // Formula 5
+            const mchc = (hb  * 100) / hct;   // Formula 6
 
             newResults = newResults.map(tr => {
-              if (tr.testId === modifiedRow.testId) {
-                let updatedVal = null;
-                // Only overwrite HCT and RBC if HB was the one modified
-                if (paramName === 'HAEMOGLOBIN') {
-                  if (tr.parameterName === 'H.C.T.') updatedVal = hct.toFixed(1);
-                  if (tr.parameterName === 'R.B.C. COUNT') updatedVal = rbc.toFixed(2);
-                }
-                if (tr.parameterName === 'M.C.V.') updatedVal = mcv.toFixed(1);
-                if (tr.parameterName === 'M.C.H.') updatedVal = mch.toFixed(1);
-                if (tr.parameterName === 'M.C.H.C.') updatedVal = mchc.toFixed(1);
+              if (tr.testId !== tid) return tr;
 
-                if (updatedVal !== null) {
-                  const autoFlag = autoCalculateFlag(updatedVal, tr.referenceRange);
-                  return { ...tr, resultValue: updatedVal, flag: autoFlag || tr.flag || '' };
-                }
+              let updatedVal = null;
+
+              // Auto-fill derived base values
+              if (paramName === 'HAEMOGLOBIN') {
+                if (tr.parameterName === 'H.C.T.')       updatedVal = hct.toFixed(1);
+                if (tr.parameterName === 'R.B.C. COUNT') updatedVal = rbc.toFixed(2);
+              } else if (paramName === 'H.C.T.') {
+                if (tr.parameterName === 'HAEMOGLOBIN')  updatedVal = hb.toFixed(1);
+                if (tr.parameterName === 'R.B.C. COUNT') updatedVal = rbc.toFixed(2);
+              }
+
+              // Always auto-fill indices
+              if (tr.parameterName === 'M.C.V.')   updatedVal = mcv.toFixed(1);
+              if (tr.parameterName === 'M.C.H.')   updatedVal = mch.toFixed(1);
+              if (tr.parameterName === 'M.C.H.C.') updatedVal = mchc.toFixed(1);
+
+              if (updatedVal !== null) {
+                const autoFlag = autoCalculateFlag(updatedVal, tr.referenceRange);
+                return { ...tr, resultValue: updatedVal, flag: autoFlag || '' };
               }
               return tr;
             });
@@ -698,7 +732,7 @@ Return ONLY the JSON. Do not include markdown code block formatting (no \`\`\`js
       const payload = {
         patientId: selectedPatient.value,
         results: savedResults,
-        reportDate
+        reportDate: new Date().toISOString()
       };
       if (selectedDoctor) payload.doctorId = selectedDoctor.value;
 

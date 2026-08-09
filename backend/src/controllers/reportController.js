@@ -57,7 +57,7 @@ exports.createReport = async (req, res) => {
     await prisma.invoice.create({
       data: {
         invoiceNumber,
-        patientId,
+        patientId: parseInt(patientId),
         reportId: report.id,
         totalAmount,
         finalAmount: totalAmount,
