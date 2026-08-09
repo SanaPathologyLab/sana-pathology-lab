@@ -1,7 +1,7 @@
 import React, { useEffect, useState, useContext } from 'react';
 import Layout from '../components/Layout';
 import { AuthContext } from '../context/AuthContext';
-import { Save, Building2, Phone, Mail, MapPin, FileText, UserCheck, Settings2 } from 'lucide-react';
+import { Save, Building2, Phone, Mail, MapPin, FileText, UserCheck, Settings2, Database, RefreshCw } from 'lucide-react';
 
 const API = '/api';
 
@@ -27,6 +27,7 @@ const Settings = () => {
   });
   const [saving, setSaving] = useState(false);
   const [saved, setSaved] = useState(false);
+  const [seedingDb, setSeedingDb] = useState(false);
 
   useEffect(() => {
     fetch(`${API}/settings`, { headers })
@@ -49,6 +50,30 @@ const Settings = () => {
       alert('Failed to save settings');
     }
     setSaving(false);
+  };
+
+  const handleTriggerSeed = async () => {
+    if (!confirm('WARNING: This will delete all current patients, reports, and invoices, and seed fresh live demo data. Are you sure you want to proceed?')) {
+      return;
+    }
+    setSeedingDb(true);
+    try {
+      const res = await fetch(`${API}/db/seed-live`, {
+        method: 'POST',
+        headers
+      });
+      const data = await res.json();
+      if (res.ok) {
+        alert(data.message || 'Database seeded successfully!');
+      } else {
+        alert(data.message || 'Failed to seed database.');
+      }
+    } catch (err) {
+      console.error(err);
+      alert('An error occurred while seeding.');
+    } finally {
+      setSeedingDb(false);
+    }
   };
 
   const handleChange = (key, value) => {
@@ -151,6 +176,24 @@ const Settings = () => {
           >
             console.groq.com
           </a>.
+        </div>
+      </Section>
+      <Section icon={<Database className="w-4 h-4" />} title="Database Seeding">
+        <div className="md:col-span-2 flex flex-col md:flex-row items-center justify-between gap-4 p-4 bg-red-50/50 border border-red-100 rounded-lg">
+          <div>
+            <p className="text-sm font-bold text-red-800">Reset & Seed Live Demo Data</p>
+            <p className="text-xs text-gray-500 mt-1 leading-relaxed max-w-xl">
+              This action will reset the database and seed it with dynamic mock data anchored relative to today's date. All charts, stats, and widgets will populate immediately.
+            </p>
+          </div>
+          <button
+            onClick={handleTriggerSeed}
+            disabled={seedingDb}
+            className="shrink-0 bg-red-600 hover:bg-red-700 text-white font-bold text-xs px-4 py-2.5 rounded-lg transition-colors flex items-center gap-2 shadow-sm disabled:opacity-50"
+          >
+            <RefreshCw className={`w-4 h-4 ${seedingDb ? 'animate-spin' : ''}`} />
+            {seedingDb ? 'Seeding...' : 'Reset & Seed Data'}
+          </button>
         </div>
       </Section>
     </Layout>
