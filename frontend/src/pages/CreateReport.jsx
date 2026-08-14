@@ -592,6 +592,7 @@ Return ONLY the JSON. Do not include markdown code block formatting (no \`\`\`js
           return updated;
         }
         return tr;
+      });
       
       return newResults;
     });

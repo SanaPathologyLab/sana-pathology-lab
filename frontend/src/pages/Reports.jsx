@@ -217,6 +217,7 @@ const Reports = () => {
           return updated;
         }
         return r;
+      });
       return newResults;
     });
   };
