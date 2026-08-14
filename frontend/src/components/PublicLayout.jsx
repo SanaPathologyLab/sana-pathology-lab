@@ -242,7 +242,7 @@ const PublicLayout = ({ children }) => {
   ];
 
   return (
-    <div className="min-h-screen bg-[#F5F7F6] relative font-sans text-slate-800 flex flex-col justify-between">
+    <div className="min-h-screen bg-[#F5F7F6] relative font-sans text-slate-800 flex flex-col justify-between overflow-x-hidden">
 
       {/* Top Utility Bar */}
       <UtilityBar />
@@ -257,20 +257,20 @@ const PublicLayout = ({ children }) => {
       >
         <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 h-[68px] flex items-center justify-between">
           {/* Logo */}
-          <Link to="/" className="flex items-center gap-5 cursor-pointer shrink-0">
-            <Logo className="w-11 h-11 drop-shadow-md" />
+          <Link to="/" className="flex items-center gap-3 lg:gap-5 cursor-pointer shrink-0">
+            <Logo className="w-9 h-9 lg:w-11 lg:h-11 drop-shadow-md" />
             <div>
-              <h1 className="text-xl font-heading text-[#1D9E75] tracking-tight leading-none">
+              <h1 className="text-lg lg:text-xl font-heading text-[#1D9E75] tracking-tight leading-none">
                 {t('logoTitle')}
               </h1>
-              <p className="text-[10px] text-[#1D9E75]/80 font-bold tracking-wide uppercase mt-0.5">
+              <p className="text-[9px] lg:text-[10px] text-[#1D9E75]/80 font-bold tracking-wide uppercase mt-0.5">
                 {t('logoSub')}
               </p>
             </div>
           </Link>
 
           {/* Desktop Nav */}
-          <div className="hidden lg:flex items-center gap-3 xl:gap-5 mr-2">
+          <div className="hidden lg:flex items-center gap-2 xl:gap-5 mr-2">
             <NavDropdown label="Services" items={servicesItems} />
             <Link to="/health-packages" className="text-sm font-bold text-slate-600 hover:text-[#1D9E75] transition-colors">
               Packages

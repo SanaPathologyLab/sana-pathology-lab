@@ -123,7 +123,7 @@ const Layout = ({ children }) => {
     <div className="flex flex-col min-h-screen bg-gray-50 font-sans">
       {/* Top utility bar */}
       <div className="bg-[#00488d] text-white text-xs py-1 px-4 hidden md:block">
-        <div className="max-w-7xl mx-auto flex justify-between items-center">
+        <div className="w-full flex justify-between items-center">
           <div className="flex items-center space-x-6">
             <span className="flex items-center"><MapPin className="w-3 h-3 mr-1" /> Datawali Road, Near Aara Machine, Hayat Nagar</span>
           </div>
@@ -137,7 +137,7 @@ const Layout = ({ children }) => {
 
       {/* Main Header */}
       <header className="bg-white border-b border-gray-200 sticky top-0 z-50 shadow-sm">
-        <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
+        <div className="w-full px-4 sm:px-6 lg:px-8">
           <div className="flex justify-between items-center h-20 gap-4">
             {/* Logo */}
             <div className="flex-shrink-0 flex items-center cursor-pointer" onClick={() => navigate('/dashboard')}>
@@ -189,14 +189,14 @@ const Layout = ({ children }) => {
 
         {/* Desktop / Tablet Navigation - own row, horizontally scrollable on small screens */}
         <nav className="hidden lg:block bg-white border-t border-gray-100">
-          <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
-            <div className="flex items-center justify-center gap-1 overflow-x-auto whitespace-nowrap nav-scroll">
+          <div className="w-full px-2 sm:px-4 lg:px-6">
+            <div className="flex items-center justify-start xl:justify-center gap-0.5 overflow-x-auto whitespace-nowrap nav-scroll">
               {links.map((link) => (
                 <NavLink
                   key={link.name}
                   to={link.path}
                   className={({ isActive }) =>
-                    `px-3 xl:px-4 py-3 text-xs xl:text-sm font-bold uppercase tracking-wide transition-colors nav-link flex-shrink-0 ${
+                    `px-2 lg:px-2.5 xl:px-3 py-3 text-[10px] lg:text-[11px] xl:text-xs font-bold uppercase tracking-wide transition-colors nav-link flex-shrink-0 ${
                       isActive ? 'text-[#00488d] active' : 'text-gray-600 hover:text-[#00488d]'
                     }`
                   }
@@ -254,13 +254,13 @@ const Layout = ({ children }) => {
       </header>
 
       {/* Main Content */}
-      <main className="flex-1 w-full max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-8">
+      <main className="flex-1 w-full px-4 sm:px-6 lg:px-8 py-8">
         {children}
       </main>
 
       {/* Footer */}
       <footer className="bg-[#00488d] text-white py-6 mt-auto">
-        <div className="max-w-7xl mx-auto px-4 text-center text-sm">
+        <div className="w-full px-4 text-center text-sm">
           <p>© {new Date().getFullYear()} Sana Pathology Lab. All Rights Reserved.</p>
         </div>
       </footer>

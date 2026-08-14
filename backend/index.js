@@ -1214,6 +1214,27 @@ app.post('/api/public/lead/capture', async (req, res) => {
   }
 });
 
+// ─── DATABASE: Seeding Live Mock Data ───
+app.post('/api/db/seed-live', verifyToken, async (req, res) => {
+  try {
+    if (req.userRole !== 'ADMIN') {
+      return res.status(403).json({ message: 'Access denied. Only Admins can reset & seed database.' });
+    }
+
+    const { exec } = require('child_process');
+    exec('node seed_live.js', (error, stdout, stderr) => {
+      if (error) {
+        console.error(`Seeding error: ${error.message}`);
+        return res.status(500).json({ message: `Failed to run seeding script: ${error.message}` });
+      }
+      res.json({ message: 'Database reset and seeded successfully with live dashboard data!' });
+    });
+  } catch (err) {
+    console.error('Seed route error:', err.message);
+    res.status(500).json({ message: 'An error occurred triggering seed.' });
+  }
+});
+
 // ─── DASHBOARD: Due for Annual Checkup ───
 app.get('/api/dashboard/due-checkups', verifyToken, async (req, res) => {
   try {

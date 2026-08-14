@@ -539,31 +539,43 @@ Return ONLY the JSON. Do not include markdown code block formatting (no \`\`\`js
   };
 
   const autoCalculateFlag = (valueStr, rangeStr) => {
-    if (!valueStr || !rangeStr) return '';
-    const val = parseFloat(valueStr.toString().replace(/,/g, ''));
-    if (isNaN(val)) return '';
+    if (!valueStr && valueStr !== 0) return '';
+    const strVal = valueStr.toString().trim();
+
+    // ── Qualitative / text result ────────────────────────────────────────────
+    const upper = strVal.toUpperCase();
+    if (['POSITIVE','REACTIVE','DETECTED','PRESENT','ABNORMAL'].some(k => upper.includes(k)))  return 'HIGH';
+    if (['NEGATIVE','NON-REACTIVE','NOT DETECTED','ABSENT','NORMAL'].some(k => upper.includes(k))) return '';
+
+    // ── Numeric result ────────────────────────────────────────────────────────
+    const val = parseFloat(strVal.replace(/,/g, ''));
+    if (isNaN(val) || !rangeStr) return '';
 
     const range = rangeStr.toString().trim().replace(/,/g, '');
-    
-    // Find exactly one numeric range "min - max" safely without lookbehinds
-    const rangePattern = /(?:^|[^\d\.])([\d\.]+)\s*-\s*([\d\.]+)(?:[^\d\.]|$)/g;
+
+    // Handle "min - max" pattern
+    const rangePattern = /(?:^|[^\d\.])(\d+\.?\d*)\s*-\s*(\d+\.?\d*)(?:[^\d.]|$)/g;
     const matches = [...range.matchAll(rangePattern)];
-    
-    if (matches.length === 1) {
+    if (matches.length >= 1) {
+      // If there are multiple ranges (e.g. M: 13-17, F: 12-16) just use the first
       const min = parseFloat(matches[0][1]);
       const max = parseFloat(matches[0][2]);
       if (val < min) return 'LOW';
       if (val > max) return 'HIGH';
-      return '';
+      return 'NORMAL';
     }
 
-    // Less than
-    const lessMatch = range.match(/<\s*([\d\.]+)/);
-    if (lessMatch && val > parseFloat(lessMatch[1])) return 'HIGH';
+    // Handle "< value" (e.g. < 200)
+    const lessMatch = range.match(/<\s*(\d+\.?\d*)/);
+    if (lessMatch) {
+      return val > parseFloat(lessMatch[1]) ? 'HIGH' : 'NORMAL';
+    }
 
-    // Greater than
-    const greaterMatch = range.match(/>\s*([\d\.]+)/);
-    if (greaterMatch && val < parseFloat(greaterMatch[1])) return 'LOW';
+    // Handle "> value" (e.g. > 60)
+    const greaterMatch = range.match(/>\s*(\d+\.?\d*)/);
+    if (greaterMatch) {
+      return val < parseFloat(greaterMatch[1]) ? 'LOW' : 'NORMAL';
+    }
 
     return '';
   };
@@ -574,14 +586,12 @@ Return ONLY the JSON. Do not include markdown code block formatting (no \`\`\`js
         if (tr.key === key) {
           const updated = { ...tr, [field]: value };
           if (field === 'resultValue') {
-            const autoFlag = autoCalculateFlag(value, tr.referenceRange);
-            if (autoFlag || value === '') updated.flag = autoFlag;
+            // Always auto-set flag for every parameter in every test
+            updated.flag = autoCalculateFlag(value, tr.referenceRange);
           }
           return updated;
         }
         return tr;
-      });
-
       
       return newResults;
     });
@@ -649,7 +659,7 @@ Return ONLY the JSON. Do not include markdown code block formatting (no \`\`\`js
       const payload = {
         patientId: selectedPatient.value,
         results: savedResults,
-        reportDate
+        reportDate: new Date().toISOString()
       };
       if (selectedDoctor) payload.doctorId = selectedDoctor.value;
 

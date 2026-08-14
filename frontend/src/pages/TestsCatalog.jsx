@@ -126,22 +126,7 @@ const TestsCatalog = () => {
             </div>
           </div>
 
-          <div className="mb-12">
-            <h2 className="text-2xl font-black text-[#085041] mb-6 font-heading">Suggested Health Packages</h2>
-            <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-6">
-              {HEALTH_PACKAGES_DATA.slice(0, 4).map(pkg => (
-                <PackageCard 
-                  key={pkg.code} 
-                  pkg={pkg} 
-                  isAdded={isInCart(pkg.code)}
-                  onAdd={() => toggleCartItem(pkg, true)}
-                  onKnowMore={(p) => setSelectedPackageDetails(p)}
-                  onBookNow={handleBookNow}
-                  onWhatsApp={(msg) => window.open(`https://wa.me/916396786939?text=${encodeURIComponent(msg)}`, '_blank')}
-                />
-              ))}
-            </div>
-          </div>
+
 
           {/* Test List Section */}
           <div>
